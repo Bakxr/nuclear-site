@@ -318,8 +318,8 @@ body {
     flex: 1 !important;
   }
 
-  /* Plant modal — tighter body padding on mobile */
-  .np-plant-modal-body {
+  /* Plant modal — tighter content padding on mobile */
+  .np-plant-modal-body > div:last-child {
     padding: 16px 16px 16px !important;
   }
 

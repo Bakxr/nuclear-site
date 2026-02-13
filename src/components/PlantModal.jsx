@@ -80,89 +80,92 @@ export default function PlantModal({ plant, onClose }) {
           maxHeight: "85vh", display: "flex", flexDirection: "column",
         }}
       >
-        {/* === HERO PHOTO === */}
-        <div style={{ position: "relative", width: "100%", aspectRatio: "16/9", background: "#1e1912", flexShrink: 0, overflow: "hidden" }}>
-          {/* Loading skeleton */}
-          {imageLoading && (
-            <div style={{
-              position: "absolute", inset: 0,
-              background: "linear-gradient(135deg, #2a241c 0%, #3a342a 50%, #2a241c 100%)",
-              backgroundSize: "200% 200%",
-              animation: "shimmer 1.5s ease infinite",
-            }} />
-          )}
+        {/* Close button — fixed to modal so it stays visible while scrolling */}
+        <button onClick={onClose} style={{
+          position: "absolute", top: 12, right: 12, width: 36, height: 36,
+          background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)",
+          border: "none", borderRadius: "50%", fontSize: 22, cursor: "pointer",
+          color: "rgba(255,255,255,0.9)", lineHeight: 1, display: "flex",
+          alignItems: "center", justifyContent: "center", zIndex: 10,
+        }}>
+          &times;
+        </button>
 
-          {/* Wikipedia image */}
-          {imageUrl && (
-            <img
-              src={imageUrl}
-              alt={plant.name}
-              onLoad={() => setImgLoaded(true)}
-              style={{
-                width: "100%", height: "100%", objectFit: "cover", display: "block",
-                opacity: imgLoaded ? 1 : 0, transition: "opacity 0.3s ease",
-              }}
-            />
-          )}
+        {/* === SCROLLABLE BODY (hero scrolls away with content) === */}
+        <div className="np-plant-modal-body" style={{ overflowY: "auto", flex: 1 }}>
 
-          {/* Fallback gradient when no image */}
-          {!imageLoading && !imageUrl && (
-            <div style={{
-              position: "absolute", inset: 0,
-              background: "linear-gradient(135deg, #1e1912 0%, #2a241c 40%, #3a342a 100%)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              <svg width="64" height="64" viewBox="0 0 64 64" opacity="0.3">
-                <circle cx="32" cy="32" r="28" fill="none" stroke="#d4a54a" strokeWidth="2" />
-                <circle cx="32" cy="32" r="6" fill="#d4a54a" />
-                <ellipse cx="32" cy="32" rx="18" ry="6" fill="none" stroke="#d4a54a" strokeWidth="1.5" transform="rotate(0 32 32)" />
-                <ellipse cx="32" cy="32" rx="18" ry="6" fill="none" stroke="#d4a54a" strokeWidth="1.5" transform="rotate(60 32 32)" />
-                <ellipse cx="32" cy="32" rx="18" ry="6" fill="none" stroke="#d4a54a" strokeWidth="1.5" transform="rotate(120 32 32)" />
-              </svg>
-            </div>
-          )}
+          {/* === HERO PHOTO — inside scroll so it slides away === */}
+          <div style={{ position: "relative", width: "100%", aspectRatio: "16/9", background: "#1e1912", overflow: "hidden", flexShrink: 0 }}>
+            {/* Loading skeleton */}
+            {imageLoading && (
+              <div style={{
+                position: "absolute", inset: 0,
+                background: "linear-gradient(135deg, #2a241c 0%, #3a342a 50%, #2a241c 100%)",
+                backgroundSize: "200% 200%",
+                animation: "shimmer 1.5s ease infinite",
+              }} />
+            )}
 
-          {/* Gradient overlay at bottom */}
-          <div style={{
-            position: "absolute", bottom: 0, left: 0, right: 0, height: "50%",
-            background: "linear-gradient(transparent, rgba(14,12,10,0.85))",
-          }} />
+            {/* Wikipedia image */}
+            {imageUrl && (
+              <img
+                src={imageUrl}
+                alt={plant.name}
+                onLoad={() => setImgLoaded(true)}
+                style={{
+                  width: "100%", height: "100%", objectFit: "cover", display: "block",
+                  opacity: imgLoaded ? 1 : 0, transition: "opacity 0.3s ease",
+                }}
+              />
+            )}
 
-          {/* Plant name overlaid */}
-          <div style={{ position: "absolute", bottom: 16, left: 24, right: 60, zIndex: 1 }}>
-            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", color: "#d4a54a", fontWeight: 700, marginBottom: 4 }}>
-              Nuclear Power Station
-            </div>
-            <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(22px, 4vw, 32px)", fontWeight: 500, margin: 0, color: "#fff", lineHeight: 1.15 }}>
-              {plant.name}
-            </h3>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6 }}>
-              <span style={{ color: "rgba(255,255,255,0.8)", fontSize: 14 }}>{plant.country}</span>
-              <span style={{
-                display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 10px",
-                borderRadius: 20, fontSize: 11, fontWeight: 600, color: statusColor,
-                background: "rgba(255,255,255,0.12)", backdropFilter: "blur(4px)",
+            {/* Fallback gradient when no image */}
+            {!imageLoading && !imageUrl && (
+              <div style={{
+                position: "absolute", inset: 0,
+                background: "linear-gradient(135deg, #1e1912 0%, #2a241c 40%, #3a342a 100%)",
+                display: "flex", alignItems: "center", justifyContent: "center",
               }}>
-                <span style={{ width: 7, height: 7, borderRadius: "50%", background: statusColor }} />
-                {plant.status}
-              </span>
+                <svg width="64" height="64" viewBox="0 0 64 64" opacity="0.3">
+                  <circle cx="32" cy="32" r="28" fill="none" stroke="#d4a54a" strokeWidth="2" />
+                  <circle cx="32" cy="32" r="6" fill="#d4a54a" />
+                  <ellipse cx="32" cy="32" rx="18" ry="6" fill="none" stroke="#d4a54a" strokeWidth="1.5" transform="rotate(0 32 32)" />
+                  <ellipse cx="32" cy="32" rx="18" ry="6" fill="none" stroke="#d4a54a" strokeWidth="1.5" transform="rotate(60 32 32)" />
+                  <ellipse cx="32" cy="32" rx="18" ry="6" fill="none" stroke="#d4a54a" strokeWidth="1.5" transform="rotate(120 32 32)" />
+                </svg>
+              </div>
+            )}
+
+            {/* Gradient overlay at bottom */}
+            <div style={{
+              position: "absolute", bottom: 0, left: 0, right: 0, height: "50%",
+              background: "linear-gradient(transparent, rgba(14,12,10,0.85))",
+            }} />
+
+            {/* Plant name overlaid */}
+            <div style={{ position: "absolute", bottom: 16, left: 24, right: 60, zIndex: 1 }}>
+              <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", color: "#d4a54a", fontWeight: 700, marginBottom: 4 }}>
+                Nuclear Power Station
+              </div>
+              <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(22px, 4vw, 32px)", fontWeight: 500, margin: 0, color: "#fff", lineHeight: 1.15 }}>
+                {plant.name}
+              </h3>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6 }}>
+                <span style={{ color: "rgba(255,255,255,0.8)", fontSize: 14 }}>{plant.country}</span>
+                <span style={{
+                  display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 10px",
+                  borderRadius: 20, fontSize: 11, fontWeight: 600, color: statusColor,
+                  background: "rgba(255,255,255,0.12)", backdropFilter: "blur(4px)",
+                }}>
+                  <span style={{ width: 7, height: 7, borderRadius: "50%", background: statusColor }} />
+                  {plant.status}
+                </span>
+              </div>
             </div>
           </div>
 
-          {/* Close button */}
-          <button onClick={onClose} style={{
-            position: "absolute", top: 12, right: 12, width: 36, height: 36,
-            background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)",
-            border: "none", borderRadius: "50%", fontSize: 22, cursor: "pointer",
-            color: "rgba(255,255,255,0.9)", lineHeight: 1, display: "flex",
-            alignItems: "center", justifyContent: "center", zIndex: 2,
-          }}>
-            &times;
-          </button>
-        </div>
-
-        {/* === SCROLLABLE BODY === */}
-        <div className="np-plant-modal-body" style={{ overflowY: "auto", padding: "24px 28px 20px", flex: 1 }}>
+          {/* === CONTENT BELOW HERO === */}
+          <div style={{ padding: "24px 28px 20px" }}>
 
           {/* Data grid + Map row */}
           <div className="np-plant-modal-body-grid" style={{ display: "grid", gridTemplateColumns: "1fr 240px", gap: 20, marginBottom: 24 }}>
@@ -264,7 +267,8 @@ export default function PlantModal({ plant, onClose }) {
             )}
             <span style={{ fontSize: 10, color: "var(--np-text-faint)", marginLeft: "auto" }}>Data sourced from IAEA PRIS</span>
           </div>
-        </div>
+          </div>{/* end content padding wrapper */}
+        </div>{/* end scrollable body */}
 
         {/* Shimmer animation */}
         <style>{`
