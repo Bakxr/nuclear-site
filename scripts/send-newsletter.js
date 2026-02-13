@@ -1,48 +1,44 @@
 /**
  * Nuclear Pulse — Weekly Newsletter Sender
  *
- * Runs every Sunday via GitHub Actions (or manually).
- * 1. Fetches top 5 nuclear news articles from RSS feeds
- * 2. Fetches weekly stock performance for all tracked tickers
- * 3. Loads active subscribers from Supabase
- * 4. Builds an HTML email
- * 5. Sends via Resend
- *
- * Required env vars:
- *   RESEND_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_KEY,
- *   FINNHUB_API_KEY, NEWSLETTER_FROM, SITE_URL
+ * Improvements:
+ *   1. Article summaries — first 2 sentences from RSS description
+ *   2. Uranium market indicator — CCJ (Cameco) price as uranium proxy
+ *   3. Plant of the week — random operating reactor from the database
+ *   4. Smarter subject line — built from top headline
  */
 
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
+import { NUCLEAR_PLANTS } from '../src/data/plants.js';
 
-// ─── Config ────────────────────────────────────────────────────────────────
-const RESEND_API_KEY    = process.env.RESEND_API_KEY;
-const SUPABASE_URL      = process.env.SUPABASE_URL;
-const SUPABASE_KEY      = process.env.SUPABASE_SERVICE_KEY;
-const FINNHUB_KEY       = process.env.FINNHUB_API_KEY || process.env.VITE_FINNHUB_API_KEY;
-const FROM              = process.env.NEWSLETTER_FROM || 'Nuclear Pulse <onboarding@resend.dev>';
-const SITE_URL          = process.env.SITE_URL || 'https://nuclear-pulse.vercel.app';
+// ─── Config ──────────────────────────────────────────────────────────────────
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
+const SUPABASE_URL   = process.env.SUPABASE_URL;
+const SUPABASE_KEY   = process.env.SUPABASE_SERVICE_KEY;
+const FINNHUB_KEY    = process.env.FINNHUB_API_KEY || process.env.VITE_FINNHUB_API_KEY;
+const FROM           = process.env.NEWSLETTER_FROM || 'Nuclear Pulse <onboarding@resend.dev>';
+const SITE_URL       = process.env.SITE_URL || 'https://atomic-energy.vercel.app';
 
-const resend  = new Resend(RESEND_API_KEY);
+const resend   = new Resend(RESEND_API_KEY);
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ─── Stock tickers to track ─────────────────────────────────────────────────
+// ─── Stock tickers ────────────────────────────────────────────────────────────
 const TICKERS = ['CCJ','UEC','NXE','LEU','DNN','SMR','OKLO','CEG','VST','UUUU','NNE','GEV'];
 
-// ─── RSS feeds (same sources as newsAPI.js) ─────────────────────────────────
+// ─── RSS feeds ────────────────────────────────────────────────────────────────
 const FEEDS = [
-  { name: 'World Nuclear News', url: 'https://www.world-nuclear-news.org/rss' },
-  { name: 'NucNet',             url: 'https://www.nucnet.org/feed' },
+  { name: 'World Nuclear News',   url: 'https://www.world-nuclear-news.org/rss' },
+  { name: 'NucNet',               url: 'https://www.nucnet.org/feed' },
   { name: 'ANS Nuclear Newswire', url: 'https://www.ans.org/news/rss/' },
-  { name: 'IAEA',               url: 'https://www.iaea.org/feeds/topnews' },
-  { name: 'US Dept of Energy',  url: 'https://www.energy.gov/ne/rss.xml' },
+  { name: 'IAEA',                 url: 'https://www.iaea.org/feeds/topnews' },
+  { name: 'US Dept of Energy',    url: 'https://www.energy.gov/ne/rss.xml' },
 ];
 
 const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
-const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days for weekly digest
+const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
+// ─── Text helpers ─────────────────────────────────────────────────────────────
 
 function stripHtml(html = '') {
   return html
@@ -51,6 +47,18 @@ function stripHtml(html = '') {
     .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, ' ')
     .replace(/\s+/g, ' ').trim();
+}
+
+// Extract first 1-2 clean sentences from description text
+function summarise(text = '', maxChars = 180) {
+  const clean = stripHtml(text);
+  const sentences = clean.match(/[^.!?]+[.!?]+/g) || [];
+  let result = '';
+  for (const s of sentences) {
+    if ((result + s).length > maxChars) break;
+    result += s + ' ';
+  }
+  return result.trim() || clean.slice(0, maxChars).trim();
 }
 
 const TAG_RULES = [
@@ -66,7 +74,7 @@ function inferTag(title = '') {
   return 'Industry';
 }
 
-// ─── Fetch news ──────────────────────────────────────────────────────────────
+// ─── Fetch news ───────────────────────────────────────────────────────────────
 
 async function fetchFeed(feed) {
   const controller = new AbortController();
@@ -77,7 +85,6 @@ async function fetchFeed(feed) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const text = await res.text();
 
-    // Parse with regex (no DOM in Node) — extract <item> or <entry> blocks
     const isAtom = text.includes('<feed');
     const itemRe = isAtom ? /<entry>([\s\S]*?)<\/entry>/g : /<item>([\s\S]*?)<\/item>/g;
     const items = [];
@@ -85,17 +92,27 @@ async function fetchFeed(feed) {
     while ((m = itemRe.exec(text)) !== null) {
       const block = m[1];
       const title = stripHtml(/<title[^>]*>([\s\S]*?)<\/title>/i.exec(block)?.[1] || '');
-      const link  = (isAtom
+
+      const link = (isAtom
         ? /href="([^"]+)"/i.exec(/<link[^>]*>/i.exec(block)?.[0] || '')?.[1]
         : /<link>([\s\S]*?)<\/link>/i.exec(block)?.[1]
             || /<guid[^>]*isPermaLink="true"[^>]*>([\s\S]*?)<\/guid>/i.exec(block)?.[1]
       ) || '';
+
+      // ① Extract description for summary
+      const descRaw = /<description>([\s\S]*?)<\/description>/i.exec(block)?.[1]
+                   || /<summary[^>]*>([\s\S]*?)<\/summary>/i.exec(block)?.[1]
+                   || /<content[^>]*>([\s\S]*?)<\/content>/i.exec(block)?.[1] || '';
+      const summary = summarise(descRaw);
+
       const pubDate = /<pubDate>([\s\S]*?)<\/pubDate>/i.exec(block)?.[1]
                    || /<published>([\s\S]*?)<\/published>/i.exec(block)?.[1] || '';
+
       if (!title || !link.startsWith('http')) continue;
       const date = pubDate ? new Date(pubDate) : null;
       if (date && Date.now() - date.getTime() > MAX_AGE_MS) continue;
-      items.push({ title, url: link, source: feed.name, date, tag: inferTag(title) });
+
+      items.push({ title, url: link, source: feed.name, date, tag: inferTag(title), summary });
     }
     return items.slice(0, 6);
   } catch (err) {
@@ -108,21 +125,17 @@ async function fetchFeed(feed) {
 async function fetchTopNews(limit = 5) {
   const results = await Promise.allSettled(FEEDS.map(fetchFeed));
   const all = results.flatMap(r => r.status === 'fulfilled' ? r.value : []);
-  // Deduplicate by URL
   const seen = new Set();
   const unique = all.filter(a => { if (seen.has(a.url)) return false; seen.add(a.url); return true; });
-  // Sort newest first
   unique.sort((a, b) => (b.date?.getTime() || 0) - (a.date?.getTime() || 0));
   return unique.slice(0, limit);
 }
 
-// ─── Fetch stocks ────────────────────────────────────────────────────────────
+// ─── Fetch stocks + uranium proxy ────────────────────────────────────────────
 
 async function fetchQuote(ticker) {
   try {
-    const res = await fetch(
-      `https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${FINNHUB_KEY}`
-    );
+    const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${FINNHUB_KEY}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const d = await res.json();
     if (!d.c) return null;
@@ -133,29 +146,40 @@ async function fetchQuote(ticker) {
   }
 }
 
-async function fetchTopMovers(count = 3) {
+async function fetchMarketData() {
   const quotes = [];
   for (const ticker of TICKERS) {
     const q = await fetchQuote(ticker);
     if (q) quotes.push(q);
-    await new Promise(r => setTimeout(r, 300)); // rate limit: ~3 req/s
+    await new Promise(r => setTimeout(r, 300));
   }
-  quotes.sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct));
-  return quotes.slice(0, count);
+  // Top 3 movers by absolute % change
+  const movers = [...quotes].sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct)).slice(0, 3);
+  // ② Uranium proxy — use CCJ (Cameco, world's largest uranium miner)
+  const uranium = quotes.find(q => q.ticker === 'CCJ') || null;
+  return { movers, uranium };
 }
 
-// ─── Get subscribers ─────────────────────────────────────────────────────────
+// ─── Plant of the week ───────────────────────────────────────────────────────
+
+// ③ Pick a deterministic "random" plant based on the week number
+// (same plant all week, different each week — no actual randomness needed)
+function getPlantOfTheWeek() {
+  const operating = NUCLEAR_PLANTS.filter(p => p.status === 'Operating');
+  if (!operating.length) return null;
+  const weekNumber = Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000));
+  return operating[weekNumber % operating.length];
+}
+
+// ─── Subscribers ──────────────────────────────────────────────────────────────
 
 async function getSubscribers() {
-  const { data, error } = await supabase
-    .from('subscribers')
-    .select('email')
-    .eq('active', true);
+  const { data, error } = await supabase.from('subscribers').select('email').eq('active', true);
   if (error) throw new Error(`Supabase error: ${error.message}`);
   return data.map(r => r.email);
 }
 
-// ─── Build email HTML ────────────────────────────────────────────────────────
+// ─── Build email HTML ─────────────────────────────────────────────────────────
 
 const TAG_COLORS = {
   Policy: '#5ab8d4', Expansion: '#4ade80', Markets: '#fbbf24',
@@ -166,48 +190,117 @@ function formatDate(d) {
   return new Date(d).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 }
 
-function buildEmail(articles, movers, unsubEmail) {
+function buildEmail(articles, movers, uranium, plant, unsubEmail) {
   const date = formatDate(new Date());
   const unsubUrl = `${SITE_URL}/api/unsubscribe?email=${encodeURIComponent(unsubEmail)}`;
 
+  // ① Article cards with summaries
   const newsRows = articles.map(a => {
     const tagColor = TAG_COLORS[a.tag] || '#94a3b8';
     const dateStr = a.date ? a.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
     return `
     <tr>
-      <td style="padding:0 0 20px 0;">
+      <td style="padding:0 0 16px 0;">
         <a href="${a.url}" style="text-decoration:none;color:inherit;display:block;
            background:#1e1912;border:1px solid rgba(245,240,232,0.08);border-radius:10px;
            padding:18px 20px;">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <div style="margin-bottom:10px;">
             <span style="background:${tagColor}22;color:${tagColor};font-size:10px;
               font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
-              padding:3px 9px;border-radius:20px;">${a.tag}</span>
+              padding:3px 9px;border-radius:20px;margin-right:8px;">${a.tag}</span>
             ${dateStr ? `<span style="font-size:11px;color:rgba(245,240,232,0.35);">${dateStr}</span>` : ''}
           </div>
           <div style="font-family:Georgia,serif;font-size:17px;font-weight:400;
-            line-height:1.45;color:#f5f0e8;margin-bottom:8px;">${a.title}</div>
-          <div style="font-size:12px;color:rgba(245,240,232,0.4);">${a.source} →</div>
+            line-height:1.45;color:#f5f0e8;margin-bottom:${a.summary ? '8px' : '10px'};">${a.title}</div>
+          ${a.summary ? `<div style="font-size:13px;color:rgba(245,240,232,0.5);line-height:1.6;margin-bottom:10px;">${a.summary}</div>` : ''}
+          <div style="font-size:12px;color:rgba(245,240,232,0.35);">${a.source} →</div>
         </a>
       </td>
     </tr>`;
   }).join('');
 
-  const moverRows = movers.map(m => {
+  // ② Uranium proxy row
+  const uraniumRow = uranium ? (() => {
+    const up = uranium.pct >= 0;
+    const color = up ? '#4ade80' : '#f87171';
+    const arrow = up ? '▲' : '▼';
+    return `
+    <tr>
+      <td style="padding:0 0 20px 0;">
+        <div style="background:#1e1912;border:1px solid rgba(212,165,74,0.15);border-radius:10px;
+          padding:16px 20px;display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;
+              color:#d4a54a;font-weight:700;margin-bottom:4px;">Uranium Market</div>
+            <div style="font-size:13px;color:rgba(245,240,232,0.5);">
+              Cameco (CCJ) — world's largest uranium miner
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-family:'Courier New',monospace;font-size:20px;
+              font-weight:700;color:#f5f0e8;">$${uranium.price.toFixed(2)}</div>
+            <div style="font-size:13px;font-weight:700;color:${color};">
+              ${arrow} ${Math.abs(uranium.pct).toFixed(2)}% today
+            </div>
+          </div>
+        </div>
+      </td>
+    </tr>`;
+  })() : '';
+
+  // Top movers grid
+  const moverCells = movers.map(m => {
     const up = m.pct >= 0;
     const color = up ? '#4ade80' : '#f87171';
     const arrow = up ? '▲' : '▼';
     return `
-    <td style="width:33%;padding:0 6px 0 0;box-sizing:border-box;">
+    <td style="width:33%;padding:0 4px;box-sizing:border-box;">
       <div style="background:#1e1912;border:1px solid rgba(245,240,232,0.08);
-        border-radius:10px;padding:14px 16px;text-align:center;">
-        <div style="font-family:'Courier New',monospace;font-size:16px;font-weight:700;
-          color:#d4a54a;margin-bottom:4px;">${m.ticker}</div>
-        <div style="font-size:13px;color:#f5f0e8;margin-bottom:2px;">$${m.price.toFixed(2)}</div>
-        <div style="font-size:12px;font-weight:700;color:${color};">${arrow} ${Math.abs(m.pct).toFixed(2)}%</div>
+        border-radius:10px;padding:12px 14px;text-align:center;">
+        <div style="font-family:'Courier New',monospace;font-size:15px;font-weight:700;
+          color:#d4a54a;margin-bottom:3px;">${m.ticker}</div>
+        <div style="font-size:12px;color:#f5f0e8;margin-bottom:2px;">$${m.price.toFixed(2)}</div>
+        <div style="font-size:11px;font-weight:700;color:${color};">${arrow} ${Math.abs(m.pct).toFixed(2)}%</div>
       </div>
     </td>`;
   }).join('');
+
+  // ③ Plant of the week card
+  const plantRow = plant ? `
+  <tr>
+    <td style="padding:0 0 0 0;">
+      <div style="background:#1e1912;border:1px solid rgba(245,240,232,0.08);
+        border-radius:10px;padding:18px 20px;">
+        <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;
+          color:#d4a54a;font-weight:700;margin-bottom:12px;">⚛ Plant of the Week</div>
+        <div style="font-family:Georgia,serif;font-size:20px;color:#f5f0e8;
+          font-weight:400;margin-bottom:6px;">${plant.name}</div>
+        <div style="font-size:13px;color:rgba(245,240,232,0.5);margin-bottom:12px;">
+          ${plant.country}
+        </div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;">
+          <div>
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;
+              color:rgba(245,240,232,0.35);margin-bottom:2px;">Capacity</div>
+            <div style="font-family:'Courier New',monospace;font-size:14px;
+              color:#d4a54a;font-weight:700;">${plant.capacity.toLocaleString()} MW</div>
+          </div>
+          <div>
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;
+              color:rgba(245,240,232,0.35);margin-bottom:2px;">Reactors</div>
+            <div style="font-family:'Courier New',monospace;font-size:14px;
+              color:#d4a54a;font-weight:700;">${plant.reactors}</div>
+          </div>
+          <div>
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;
+              color:rgba(245,240,232,0.35);margin-bottom:2px;">Type</div>
+            <div style="font-family:'Courier New',monospace;font-size:14px;
+              color:#d4a54a;font-weight:700;">${plant.type}</div>
+          </div>
+        </div>
+      </div>
+    </td>
+  </tr>` : '';
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -234,7 +327,7 @@ function buildEmail(articles, movers, unsubEmail) {
 
         <!-- Intro -->
         <tr>
-          <td style="padding:28px 0 24px 0;">
+          <td style="padding:28px 0 28px 0;">
             <p style="font-size:15px;color:rgba(245,240,232,0.6);line-height:1.65;margin:0;">
               Your weekly digest of the most important stories in nuclear energy — covering policy,
               new construction, markets, and research from the world's leading nuclear sources.
@@ -254,26 +347,51 @@ function buildEmail(articles, movers, unsubEmail) {
         </tr>
 
         <!-- Market Pulse -->
-        ${movers.length > 0 ? `
         <tr>
-          <td style="padding:8px 0 32px 0;border-top:1px solid rgba(245,240,232,0.06);">
+          <td style="padding:24px 0 0 0;border-top:1px solid rgba(245,240,232,0.06);">
             <div style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;
-              color:rgba(212,165,74,0.7);font-weight:700;margin:20px 0 14px;">Market Pulse</div>
-            <p style="font-size:13px;color:rgba(245,240,232,0.4);margin:0 0 16px;">
-              Biggest movers in nuclear stocks this week
-            </p>
+              color:rgba(212,165,74,0.7);font-weight:700;margin-bottom:16px;">Market Pulse</div>
             <table width="100%" cellpadding="0" cellspacing="0">
-              <tr>${moverRows}</tr>
+              ${uraniumRow}
+              ${movers.length > 0 ? `
+              <tr>
+                <td style="padding:0 0 8px 0;">
+                  <div style="font-size:12px;color:rgba(245,240,232,0.35);margin-bottom:10px;">
+                    Biggest movers this week
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:0 0 8px 0;">
+                  <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>${moverCells}</tr>
+                  </table>
+                </td>
+              </tr>` : ''}
+              <tr>
+                <td>
+                  <p style="font-size:10px;color:rgba(245,240,232,0.2);margin:10px 0 0;">
+                    Data sourced from Finnhub. Not financial advice.
+                  </p>
+                </td>
+              </tr>
             </table>
-            <p style="font-size:10px;color:rgba(245,240,232,0.2);margin:14px 0 0;">
-              Data sourced from Finnhub. Not financial advice.
-            </p>
+          </td>
+        </tr>
+
+        <!-- Plant of the Week -->
+        ${plant ? `
+        <tr>
+          <td style="padding:24px 0 0 0;border-top:1px solid rgba(245,240,232,0.06);">
+            <table width="100%" cellpadding="0" cellspacing="0">
+              ${plantRow}
+            </table>
           </td>
         </tr>` : ''}
 
         <!-- Footer -->
         <tr>
-          <td style="padding:24px 0 0 0;border-top:1px solid rgba(245,240,232,0.06);text-align:center;">
+          <td style="padding:32px 0 0 0;border-top:1px solid rgba(245,240,232,0.06);text-align:center;margin-top:24px;">
             <p style="font-size:13px;color:rgba(245,240,232,0.4);margin:0 0 12px;">
               You're receiving this because you subscribed at
               <a href="${SITE_URL}" style="color:#d4a54a;text-decoration:none;">Nuclear Pulse</a>.
@@ -291,57 +409,52 @@ function buildEmail(articles, movers, unsubEmail) {
 </html>`;
 }
 
-// ─── Main ────────────────────────────────────────────────────────────────────
+// ─── Main ─────────────────────────────────────────────────────────────────────
 
 async function main() {
   console.log('[newsletter] Starting…');
 
-  // Validate env
   for (const key of ['RESEND_API_KEY', 'SUPABASE_URL', 'SUPABASE_SERVICE_KEY']) {
-    if (!process.env[key]) {
-      console.error(`[newsletter] Missing required env var: ${key}`);
-      process.exit(1);
-    }
+    if (!process.env[key]) { console.error(`[newsletter] Missing env var: ${key}`); process.exit(1); }
   }
 
   console.log('[newsletter] Fetching news…');
   const articles = await fetchTopNews(5);
   console.log(`[newsletter] Got ${articles.length} articles`);
 
-  console.log('[newsletter] Fetching stock movers…');
-  const movers = await fetchTopMovers(3);
-  console.log(`[newsletter] Got ${movers.length} movers`);
+  console.log('[newsletter] Fetching market data…');
+  const { movers, uranium } = await fetchMarketData();
+  console.log(`[newsletter] Got ${movers.length} movers, uranium proxy: ${uranium ? `$${uranium.price}` : 'unavailable'}`);
+
+  // ③ Plant of the week
+  const plant = getPlantOfTheWeek();
+  console.log(`[newsletter] Plant of the week: ${plant?.name || 'none'}`);
 
   console.log('[newsletter] Loading subscribers…');
   const subscribers = await getSubscribers();
   console.log(`[newsletter] ${subscribers.length} active subscribers`);
 
-  if (subscribers.length === 0) {
-    console.log('[newsletter] No subscribers — nothing to send.');
-    return;
-  }
+  if (subscribers.length === 0) { console.log('[newsletter] No subscribers — nothing to send.'); return; }
 
-  const subject = `Nuclear Pulse Weekly — ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`;
+  // ④ Subject line built from top headline
+  const topTitle = articles[0]?.title || '';
+  const rest = articles.length > 1 ? ` + ${articles.length - 1} more stories` : '';
+  const subject = topTitle
+    ? `${topTitle.slice(0, 60)}${topTitle.length > 60 ? '…' : ''}${rest}`
+    : `Nuclear Pulse Weekly — ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`;
 
-  // Send individually so each email has a personalised unsubscribe link
+  console.log(`[newsletter] Subject: "${subject}"`);
+
   let sent = 0, failed = 0;
   for (const email of subscribers) {
-    const html = buildEmail(articles, movers, email);
+    const html = buildEmail(articles, movers, uranium, plant, email);
     const { error } = await resend.emails.send({ from: FROM, to: email, subject, html });
-    if (error) {
-      console.error(`[newsletter] Failed to send to ${email}:`, error.message);
-      failed++;
-    } else {
-      sent++;
-    }
-    // Small delay to stay within Resend rate limits
+    if (error) { console.error(`[newsletter] Failed to send to ${email}:`, error.message); failed++; }
+    else sent++;
     await new Promise(r => setTimeout(r, 100));
   }
 
   console.log(`[newsletter] Done. Sent: ${sent}, Failed: ${failed}`);
 }
 
-main().catch(err => {
-  console.error('[newsletter] Fatal error:', err);
-  process.exit(1);
-});
+main().catch(err => { console.error('[newsletter] Fatal error:', err); process.exit(1); });
