@@ -304,6 +304,25 @@ body {
     font-size: 11px !important;
   }
 
+  /* Reactor viewer header — stack title above buttons on mobile */
+  .np-reactor-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+  .np-reactor-header > div:last-child {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+  .np-reactor-header > div:last-child button {
+    flex: 1 !important;
+  }
+
+  /* Plant modal — tighter body padding on mobile */
+  .np-plant-modal-body {
+    padding: 16px 16px 16px !important;
+  }
+
   /* Newsletter — stacked */
   .np-newsletter-row {
     flex-direction: column !important;

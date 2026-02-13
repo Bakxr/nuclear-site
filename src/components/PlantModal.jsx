@@ -155,7 +155,7 @@ export default function PlantModal({ plant, onClose }) {
         </div>
 
         {/* === SCROLLABLE BODY === */}
-        <div style={{ overflowY: "auto", padding: "24px 28px 20px", flex: 1 }}>
+        <div className="np-plant-modal-body" style={{ overflowY: "auto", padding: "24px 28px 20px", flex: 1 }}>
 
           {/* Data grid + Map row */}
           <div className="np-plant-modal-body-grid" style={{ display: "grid", gridTemplateColumns: "1fr 240px", gap: 20, marginBottom: 24 }}>
@@ -217,7 +217,7 @@ export default function PlantModal({ plant, onClose }) {
           {/* === REACTOR VIEWER === */}
           <div style={{ background: "var(--np-surface-dim)", borderRadius: 12, marginBottom: 16, overflow: "hidden" }}>
             {/* Header + tab switcher */}
-            <div style={{ padding: "16px 20px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div className="np-reactor-header" style={{ padding: "16px 20px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
                 <h4 style={{ fontFamily: "'Playfair Display',serif", fontSize: 18, fontWeight: 500, margin: "0 0 3px", color: "var(--np-text)" }}>
                   How a <em style={{ color: "var(--np-text-muted)" }}>{normalizedType}</em> Works
