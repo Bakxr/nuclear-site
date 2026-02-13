@@ -23,6 +23,13 @@ export default function PlantModal({ plant, onClose }) {
   const homesPerYear = Math.round(plant.capacity * 8760 * 0.9 / 10000);
   const osmData = useMemo(() => getOSMTiles(plant.lat, plant.lng, 11), [plant.lat, plant.lng]);
 
+  // Lock background scroll while modal is open
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     setImageLoading(true);
