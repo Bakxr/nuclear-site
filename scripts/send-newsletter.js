@@ -35,7 +35,7 @@ const FEEDS = [
   { name: 'US Dept of Energy',    url: 'https://www.energy.gov/ne/rss.xml' },
 ];
 
-const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+// No CORS proxy needed in Node.js — fetch feeds directly
 const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
 // ─── Text helpers ─────────────────────────────────────────────────────────────
@@ -80,7 +80,7 @@ async function fetchFeed(feed) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 8000);
   try {
-    const res = await fetch(CORS_PROXY + encodeURIComponent(feed.url), { signal: controller.signal });
+    const res = await fetch(feed.url, { signal: controller.signal });
     clearTimeout(timer);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const text = await res.text();
