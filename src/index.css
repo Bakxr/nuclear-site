@@ -158,9 +158,18 @@ body {
     color: #1e1912;
   }
 
-  /* Stats — 3 columns */
+  /* Stats — 3 columns, flush join with hero */
   .np-stats-grid {
     grid-template-columns: repeat(3, 1fr) !important;
+    gap: 0 !important;
+  }
+  .np-stats-grid a {
+    border-right: 1px solid var(--np-border) !important;
+    border-bottom: 1px solid var(--np-border) !important;
+    padding: 24px 12px !important;
+  }
+  .np-stats-grid a:nth-child(3n) {
+    border-right: none !important;
   }
 
   /* Hero */
@@ -221,9 +230,21 @@ body {
    MOBILE  (max-width: 640px)
    ==================================================================== */
 @media (max-width: 640px) {
-  /* Stats — 2 columns */
+  /* Stats — 2 columns, flush join with hero */
   .np-stats-grid {
     grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0 !important;
+  }
+  .np-stats-grid a {
+    border-right: 1px solid var(--np-border) !important;
+    border-bottom: 1px solid var(--np-border) !important;
+    padding: 20px 12px !important;
+  }
+  .np-stats-grid a:nth-child(3n) {
+    border-right: 1px solid var(--np-border) !important;
+  }
+  .np-stats-grid a:nth-child(2n) {
+    border-right: none !important;
   }
 
   /* Hero */

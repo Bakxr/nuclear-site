@@ -477,7 +477,7 @@ export default function NuclearPulse() {
       </section>
 
       {/* Stats */}
-      <section ref={statsRef} className="np-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(6,1fr)", gap: 1, background: "var(--np-border)", margin: "0 0 0 0" }}>
+      <section ref={statsRef} className="np-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(6,1fr)", gap: 1, background: "var(--np-bg)", margin: "0 0 0 0" }}>
         {GLOBAL_STATS.map((s, i) => (
           <a key={i} href={s.sourceUrl} target="_blank" rel="noopener noreferrer" style={{
             background: "var(--np-bg)", padding: "32px 20px", textAlign: "center",
