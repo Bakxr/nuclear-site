@@ -1,0 +1,33 @@
+name: Weekly Newsletter
+
+on:
+  schedule:
+    - cron: '0 8 * * 0'   # Every Sunday at 8:00am UTC
+  workflow_dispatch:        # Also allows manual trigger from GitHub Actions tab
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Send newsletter
+        run: node scripts/send-newsletter.js
+        env:
+          RESEND_API_KEY:       ${{ secrets.RESEND_API_KEY }}
+          SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          FINNHUB_API_KEY:      ${{ secrets.VITE_FINNHUB_API_KEY }}
+          NEWSLETTER_FROM:      ${{ secrets.NEWSLETTER_FROM }}
+          SITE_URL:             ${{ secrets.SITE_URL }}
