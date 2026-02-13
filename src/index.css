@@ -188,12 +188,22 @@ body {
     gap: 12px !important;
   }
 
-  /* Data rows — hide sub-info column */
+  /* Data section — tighter horizontal padding */
+  .np-data-section {
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+  }
+
+  /* Data rows — hide sub-info column, widen value column */
   .np-data-row {
-    grid-template-columns: 32px 80px 1fr 60px 20px !important;
+    grid-template-columns: 28px 72px 1fr 70px 20px !important;
+    gap: 8px !important;
   }
   .np-data-sub {
     display: none !important;
+  }
+  .np-data-value {
+    font-size: 12px !important;
   }
 
   /* Compare bars */
@@ -285,13 +295,13 @@ body {
     text-align: center !important;
   }
 
-  /* Data rows — hide bar + sub */
+  /* Data rows — compact with bar visible */
   .np-data-row {
-    grid-template-columns: 28px 1fr 60px 20px !important;
-    gap: 8px !important;
+    grid-template-columns: 26px 58px 1fr 66px 18px !important;
+    gap: 6px !important;
   }
-  .np-data-bar {
-    display: none !important;
+  .np-data-value {
+    font-size: 11px !important;
   }
 
   /* Newsletter — stacked */

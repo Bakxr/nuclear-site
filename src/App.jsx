@@ -536,7 +536,7 @@ export default function NuclearPulse() {
       </section>
 
       {/* DATA SECTION */}
-      <section ref={sectionRefs.data} style={{ padding: "80px 40px", background: "var(--np-surface-dim)", scrollMarginTop: 80 }}>
+      <section ref={sectionRefs.data} className="np-data-section" style={{ padding: "80px 40px", background: "var(--np-surface-dim)", scrollMarginTop: 80 }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.15 }} variants={staggerContainer}>
             <motion.p variants={fadeUp} style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: "#d4a54a", fontWeight: 600, marginBottom: 16 }}>Global Data</motion.p>
@@ -585,7 +585,8 @@ export default function NuclearPulse() {
                   <div className="np-data-bar" style={{ position: "relative", height: 20, borderRadius: 3, background: "var(--np-surface-dim)" }}>
                     <motion.div
                       initial={{ width: 0 }}
-                      animate={{ width: `${getBarWidth(c)}%` }}
+                      whileInView={{ width: `${getBarWidth(c)}%` }}
+                      viewport={{ once: true }}
                       transition={{ duration: 1.2, ease: "easeOut", delay: i * 0.04 }}
                       style={{
                         position: "absolute", left: 0, top: 0, height: "100%", borderRadius: 3,
@@ -604,7 +605,7 @@ export default function NuclearPulse() {
                       </div>
                     )}
                   </div>
-                  <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 14, fontWeight: 700, textAlign: "right" }}>
+                  <span className="np-data-value" style={{ fontFamily: "'DM Mono',monospace", fontSize: 14, fontWeight: 700, textAlign: "right", whiteSpace: "nowrap" }}>
                     {dataSort === "capacity" ? c.capacity : dataSort === "reactors" ? `${c.reactors}` : `${c.nuclear}%`}
                   </span>
                   <span className="np-data-sub" style={{ fontSize: 11, color: "var(--np-text-faint)", textAlign: "right" }}>
