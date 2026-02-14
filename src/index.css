@@ -337,3 +337,35 @@ body {
     width: 100% !important;
   }
 }
+
+/* ====================================================================
+   PREMIUM MOTION — NDS-style transitions
+   ==================================================================== */
+
+/* Smooth card lift — applied globally to interactive cards */
+[style*="borderRadius: 14"],
+[style*="borderRadius: 16"],
+[style*="borderRadius: 12"] {
+  transition: transform 0.28s cubic-bezier(0.16,1,0.3,1),
+              box-shadow 0.28s cubic-bezier(0.16,1,0.3,1),
+              border-color 0.2s ease,
+              background 0.2s ease !important;
+  will-change: transform;
+}
+
+/* Framer-motion elements — smooth GPU compositing */
+.motion-div, [data-framer-component-type] {
+  will-change: transform, opacity;
+}
+
+/* Section headings — optical sizing for editorial scale */
+h1, h2 {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar hidden on mobile for cleaner feel */
+@media (max-width: 640px) {
+  ::-webkit-scrollbar { display: none; }
+  * { scrollbar-width: none; }
+}

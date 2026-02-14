@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { motion, AnimatePresence, useInView } from "framer-motion";
+import { motion, AnimatePresence, useInView, useScroll, useTransform } from "framer-motion";
 import { LineChart, Line, ResponsiveContainer } from "recharts";
 import { STOCKS_BASE, NUCLEAR_SHARE, REACTOR_TYPES, LEARN_FACTS, LEARN_COLORS, ENERGY_COMPARISON, ENERGY_SOURCE_COLORS, STATUS_COLORS } from "./data/constants.js";
 import { NUCLEAR_PLANTS } from "./data/plants.js";
@@ -16,6 +16,28 @@ import SearchOverlay from "./components/SearchOverlay.jsx";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import ReactorDiagram from "./components/reactorDiagrams/index.jsx";
 import Reactor3D from "./components/reactorDiagrams/Reactor3D.jsx";
+
+// ─── SECTION LABEL — animated gold line + uppercase text ──────────────
+function SectionLabel({ children, dark = false }) {
+  return (
+    <motion.div
+      variants={fadeUp}
+      style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}
+    >
+      <motion.div
+        variants={lineGrow}
+        style={{
+          height: 1, width: 28, background: "#d4a54a",
+          flexShrink: 0, transformOrigin: "left",
+        }}
+      />
+      <span style={{
+        fontSize: 11, textTransform: "uppercase", letterSpacing: "0.14em", fontWeight: 700,
+        color: dark ? "rgba(212,165,74,0.7)" : "#d4a54a",
+      }}>{children}</span>
+    </motion.div>
+  );
+}
 
 // ─── SMR TRACKER DATA ─────────────────────────────────────────────────
 const SMR_PROJECTS = [
@@ -59,14 +81,29 @@ const QUOTES = [
 ];
 
 // ─── ANIMATION VARIANTS ───────────────────────────────────────────────
+// Premium spring easing — matches NDS / Apple motion language
+const EASE = [0.16, 1, 0.3, 1];
+
 const fadeUp = {
-  hidden: { opacity: 0, y: 24 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
+  hidden: { opacity: 0, y: 48 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.85, ease: EASE } },
 };
 
 const staggerContainer = {
   hidden: {},
-  visible: { transition: { staggerChildren: 0.07 } },
+  visible: { transition: { staggerChildren: 0.09, delayChildren: 0.05 } },
+};
+
+// Word-by-word stagger (hero heading)
+const wordReveal = {
+  hidden: { opacity: 0, y: 32, skewY: 1.5 },
+  visible: { opacity: 1, y: 0, skewY: 0, transition: { duration: 0.75, ease: EASE } },
+};
+
+// Draws a line left-to-right (section labels)
+const lineGrow = {
+  hidden: { scaleX: 0, originX: 0 },
+  visible: { scaleX: 1, originX: 0, transition: { duration: 0.7, ease: EASE, delay: 0.1 } },
 };
 
 const GLOBAL_STATS = [
@@ -145,6 +182,11 @@ export default function NuclearPulse() {
   const [hoveredSource, setHoveredSource] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { isDark, toggle: toggleDarkMode } = useDarkMode();
+
+  // Parallax hero
+  const { scrollY } = useScroll();
+  const heroY       = useTransform(scrollY, [0, 520], [0, -90]);
+  const heroOpacity = useTransform(scrollY, [0, 380], [1, 0]);
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [activeSection, setActiveSection] = useState(null);
   const [showSearch, setShowSearch] = useState(false);
@@ -487,17 +529,41 @@ export default function NuclearPulse() {
       </nav>
 
       {/* Hero */}
-      <section className="np-hero" style={{ textAlign: "center", padding: "100px 40px 56px", position: "relative", background: "linear-gradient(to bottom, var(--np-bg-alt) 0%, var(--np-bg) 100%)" }}>
-        <h1 style={{
-          fontFamily: "'Playfair Display',serif", fontSize: "clamp(44px,7vw,88px)", fontWeight: 400,
-          lineHeight: 1.08, letterSpacing: "-0.025em", maxWidth: 880, margin: "0 auto", color: "var(--np-text)",
-        }}>
-          Explore the world's<br /><em style={{ color: "#d4a54a" }}>nuclear energy</em> landscape.
-        </h1>
-        <p style={{ fontSize: 16, color: "var(--np-text-muted)", maxWidth: 540, margin: "28px auto 0", lineHeight: 1.7, fontWeight: 400 }}>
-          Live data on {NUCLEAR_PLANTS.length}+ global reactors, industry stocks, research breakthroughs, and the future of clean energy.
-        </p>
-        <div className="np-hero-search" style={{ display: "flex", justifyContent: "center", marginTop: 40, gap: 0 }}>
+      <section className="np-hero" style={{ textAlign: "center", padding: "120px 40px 72px", position: "relative", background: "linear-gradient(to bottom, var(--np-bg-alt) 0%, var(--np-bg) 100%)", overflow: "hidden" }}>
+        {/* Parallax content wrapper */}
+        <motion.div style={{ y: heroY, opacity: heroOpacity }}>
+          {/* Staggered word headline */}
+          <motion.h1
+            initial="hidden"
+            animate="visible"
+            variants={{ visible: { transition: { staggerChildren: 0.1, delayChildren: 0.15 } } }}
+            style={{
+              fontFamily: "'Playfair Display',serif", fontSize: "clamp(44px,7vw,88px)", fontWeight: 400,
+              lineHeight: 1.08, letterSpacing: "-0.025em", maxWidth: 900, margin: "0 auto", color: "var(--np-text)",
+            }}
+          >
+            {["Explore", "the", "world's"].map((w, i) => (
+              <motion.span key={i} variants={wordReveal} style={{ display: "inline-block", marginRight: "0.22em" }}>{w}</motion.span>
+            ))}
+            <br />
+            <motion.em variants={wordReveal} style={{ color: "#d4a54a", display: "inline-block", marginRight: "0.22em", fontStyle: "italic" }}>nuclear energy</motion.em>
+            <motion.span variants={wordReveal} style={{ display: "inline-block" }}>landscape.</motion.span>
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, ease: EASE, delay: 0.85 }}
+            style={{ fontSize: 16, color: "var(--np-text-muted)", maxWidth: 540, margin: "32px auto 0", lineHeight: 1.75, fontWeight: 400 }}
+          >
+            Live data on {NUCLEAR_PLANTS.length}+ global reactors, industry stocks, research breakthroughs, and the future of clean energy.
+          </motion.p>
+
+          <motion.div
+            className="np-hero-search"
+            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: EASE, delay: 1.1 }}
+            style={{ display: "flex", justifyContent: "center", marginTop: 44, gap: 0 }}
+          >
           <input type="text" placeholder='Try "Canada" or "CANDU"' value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
             style={{
               padding: "16px 26px", fontSize: 15, fontFamily: "'DM Sans',sans-serif",
@@ -518,7 +584,8 @@ export default function NuclearPulse() {
             onMouseLeave={e => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.15)"; }}>
             Explore
           </button>
-        </div>
+          </motion.div>{/* end search motion.div */}
+        </motion.div>{/* end parallax wrapper */}
       </section>
 
       {/* Stats */}
@@ -545,7 +612,7 @@ export default function NuclearPulse() {
       </section>
 
       {/* ROTATING QUOTES */}
-      <section style={{ padding: "80px 40px", textAlign: "center", background: "var(--np-bg)" }}>
+      <section style={{ padding: "100px 40px", textAlign: "center", background: "var(--np-bg)" }}>
         <div style={{ maxWidth: 880, margin: "0 auto" }}>
           <div style={{ width: 40, height: 1, background: "rgba(212,165,74,0.5)", margin: "0 auto 48px" }} />
           <div style={{ minHeight: 160, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
@@ -581,10 +648,10 @@ export default function NuclearPulse() {
       </section>
 
       {/* DATA SECTION */}
-      <section ref={sectionRefs.data} className="np-data-section" style={{ padding: "80px 40px", background: "var(--np-surface-dim)", scrollMarginTop: 80 }}>
+      <section ref={sectionRefs.data} className="np-data-section" style={{ padding: "100px 40px", background: "var(--np-surface-dim)", scrollMarginTop: 80 }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.15 }} variants={staggerContainer}>
-            <motion.p variants={fadeUp} style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: "#d4a54a", fontWeight: 600, marginBottom: 16 }}>Global Data</motion.p>
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }} variants={staggerContainer}>
+            <SectionLabel>Global Data</SectionLabel>
             <motion.h2 variants={fadeUp} style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(32px,4vw,52px)", fontWeight: 400, letterSpacing: "-0.02em", marginBottom: 8 }}>
               Nuclear share of <em style={{ color: "var(--np-text-muted)" }}>electricity.</em>
             </motion.h2>
@@ -610,7 +677,7 @@ export default function NuclearPulse() {
           </motion.div>
 
           {/* Nuclear share rows */}
-          <motion.div key={dataSort} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.1 }} variants={staggerContainer}>
+          <motion.div key={dataSort} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-40px" }} variants={staggerContainer}>
             {(dataShowAll ? sortedNuclearShare : sortedNuclearShare.slice(0, halfCount)).map((c, i) => (
               <motion.div key={c.country} variants={fadeUp}>
                 <div
@@ -745,8 +812,8 @@ export default function NuclearPulse() {
       <ErrorBoundary section="Globe" dark={false}>
       <section ref={sectionRefs.globe} style={{ padding: "0 40px 80px", scrollMarginTop: 80 }}>
         <div className="np-globe-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24 }}>
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.5 }} variants={staggerContainer}>
-            <motion.p variants={fadeUp} style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: "#d4a54a", fontWeight: 600, marginBottom: 14 }}>Interactive Map</motion.p>
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-40px" }} variants={staggerContainer}>
+            <SectionLabel>Interactive Map</SectionLabel>
             <motion.h2 variants={fadeUp} style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(32px,4vw,52px)", fontWeight: 400, letterSpacing: "-0.02em", margin: 0 }}>
               Every reactor on <em style={{ color: "var(--np-text-muted)" }}>Earth.</em>
             </motion.h2>
@@ -795,10 +862,10 @@ export default function NuclearPulse() {
 
       {/* NEWS SECTION */}
       <ErrorBoundary section="News">
-      <section ref={sectionRefs.news} style={{ padding: "80px 40px", scrollMarginTop: 80, background: "linear-gradient(to bottom, var(--np-bg-alt) 0%, var(--np-bg) 100%)" }}>
+      <section ref={sectionRefs.news} style={{ padding: "100px 40px", scrollMarginTop: 80, background: "linear-gradient(to bottom, var(--np-bg-alt) 0%, var(--np-bg) 100%)" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }} variants={staggerContainer}>
-            <motion.p variants={fadeUp} style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: "#d4a54a", fontWeight: 600, marginBottom: 16 }}>Industry News</motion.p>
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }} variants={staggerContainer}>
+            <SectionLabel>Industry News</SectionLabel>
             <motion.h2 variants={fadeUp} style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(32px,4vw,52px)", fontWeight: 400, letterSpacing: "-0.02em", marginBottom: 8 }}>
               Latest <em style={{ color: "var(--np-text-muted)" }}>news.</em>
             </motion.h2>
@@ -971,10 +1038,10 @@ export default function NuclearPulse() {
 
       {/* STOCKS SECTION */}
       <ErrorBoundary section="Stocks" dark={true}>
-      <section ref={sectionRefs.stocks} style={{ padding: "80px 40px", background: "var(--np-dark-bg)", color: "var(--np-dark-text)", scrollMarginTop: 80 }}>
+      <section ref={sectionRefs.stocks} style={{ padding: "100px 40px", background: "var(--np-dark-bg)", color: "var(--np-dark-text)", scrollMarginTop: 80 }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }} variants={staggerContainer}>
-          <motion.p variants={fadeUp} style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: "rgba(212,165,74,0.6)", fontWeight: 600, marginBottom: 16 }}>Market Overview</motion.p>
+        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }} variants={staggerContainer}>
+          <SectionLabel dark>Market Overview</SectionLabel>
           <motion.h2 variants={fadeUp} style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(32px,4vw,52px)", fontWeight: 400, letterSpacing: "-0.02em", marginBottom: 8 }}>
             Nuclear industry <em style={{ color: "#d4a54a" }}>stocks.</em>
           </motion.h2>
@@ -1016,8 +1083,8 @@ export default function NuclearPulse() {
                 background: "rgba(245,240,232,0.035)", border: "1px solid rgba(245,240,232,0.06)",
                 borderRadius: 14, padding: "20px 22px", cursor: "pointer", transition: "all 0.25s",
               }}
-                onMouseEnter={e => { e.currentTarget.style.background = "rgba(245,240,232,0.07)"; e.currentTarget.style.borderColor = "rgba(212,165,74,0.25)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = "rgba(245,240,232,0.035)"; e.currentTarget.style.borderColor = "rgba(245,240,232,0.06)"; e.currentTarget.style.transform = "translateY(0)"; }}>
+                onMouseEnter={e => { e.currentTarget.style.background = "rgba(245,240,232,0.07)"; e.currentTarget.style.borderColor = "rgba(212,165,74,0.3)"; e.currentTarget.style.transform = "translateY(-6px)"; e.currentTarget.style.boxShadow = "0 20px 48px rgba(0,0,0,0.28)"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "rgba(245,240,232,0.035)"; e.currentTarget.style.borderColor = "rgba(245,240,232,0.06)"; e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                   <div>
                     <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 16, fontWeight: 700, color: "#d4a54a" }}>{s.ticker}</div>
@@ -1052,10 +1119,10 @@ export default function NuclearPulse() {
       </ErrorBoundary>
 
       {/* SMR TRACKER SECTION */}
-      <section ref={sectionRefs.smr} style={{ padding: "80px 40px", background: "var(--np-dark-bg)", color: "var(--np-dark-text)", scrollMarginTop: 80 }}>
+      <section ref={sectionRefs.smr} style={{ padding: "100px 40px", background: "var(--np-dark-bg)", color: "var(--np-dark-text)", scrollMarginTop: 80 }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.15 }} variants={staggerContainer}>
-            <motion.p variants={fadeUp} style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: "rgba(212,165,74,0.7)", fontWeight: 600, marginBottom: 16 }}>SMR Tracker</motion.p>
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }} variants={staggerContainer}>
+            <SectionLabel dark>SMR Tracker</SectionLabel>
             <motion.h2 variants={fadeUp} style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(32px,4vw,52px)", fontWeight: 400, letterSpacing: "-0.02em", marginBottom: 8 }}>
               Small modular <em style={{ color: "#d4a54a" }}>reactors.</em>
             </motion.h2>
@@ -1135,12 +1202,12 @@ export default function NuclearPulse() {
       </section>
 
       {/* LEARN SECTION */}
-      <section ref={sectionRefs.learn} style={{ padding: "80px 40px", scrollMarginTop: 80 }}>
+      <section ref={sectionRefs.learn} style={{ padding: "100px 40px", scrollMarginTop: 80 }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
 
           {/* Reactor Types */}
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.15 }} variants={staggerContainer} style={{ marginBottom: 72 }}>
-            <motion.p variants={fadeUp} style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: "#d4a54a", fontWeight: 600, marginBottom: 16 }}>Education</motion.p>
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }} variants={staggerContainer} style={{ marginBottom: 72 }}>
+            <SectionLabel>Education</SectionLabel>
             <motion.h2 variants={fadeUp} style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(32px,4vw,52px)", fontWeight: 400, letterSpacing: "-0.02em", marginBottom: 8 }}>
               Reactor <em style={{ color: "var(--np-text-muted)" }}>types.</em>
             </motion.h2>
@@ -1248,8 +1315,8 @@ export default function NuclearPulse() {
 
           <div style={{ width: 40, height: 1, background: "var(--np-border-strong)", marginBottom: 64 }} />
 
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.15 }} variants={staggerContainer}>
-            <motion.p variants={fadeUp} style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: "#d4a54a", fontWeight: 600, marginBottom: 16 }}>Did You Know</motion.p>
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }} variants={staggerContainer}>
+            <SectionLabel>Did You Know</SectionLabel>
             <motion.h2 variants={fadeUp} style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(32px,4vw,52px)", fontWeight: 400, letterSpacing: "-0.02em", marginBottom: 12 }}>
               Did you <em style={{ color: "var(--np-text-muted)" }}>know?</em>
             </motion.h2>
@@ -1286,7 +1353,7 @@ export default function NuclearPulse() {
 
           {/* Fact cards grid */}
           <motion.div
-            initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.1 }}
+            initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-40px" }}
             variants={staggerContainer}
             style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 20 }}
           >
@@ -1389,10 +1456,10 @@ export default function NuclearPulse() {
       </section>
 
       {/* COMPARE SECTION — Nuclear vs Other Energy */}
-      <section ref={sectionRefs.compare} style={{ padding: "80px 40px", scrollMarginTop: 80 }}>
+      <section ref={sectionRefs.compare} style={{ padding: "100px 40px", scrollMarginTop: 80 }}>
         <div style={{ maxWidth: 900, margin: "0 auto" }}>
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} variants={staggerContainer}>
-            <motion.p variants={fadeUp} style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: "#d4a54a", fontWeight: 600, marginBottom: 16 }}>Energy Comparison</motion.p>
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }} variants={staggerContainer}>
+            <SectionLabel>Energy Comparison</SectionLabel>
             <motion.h2 variants={fadeUp} style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(32px,4vw,52px)", fontWeight: 400, letterSpacing: "-0.02em", marginBottom: 8 }}>
               Nuclear vs other <em style={{ color: "var(--np-text-muted)" }}>energy.</em>
             </motion.h2>
@@ -1528,10 +1595,10 @@ export default function NuclearPulse() {
       </section>
 
       {/* TIMELINE SECTION */}
-      <section ref={sectionRefs.timeline} style={{ padding: "80px 40px", background: "var(--np-dark-bg)", color: "var(--np-dark-text)", scrollMarginTop: 80 }}>
+      <section ref={sectionRefs.timeline} style={{ padding: "100px 40px", background: "var(--np-dark-bg)", color: "var(--np-dark-text)", scrollMarginTop: 80 }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }} variants={staggerContainer}>
-            <motion.p variants={fadeUp} style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: "rgba(212,165,74,0.6)", fontWeight: 600, marginBottom: 16 }}>History</motion.p>
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }} variants={staggerContainer}>
+            <SectionLabel dark>History</SectionLabel>
             <motion.h2 variants={fadeUp} style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(32px,4vw,52px)", fontWeight: 400, letterSpacing: "-0.02em", marginBottom: 8 }}>
               Nuclear <em style={{ color: "#d4a54a" }}>timeline.</em>
             </motion.h2>
@@ -1544,8 +1611,8 @@ export default function NuclearPulse() {
       {/* Newsletter CTA */}
       <section style={{ padding: "96px 40px", textAlign: "center", background: "var(--np-surface-dim)" }}>
         <div style={{ maxWidth: 560, margin: "0 auto" }}>
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.4 }} variants={staggerContainer}>
-            <motion.p variants={fadeUp} style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: "#d4a54a", fontWeight: 600, marginBottom: 20 }}>Newsletter</motion.p>
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }} variants={staggerContainer}>
+            <SectionLabel>Newsletter</SectionLabel>
             <motion.h2 variants={fadeUp} style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(28px,3.5vw,44px)", fontWeight: 400, marginBottom: 12, lineHeight: 1.2 }}>
               Stay informed on the <em style={{ color: "var(--np-text-muted)" }}>nuclear renaissance.</em>
             </motion.h2>
@@ -1615,3 +1682,5 @@ export default function NuclearPulse() {
     </div>
   );
 }
+
+
