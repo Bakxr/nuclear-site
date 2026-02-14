@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
 import { fetchPlantImage, getOSMTiles, normalizeReactorType } from "../services/plantAPI.js";
 import { REACTOR_TYPES, STATUS_COLORS } from "../data/constants.js";
@@ -45,6 +45,15 @@ export default function PlantModal({ plant, onClose }) {
   }, [plant.name]);
 
   const statusColor = STATUS_COLORS[plant.status] || "#64748b";
+  const [copied, setCopied] = useState(false);
+  const copyLink = useCallback(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("plant", encodeURIComponent(plant.name));
+    navigator.clipboard.writeText(url.toString()).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, [plant.name]);
 
   const infoCards = [
     { label: "Net Capacity", val: `${plant.capacity.toLocaleString()} MW` },
@@ -254,18 +263,32 @@ export default function PlantModal({ plant, onClose }) {
           </div>
 
           {/* Footer */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 4 }}>
-            {imageUrl && (
-              <a
-                href={`https://en.wikipedia.org/wiki/${encodeURIComponent(plant.name.replace(/\s+/g, "_"))}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ fontSize: 12, color: "#d4a54a", textDecoration: "none", fontWeight: 600 }}
-              >
-                View on Wikipedia &rarr;
-              </a>
-            )}
-            <span style={{ fontSize: 10, color: "var(--np-text-faint)", marginLeft: "auto" }}>Data sourced from IAEA PRIS</span>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 4, flexWrap: "wrap", gap: 8 }}>
+            <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+              {imageUrl && (
+                <a
+                  href={`https://en.wikipedia.org/wiki/${encodeURIComponent(plant.name.replace(/\s+/g, "_"))}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ fontSize: 12, color: "#d4a54a", textDecoration: "none", fontWeight: 600 }}
+                >
+                  Wikipedia &rarr;
+                </a>
+              )}
+              <button onClick={copyLink} style={{
+                background: "none", border: "1px solid var(--np-border)", borderRadius: 6,
+                padding: "4px 10px", fontSize: 12, cursor: "pointer", fontFamily: "'DM Sans',sans-serif",
+                color: copied ? "#4ade80" : "var(--np-text-muted)", transition: "all 0.2s",
+                display: "flex", alignItems: "center", gap: 5,
+              }}>
+                <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M4 4h8v1H4zm0 3h8v1H4zm0 3h5v1H4z"/>
+                  <path d="M2 2h12v12H2V2zm1 1v10h10V3H3z"/>
+                </svg>
+                {copied ? "Copied!" : "Share plant"}
+              </button>
+            </div>
+            <span style={{ fontSize: 10, color: "var(--np-text-faint)" }}>Data sourced from IAEA PRIS</span>
           </div>
           </div>{/* end content padding wrapper */}
         </div>{/* end scrollable body */}
