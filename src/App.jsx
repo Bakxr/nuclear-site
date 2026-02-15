@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { motion, AnimatePresence, useInView, useScroll, useTransform } from "framer-motion";
+import { motion, AnimatePresence, useInView, useScroll, useTransform, MotionConfig } from "framer-motion";
 import { LineChart, Line, ResponsiveContainer } from "recharts";
 import { STOCKS_BASE, NUCLEAR_SHARE, REACTOR_TYPES, LEARN_FACTS, LEARN_COLORS, ENERGY_COMPARISON, ENERGY_SOURCE_COLORS, STATUS_COLORS } from "./data/constants.js";
 import { NUCLEAR_PLANTS } from "./data/plants.js";
@@ -81,29 +81,29 @@ const QUOTES = [
 ];
 
 // ─── ANIMATION VARIANTS ───────────────────────────────────────────────
-// Premium spring easing — matches NDS / Apple motion language
-const EASE = [0.16, 1, 0.3, 1];
+// Spec-recommended easing: smooth deceleration, no bounce
+const EASE = [0.22, 1, 0.36, 1];
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 48 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.85, ease: EASE } },
+  hidden: { opacity: 0, y: 40, scale: 0.98 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.65, ease: EASE } },
 };
 
 const staggerContainer = {
   hidden: {},
-  visible: { transition: { staggerChildren: 0.09, delayChildren: 0.05 } },
+  visible: { transition: { staggerChildren: 0.08, delayChildren: 0.04 } },
 };
 
-// Word-by-word stagger (hero heading)
+// Word-by-word stagger (hero heading) — 400–700ms range
 const wordReveal = {
-  hidden: { opacity: 0, y: 32, skewY: 1.5 },
-  visible: { opacity: 1, y: 0, skewY: 0, transition: { duration: 0.75, ease: EASE } },
+  hidden: { opacity: 0, y: 28, skewY: 1 },
+  visible: { opacity: 1, y: 0, skewY: 0, transition: { duration: 0.6, ease: EASE } },
 };
 
-// Draws a line left-to-right (section labels)
+// Draws a line left-to-right (section labels) — micro timing 300ms
 const lineGrow = {
   hidden: { scaleX: 0, originX: 0 },
-  visible: { scaleX: 1, originX: 0, transition: { duration: 0.7, ease: EASE, delay: 0.1 } },
+  visible: { scaleX: 1, originX: 0, transition: { duration: 0.5, ease: EASE, delay: 0.05 } },
 };
 
 const GLOBAL_STATS = [
@@ -153,7 +153,7 @@ export default function NuclearPulse() {
   const [newsLimit, setNewsLimit] = useState(6);
   const [plantFilter, setPlantFilter] = useState("All");
   const [showStats, setShowStats] = useState(false);
-  const [stocks, setStocks] = useState([]);
+  const [stocks, setStocks] = useState(() => STOCKS_BASE.map(s => ({ ...s, price: 0, change: 0, pct: 0, history: [] })));
   const [stocksLoading, setStocksLoading] = useState(true);
   const [stocksError, setStocksError] = useState(false);
   const [stocksRetry, setStocksRetry] = useState(0);
@@ -195,16 +195,26 @@ export default function NuclearPulse() {
   const [quoteIndex, setQuoteIndex] = useState(() => Math.floor(Math.random() * QUOTES.length));
   const [quoteFading, setQuoteFading] = useState(false);
 
-  // Section refs for navigation
+  // Section refs for navigation — each ref is a named variable (not inside an object literal)
+  // to satisfy the Rules of Hooks (hooks must be called unconditionally at the top level)
+  const globeRef = useRef(null);
+  const stocksRef = useRef(null);
+  const newsRef = useRef(null);
+  const dataRef = useRef(null);
+  const compareRef = useRef(null);
+  const timelineRef = useRef(null);
+  const learnRef = useRef(null);
+  const smrRef = useRef(null);
+  // Plain lookup map (not a hook) used by scrollTo and IntersectionObserver
   const sectionRefs = {
-    globe: useRef(null),
-    stocks: useRef(null),
-    news: useRef(null),
-    data: useRef(null),
-    compare: useRef(null),
-    timeline: useRef(null),
-    learn: useRef(null),
-    smr: useRef(null),
+    globe: globeRef,
+    stocks: stocksRef,
+    news: newsRef,
+    data: dataRef,
+    compare: compareRef,
+    timeline: timelineRef,
+    learn: learnRef,
+    smr: smrRef,
   };
 
   // Scroll to top on mount (prevents browser scroll restoration on refresh)
@@ -281,7 +291,6 @@ export default function NuclearPulse() {
       } catch (error) {
         console.error('Error loading stock data:', error);
         setStocksError(true);
-        setStocks([]);
       } finally {
         setStocksLoading(false);
       }
@@ -320,7 +329,9 @@ export default function NuclearPulse() {
 
   // Newsletter subscribe handler
   async function handleSubscribe() {
-    if (!subEmail.trim()) { setSubStatus("error"); setSubErrorMsg("Please enter your email address."); return; }
+    const trimmed = subEmail.trim();
+    if (!trimmed) { setSubStatus("error"); setSubErrorMsg("Please enter your email address."); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(trimmed)) { setSubStatus("error"); setSubErrorMsg("Please enter a valid email address."); return; }
     setSubStatus("loading");
     try {
       const res = await fetch("/api/subscribe", {
@@ -424,6 +435,7 @@ export default function NuclearPulse() {
   }, [learnFilter]);
 
   return (
+    <MotionConfig reducedMotion="user">
     <div style={{ minHeight: "100vh", background: "var(--np-bg)", fontFamily: "'DM Sans',sans-serif", color: "var(--np-text)" }}>
       <StockTicker stocks={stocks} onClickStock={setSelectedStock} />
 
@@ -1680,6 +1692,7 @@ export default function NuclearPulse() {
         ::selection{background:rgba(212,165,74,0.25);color:#1e1912}
       `}</style>
     </div>
+    </MotionConfig>
   );
 }
 

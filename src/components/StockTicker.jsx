@@ -6,7 +6,7 @@ export default function StockTicker({ stocks, onClickStock }) {
       overflow: "hidden", background: "rgba(20,18,14,0.97)", padding: "10px 0",
       borderBottom: "1px solid rgba(212,165,74,0.1)",
     }}>
-      <div style={{
+      <div className="np-ticker-scroll" style={{
         display: "flex", gap: 44, animation: "tickerScroll 40s linear infinite",
         whiteSpace: "nowrap", width: "max-content",
       }}>

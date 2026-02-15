@@ -6,22 +6,21 @@ import ReactorDiagram from "./reactorDiagrams/index.jsx";
 import Reactor3D from "./reactorDiagrams/Reactor3D.jsx";
 
 export default function PlantModal({ plant, onClose }) {
-  if (!plant) return null;
-
+  // All hooks must be called unconditionally before any early return
   const [imageUrl, setImageUrl] = useState(null);
   const [imageLoading, setImageLoading] = useState(true);
   const [imgLoaded, setImgLoaded] = useState(false);
   const [reactorView, setReactorView] = useState("3d");
+  const [copied, setCopied] = useState(false);
 
-  const normalizedType = useMemo(() => normalizeReactorType(plant.type), [plant.type]);
+  const normalizedType = useMemo(() => plant ? normalizeReactorType(plant.type) : null, [plant?.type]);
   const reactorInfo = useMemo(
     () => REACTOR_TYPES.find(r => r.type === normalizedType),
     [normalizedType]
   );
-  const annualTWh = useMemo(() => (plant.capacity * 8760 * 0.9 / 1e6).toFixed(1), [plant.capacity]);
+  const annualTWh = useMemo(() => plant ? (plant.capacity * 8760 * 0.9 / 1e6).toFixed(1) : "0", [plant?.capacity]);
   const co2Avoided = useMemo(() => (annualTWh * 0.42).toFixed(1), [annualTWh]);
-  const homesPerYear = Math.round(plant.capacity * 8760 * 0.9 / 10000);
-  const osmData = useMemo(() => getOSMTiles(plant.lat, plant.lng, 11), [plant.lat, plant.lng]);
+  const osmData = useMemo(() => plant ? getOSMTiles(plant.lat, plant.lng, 11) : null, [plant?.lat, plant?.lng]);
 
   // Lock background scroll while modal is open
   useEffect(() => {
@@ -31,6 +30,7 @@ export default function PlantModal({ plant, onClose }) {
   }, []);
 
   useEffect(() => {
+    if (!plant) return;
     let cancelled = false;
     setImageLoading(true);
     setImageUrl(null);
@@ -42,18 +42,22 @@ export default function PlantModal({ plant, onClose }) {
       }
     });
     return () => { cancelled = true; };
-  }, [plant.name]);
+  }, [plant?.name]);
 
-  const statusColor = STATUS_COLORS[plant.status] || "#64748b";
-  const [copied, setCopied] = useState(false);
   const copyLink = useCallback(() => {
+    if (!plant) return;
     const url = new URL(window.location.href);
     url.searchParams.set("plant", encodeURIComponent(plant.name));
     navigator.clipboard.writeText(url.toString()).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
-  }, [plant.name]);
+  }, [plant?.name]);
+
+  if (!plant) return null;
+
+  const homesPerYear = Math.round(plant.capacity * 8760 * 0.9 / 10000);
+  const statusColor = STATUS_COLORS[plant.status] || "#64748b";
 
   const infoCards = [
     { label: "Net Capacity", val: `${plant.capacity.toLocaleString()} MW` },

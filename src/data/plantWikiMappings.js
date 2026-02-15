@@ -11,7 +11,6 @@ export const PLANT_WIKI_TITLES = {
   // USA
   "Palo Verde":           "Palo_Verde_Nuclear_Generating_Station",
   "Vogtle":               "Vogtle_Electric_Generating_Plant",
-  "Vogtle 3-4":           "Vogtle_Electric_Generating_Plant",
   "South Texas":          "South_Texas_Nuclear_Generating_Station",
   "Diablo Canyon":        "Diablo_Canyon_Nuclear_Power_Plant",
   "Braidwood":            "Braidwood_Nuclear_Generating_Station",

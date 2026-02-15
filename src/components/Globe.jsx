@@ -13,6 +13,70 @@ function latLngToVector3(lat, lng, radius) {
   );
 }
 
+// Simple topojson decoder (no library needed) — lifted to module level so fetchLand can use it
+function decodeTopojson(topology, object) {
+  const arcs = topology.arcs;
+  const transform = topology.transform;
+  function decodeArc(arcIdx) {
+    const arc = arcs[Math.abs(arcIdx)];
+    const coords = [];
+    let x = 0, y = 0;
+    for (let i = 0; i < arc.length; i++) {
+      x += arc[i][0];
+      y += arc[i][1];
+      const lon = transform ? x * transform.scale[0] + transform.translate[0] : arc[i][0];
+      const lat = transform ? y * transform.scale[1] + transform.translate[1] : arc[i][1];
+      coords.push([lon, lat]);
+    }
+    if (arcIdx < 0) coords.reverse();
+    return coords;
+  }
+  function decodeRing(ring) {
+    let coords = [];
+    ring.forEach(idx => { coords = coords.concat(decodeArc(idx)); });
+    return coords;
+  }
+  if (object.type === "GeometryCollection") {
+    const features = object.geometries.map(geom => {
+      if (geom.type === "Polygon") {
+        return { type: "Feature", geometry: { type: "Polygon", coordinates: geom.arcs.map(decodeRing) } };
+      } else if (geom.type === "MultiPolygon") {
+        return { type: "Feature", geometry: { type: "MultiPolygon", coordinates: geom.arcs.map(poly => poly.map(decodeRing)) } };
+      }
+      return null;
+    }).filter(Boolean);
+    return { type: "FeatureCollection", features };
+  }
+  if (object.type === "Polygon") {
+    return { type: "Feature", geometry: { type: "Polygon", coordinates: object.arcs.map(decodeRing) } };
+  }
+  if (object.type === "MultiPolygon") {
+    return { type: "Feature", geometry: { type: "MultiPolygon", coordinates: object.arcs.map(p => p.map(decodeRing)) } };
+  }
+  return { type: "FeatureCollection", features: [] };
+}
+
+// Module-level land cache — fetched once per page load, never re-fetched on plants/filter changes
+let cachedLand = null;
+let landFetchPromise = null;
+
+function fetchLand() {
+  if (cachedLand) return Promise.resolve(cachedLand);
+  if (landFetchPromise) return landFetchPromise;
+  landFetchPromise = fetch("https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json")
+    .then(r => r.json())
+    .then(world => {
+      cachedLand = world.type === "Topology" ? decodeTopojson(world, world.objects.land) : world;
+      landFetchPromise = null;
+      return cachedLand;
+    })
+    .catch(() => {
+      landFetchPromise = null;
+      return null;
+    });
+  return landFetchPromise;
+}
+
 export default function Globe({ onSelectPlant, plants }) {
   const mountRef = useRef(null);
   const [hoveredPlant, setHoveredPlant] = useState(null);
@@ -24,6 +88,11 @@ export default function Globe({ onSelectPlant, plants }) {
   const autoRotate = useRef(true);
   const autoRotateTimer = useRef(null);
 
+  // Shared refs between the two effects
+  const pivotGroupRef = useRef(null);
+  const markersRef = useRef([]);
+
+  // ── Effect 1: One-time scene setup (renderer, lights, globe, atmosphere, animation loop) ──
   useEffect(() => {
     const mount = mountRef.current;
     if (!mount) return;
@@ -48,91 +117,37 @@ export default function Globe({ onSelectPlant, plants }) {
     rim.position.set(-3, -2, -3);
     scene.add(rim);
 
+    // Pivot group for all rotating elements
+    const pivotGroup = new THREE.Group();
+    scene.add(pivotGroup);
+    pivotGroupRef.current = pivotGroup;
+
     // Ocean sphere
     const oceanGeom = new THREE.SphereGeometry(0.995, 96, 96);
     const oceanMat = new THREE.MeshPhongMaterial({ color: 0x1a3a5c, shininess: 60, transparent: true, opacity: 0.95 });
     const ocean = new THREE.Mesh(oceanGeom, oceanMat);
-    scene.add(ocean);
+    pivotGroup.add(ocean);
 
     // Land texture from canvas
     const texCanvas = document.createElement("canvas");
     texCanvas.width = 2048;
     texCanvas.height = 1024;
     const ctx = texCanvas.getContext("2d");
-
-    // Draw land using d3 equirectangular
-    const projection = d3.geoEquirectangular()
-      .fitSize([2048, 1024], { type: "Sphere" });
+    const projection = d3.geoEquirectangular().fitSize([2048, 1024], { type: "Sphere" });
     const path = d3.geoPath(projection, ctx);
 
-    // Pivot group for all rotating elements
-    const pivotGroup = new THREE.Group();
-    pivotGroup.add(ocean);
-    scene.add(pivotGroup);
+    // Track globe mesh for cleanup
+    let globeGeom = null;
+    let globeMat = null;
+    let landTexture = null;
 
-    // Simple topojson decoder (no library needed)
-    function decodeTopojson(topology, object) {
-      const arcs = topology.arcs;
-      const transform = topology.transform;
-      function decodeArc(arcIdx) {
-        let arc = arcs[Math.abs(arcIdx)];
-        let coords = [];
-        let x = 0, y = 0;
-        for (let i = 0; i < arc.length; i++) {
-          x += arc[i][0];
-          y += arc[i][1];
-          const lon = transform ? x * transform.scale[0] + transform.translate[0] : arc[i][0];
-          const lat = transform ? y * transform.scale[1] + transform.translate[1] : arc[i][1];
-          coords.push([lon, lat]);
-        }
-        if (arcIdx < 0) coords.reverse();
-        return coords;
-      }
-      function decodeRing(ring) {
-        let coords = [];
-        ring.forEach(idx => {
-          const decoded = decodeArc(idx);
-          coords = coords.concat(decoded);
-        });
-        return coords;
-      }
-      if (object.type === "GeometryCollection") {
-        const features = object.geometries.map(geom => {
-          if (geom.type === "Polygon") {
-            return { type: "Feature", geometry: { type: "Polygon", coordinates: geom.arcs.map(decodeRing) } };
-          } else if (geom.type === "MultiPolygon") {
-            return { type: "Feature", geometry: { type: "MultiPolygon", coordinates: geom.arcs.map(poly => poly.map(decodeRing)) } };
-          }
-          return null;
-        }).filter(Boolean);
-        return { type: "FeatureCollection", features };
-      }
-      // Single geometry
-      if (object.type === "Polygon") {
-        return { type: "Feature", geometry: { type: "Polygon", coordinates: object.arcs.map(decodeRing) } };
-      }
-      if (object.type === "MultiPolygon") {
-        return { type: "Feature", geometry: { type: "MultiPolygon", coordinates: object.arcs.map(p => p.map(decodeRing)) } };
-      }
-      return { type: "FeatureCollection", features: [] };
-    }
+    fetchLand().then(land => {
+      if (!mount.isConnected) return; // component unmounted before fetch resolved
+      ctx.clearRect(0, 0, 2048, 1024);
+      ctx.fillStyle = "rgba(0,0,0,0)";
+      ctx.fillRect(0, 0, 2048, 1024);
 
-    // Fetch land data
-    fetch("https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json")
-      .then(r => r.json())
-      .then(world => {
-        let land;
-        if (world.type === "Topology") {
-          const geoms = world.objects.land;
-          land = decodeTopojson(world, geoms);
-        } else {
-          land = world;
-        }
-        ctx.clearRect(0, 0, 2048, 1024);
-        // Background transparent
-        ctx.fillStyle = "rgba(0,0,0,0)";
-        ctx.fillRect(0, 0, 2048, 1024);
-        // Draw land
+      if (land) {
         ctx.fillStyle = "#c8b89a";
         ctx.strokeStyle = "#a89878";
         ctx.lineWidth = 0.5;
@@ -141,7 +156,6 @@ export default function Globe({ onSelectPlant, plants }) {
         ctx.fill();
         ctx.stroke();
 
-        // Add grid lines
         ctx.strokeStyle = "rgba(212,165,74,0.12)";
         ctx.lineWidth = 0.5;
         const graticule = d3.geoGraticule().step([15, 15])();
@@ -149,23 +163,17 @@ export default function Globe({ onSelectPlant, plants }) {
         path(graticule);
         ctx.stroke();
 
-        const texture = new THREE.CanvasTexture(texCanvas);
-        texture.needsUpdate = true;
-        const globeGeom = new THREE.SphereGeometry(1, 96, 96);
-        const globeMat = new THREE.MeshPhongMaterial({
-          map: texture,
-          transparent: true,
-          shininess: 10,
-        });
-        const globe = new THREE.Mesh(globeGeom, globeMat);
-        pivotGroup.add(globe);
-      })
-      .catch(() => {
+        landTexture = new THREE.CanvasTexture(texCanvas);
+        landTexture.needsUpdate = true;
+        globeGeom = new THREE.SphereGeometry(1, 96, 96);
+        globeMat = new THREE.MeshPhongMaterial({ map: landTexture, transparent: true, shininess: 10 });
+      } else {
         // Fallback: solid color globe
-        const globeGeom = new THREE.SphereGeometry(1, 64, 64);
-        const globeMat = new THREE.MeshPhongMaterial({ color: 0xc8b89a, shininess: 10 });
-        pivotGroup.add(new THREE.Mesh(globeGeom, globeMat));
-      });
+        globeGeom = new THREE.SphereGeometry(1, 64, 64);
+        globeMat = new THREE.MeshPhongMaterial({ color: 0xc8b89a, shininess: 10 });
+      }
+      pivotGroup.add(new THREE.Mesh(globeGeom, globeMat));
+    });
 
     // Atmosphere
     const atmosGeom = new THREE.SphereGeometry(1.06, 64, 64);
@@ -177,30 +185,6 @@ export default function Globe({ onSelectPlant, plants }) {
       transparent: true,
     });
     scene.add(new THREE.Mesh(atmosGeom, atmosMat));
-
-    // Plant markers
-    const markers = [];
-    plants.forEach((plant, i) => {
-      const pos = latLngToVector3(plant.lat, plant.lng, 1.015);
-      const color = STATUS_COLORS_HEX[plant.status] ?? STATUS_COLORS_HEX.Shutdown;
-      const markerGeom = new THREE.SphereGeometry(0.012, 10, 10);
-      const markerMat = new THREE.MeshBasicMaterial({ color });
-      const marker = new THREE.Mesh(markerGeom, markerMat);
-      marker.position.copy(pos);
-      marker.userData = { plant, index: i };
-      markers.push(marker);
-      pivotGroup.add(marker);
-
-      // Glow ring
-      const ringGeom = new THREE.RingGeometry(0.014, 0.024, 16);
-      const ringMat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.3, side: THREE.DoubleSide });
-      const ring = new THREE.Mesh(ringGeom, ringMat);
-      ring.position.copy(pos);
-      ring.lookAt(new THREE.Vector3(0, 0, 0));
-      ring.userData.pulse = true;
-      ring.userData.phase = Math.random() * 6.28;
-      pivotGroup.add(ring);
-    });
 
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
@@ -247,14 +231,14 @@ export default function Globe({ onSelectPlant, plants }) {
         previousMouse.current = { x: e.clientX, y: e.clientY };
       }
       raycaster.setFromCamera(mouse, camera);
-      const hits = raycaster.intersectObjects(markers);
+      const hits = raycaster.intersectObjects(markersRef.current);
       if (hits.length > 0) {
         setHoveredPlant(hits[0].object.userData.plant);
         setTooltip({ visible: true, x: e.clientX - rect.left, y: e.clientY - rect.top });
         mount.style.cursor = "pointer";
       } else {
         setHoveredPlant(null);
-        setTooltip(t => ({ ...t, visible: false }));
+        setTooltip(prev => ({ ...prev, visible: false }));
         mount.style.cursor = isDragging.current ? "grabbing" : "grab";
       }
     };
@@ -268,7 +252,7 @@ export default function Globe({ onSelectPlant, plants }) {
       mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
       raycaster.setFromCamera(mouse, camera);
-      const hits = raycaster.intersectObjects(markers);
+      const hits = raycaster.intersectObjects(markersRef.current);
       if (hits.length > 0) onSelectPlant(hits[0].object.userData.plant);
     };
 
@@ -299,14 +283,13 @@ export default function Globe({ onSelectPlant, plants }) {
     const onTouchEnd = (e) => {
       isDragging.current = false;
       autoRotateTimer.current = setTimeout(() => { autoRotate.current = true; }, 4000);
-      // Single-tap: open plant modal if a marker was tapped
       if (!hasDragged.current && e.changedTouches.length === 1) {
         const t = e.changedTouches[0];
         const rect = mount.getBoundingClientRect();
         mouse.x = ((t.clientX - rect.left) / rect.width) * 2 - 1;
         mouse.y = -((t.clientY - rect.top) / rect.height) * 2 + 1;
         raycaster.setFromCamera(mouse, camera);
-        const hits = raycaster.intersectObjects(markers);
+        const hits = raycaster.intersectObjects(markersRef.current);
         if (hits.length > 0) onSelectPlant(hits[0].object.userData.plant);
       }
     };
@@ -331,6 +314,7 @@ export default function Globe({ onSelectPlant, plants }) {
 
     return () => {
       cancelAnimationFrame(frame);
+      if (autoRotateTimer.current) clearTimeout(autoRotateTimer.current);
       el.removeEventListener("mousedown", onMouseDown);
       el.removeEventListener("mousemove", onMouseMove);
       el.removeEventListener("mouseup", onMouseUp);
@@ -340,8 +324,68 @@ export default function Globe({ onSelectPlant, plants }) {
       el.removeEventListener("touchmove", onTouchMove);
       el.removeEventListener("touchend", onTouchEnd);
       window.removeEventListener("resize", onResize);
+      // Dispose static geometry/materials
+      oceanGeom.dispose();
+      oceanMat.dispose();
+      atmosGeom.dispose();
+      atmosMat.dispose();
+      globeGeom?.dispose();
+      globeMat?.dispose();
+      landTexture?.dispose();
       renderer.dispose();
+      pivotGroupRef.current = null;
       if (mount.contains(el)) mount.removeChild(el);
+    };
+  }, []); // ← runs once only; never re-runs on plants/filter changes
+
+  // ── Effect 2: Update markers only when plants prop changes (no CDN re-fetch) ──
+  useEffect(() => {
+    const pivotGroup = pivotGroupRef.current;
+    if (!pivotGroup) return;
+
+    // Dispose and remove old markers and rings
+    const toRemove = pivotGroup.children.filter(ch => ch.userData?.isMarker || ch.userData?.pulse);
+    toRemove.forEach(ch => {
+      ch.geometry?.dispose();
+      ch.material?.dispose();
+      pivotGroup.remove(ch);
+    });
+
+    // Add new markers
+    const markers = [];
+    plants.forEach((plant, i) => {
+      const pos = latLngToVector3(plant.lat, plant.lng, 1.015);
+      const color = STATUS_COLORS_HEX[plant.status] ?? STATUS_COLORS_HEX.Shutdown;
+
+      const markerGeom = new THREE.SphereGeometry(0.012, 10, 10);
+      const markerMat = new THREE.MeshBasicMaterial({ color });
+      const marker = new THREE.Mesh(markerGeom, markerMat);
+      marker.position.copy(pos);
+      marker.userData = { plant, index: i, isMarker: true };
+      markers.push(marker);
+      pivotGroup.add(marker);
+
+      // Glow ring
+      const ringGeom = new THREE.RingGeometry(0.014, 0.024, 16);
+      const ringMat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.3, side: THREE.DoubleSide });
+      const ring = new THREE.Mesh(ringGeom, ringMat);
+      ring.position.copy(pos);
+      ring.lookAt(new THREE.Vector3(0, 0, 0));
+      ring.userData.pulse = true;
+      ring.userData.phase = Math.random() * 6.28;
+      pivotGroup.add(ring);
+    });
+
+    markersRef.current = markers;
+
+    return () => {
+      // Dispose marker GPU resources on re-run or unmount
+      const group = pivotGroupRef.current;
+      if (!group) return;
+      markers.forEach(m => {
+        m.geometry?.dispose();
+        m.material?.dispose();
+      });
     };
   }, [plants]);
 

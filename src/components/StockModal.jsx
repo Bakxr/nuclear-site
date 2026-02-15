@@ -16,11 +16,11 @@ export default function StockModal({ stock, onClose }) {
 
   const data = stock.history || [];
   const rangeData = timeRange === "1M" ? data.slice(-30) : timeRange === "1W" ? data.slice(-7) : data;
-  const minP = Math.min(...rangeData.map(d => d.price));
-  const maxP = Math.max(...rangeData.map(d => d.price));
   const startP = rangeData[0]?.price || 0;
   const endP = rangeData[rangeData.length - 1]?.price || 0;
-  const rangePct = ((endP - startP) / startP * 100).toFixed(2);
+  const minP = rangeData.length ? Math.min(...rangeData.map(d => d.price)) : 0;
+  const maxP = rangeData.length ? Math.max(...rangeData.map(d => d.price)) : 0;
+  const rangePct = startP ? ((endP - startP) / startP * 100).toFixed(2) : "0.00";
   const isUp = endP >= startP;
 
   return (

@@ -5,7 +5,7 @@
  */
 
 export const COUNTRY_PROFILES = {
-  "United States": {
+  "USA": {
     summary:
       "The United States operates the world's largest fleet of nuclear reactors with 94 units " +
       "across 54 plants, generating about 18.9% of national electricity and roughly 50% of the " +
@@ -110,7 +110,7 @@ export const COUNTRY_PROFILES = {
     ],
   },
 
-  "South Korea": {
+  "S. Korea": {
     summary:
       "South Korea operates 26 reactors providing 29.0% of the country's electricity, " +
       "making it one of the most nuclear-dependent nations. Korean reactors consistently " +
@@ -173,7 +173,7 @@ export const COUNTRY_PROFILES = {
     ],
   },
 
-  "United Kingdom": {
+  "UK": {
     summary:
       "The UK operates 9 reactors providing about 13.0% of national electricity. The " +
       "country was a nuclear pioneer, opening the world's first commercial nuclear power " +
@@ -257,7 +257,7 @@ export const COUNTRY_PROFILES = {
     ],
   },
 
-  "Czech Republic": {
+  "Czech Rep.": {
     summary:
       "The Czech Republic operates 6 VVER reactors at two sites, Dukovany and Temelin, " +
       "providing about 36.7% of national electricity. Nuclear is the backbone of Czech " +

@@ -342,14 +342,17 @@ body {
    PREMIUM MOTION — NDS-style transitions
    ==================================================================== */
 
-/* Smooth card lift — applied globally to interactive cards */
-[style*="borderRadius: 14"],
-[style*="borderRadius: 16"],
-[style*="borderRadius: 12"] {
+/* Smooth card lift — targeted to explicit interactive card class only.
+   NOTE: Avoid broad [style*="borderRadius"] selectors here — they promote
+   every matched element to a GPU compositing layer via will-change, which
+   wastes VRAM on pages with many cards. Use .np-interactive-card instead. */
+.np-interactive-card {
   transition: transform 0.28s cubic-bezier(0.16,1,0.3,1),
               box-shadow 0.28s cubic-bezier(0.16,1,0.3,1),
               border-color 0.2s ease,
               background 0.2s ease !important;
+}
+.np-interactive-card:hover {
   will-change: transform;
 }
 
@@ -368,4 +371,18 @@ h1, h2 {
 @media (max-width: 640px) {
   ::-webkit-scrollbar { display: none; }
   * { scrollbar-width: none; }
+}
+
+/* Respect system reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  /* Ticker is functional UI, not decorative — keep it scrolling */
+  .np-ticker-scroll {
+    animation-duration: 40s !important;
+    animation-iteration-count: infinite !important;
+  }
 }

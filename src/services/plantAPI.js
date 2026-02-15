@@ -109,8 +109,7 @@ export function normalizeReactorType(typeString) {
   if (t.includes("BWR") || t.includes("ABWR")) return "BWR";
   if (
     t.includes("PWR") || t.includes("EPR") || t.includes("AP1000") ||
-    t.includes("APR") || t.includes("HPR") || t.includes("VVER") ||
-    t.includes("KLT")
+    t.includes("APR") || t.includes("HPR") || t.includes("KLT")
   ) return "PWR";
   // RBMK, EGP, HTGR, CFR, AGR, FBR, MSR → Other
   return "Other";
