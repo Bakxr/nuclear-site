@@ -493,6 +493,23 @@ export async function fetchNuclearNews() {
     return cached.data;
   }
 
+  try {
+    const apiRes = await fetch('/api/news', { headers: { Accept: 'application/json' } });
+    if (apiRes.ok) {
+      const payload = await apiRes.json();
+      if (Array.isArray(payload.articles) && payload.articles.length > 0) {
+        const articles = payload.articles.map((article) => ({
+          ...article,
+          pubDate: article.pubDate ? new Date(article.pubDate) : null,
+        }));
+        cache.set(cacheKey, { data: articles, ts: Date.now() });
+        return articles;
+      }
+    }
+  } catch (error) {
+    if (import.meta.env.DEV) console.warn('[newsAPI] /api/news unavailable:', error?.message || error);
+  }
+
   _rejections.length = 0;
 
   // Parallel fetching — allorigins.win / corsproxy.io have no per-IP rate limit,

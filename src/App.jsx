@@ -1,21 +1,27 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { lazy, Suspense, useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { motion, AnimatePresence, useInView, useScroll, useTransform, MotionConfig } from "framer-motion";
 import { LineChart, Line, ResponsiveContainer } from "recharts";
 import { STOCKS_BASE, NUCLEAR_SHARE, REACTOR_TYPES, LEARN_FACTS, LEARN_COLORS, ENERGY_COMPARISON, ENERGY_SOURCE_COLORS, STATUS_COLORS } from "./data/constants.js";
 import { NUCLEAR_PLANTS } from "./data/plants.js";
+import { SUPPLY_STAGE_COLORS, URANIUM_SUPPLY_SITES } from "./data/supplySites.js";
 import { fetchStockHistory, fetchMultipleQuotes } from "./services/stocksAPI.js";
-import { fetchNuclearNews, getInstantNews } from "./services/newsAPI.js";
+import { clearNewsCache, fetchNuclearNews, getInstantNews } from "./services/newsAPI.js";
 import useDarkMode from "./hooks/useDarkMode.js";
 import Timeline from "./components/Timeline.jsx";
-import Globe from "./components/Globe.jsx";
-import StockModal from "./components/StockModal.jsx";
-import PlantModal from "./components/PlantModal.jsx";
-import CountryModal from "./components/CountryModal.jsx";
 import StockTicker from "./components/StockTicker.jsx";
 import SearchOverlay from "./components/SearchOverlay.jsx";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import ReactorDiagram from "./components/reactorDiagrams/index.jsx";
-import Reactor3D from "./components/reactorDiagrams/Reactor3D.jsx";
+import useDialog from "./hooks/useDialog.js";
+import { groupPlantsByCountry, normalizeCountryName } from "./utils/countries.js";
+import { NAV_ITEMS } from "./data/editorial.js";
+import { inferNewsLocation } from "./utils/news.js";
+
+const Globe = lazy(() => import("./components/Globe.jsx"));
+const StockModal = lazy(() => import("./components/StockModal.jsx"));
+const PlantModal = lazy(() => import("./components/PlantModal.jsx"));
+const CountryModal = lazy(() => import("./components/CountryModal.jsx"));
+const Reactor3D = lazy(() => import("./components/reactorDiagrams/Reactor3D.jsx"));
 
 // ─── SECTION LABEL — animated gold line + uppercase text ──────────────
 function SectionLabel({ children, dark = false }) {
@@ -36,6 +42,119 @@ function SectionLabel({ children, dark = false }) {
         color: dark ? "rgba(212,165,74,0.7)" : "#d4a54a",
       }}>{children}</span>
     </motion.div>
+  );
+}
+
+const NEWSLETTER_STORAGE_KEY = "np-newsletter-subscribed";
+const NEWSLETTER_POPUP_SHOWN_KEY = "np-newsletter-popup-shown";
+const NEWSLETTER_POPUP_DISMISSED_KEY = "np-newsletter-popup-dismissed";
+const NEWSLETTER_FORM_DEFAULT = { email: "", website: "", status: "idle", error: "" };
+
+function NewsletterCapture({
+  surface,
+  form,
+  success,
+  successMessage,
+  onEmailChange,
+  onWebsiteChange,
+  onSubmit,
+  buttonLabel = "Subscribe",
+  placeholder = "Enter your email",
+  note,
+  align = "left",
+  rowStyle,
+  inputStyle,
+  buttonStyle,
+  successStyle,
+  errorStyle,
+}) {
+  if (success) {
+    return (
+      <div style={{
+        fontSize: 15,
+        color: "#4ade80",
+        fontWeight: 600,
+        padding: "10px 0",
+        textAlign: align,
+        ...successStyle,
+      }}>
+        {successMessage}
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="np-newsletter-row" style={{ display: "flex", justifyContent: align === "center" ? "center" : "flex-start", ...rowStyle }}>
+        <input
+          aria-hidden="true"
+          tabIndex={-1}
+          autoComplete="off"
+          value={form.website}
+          onChange={(e) => onWebsiteChange(surface, e.target.value)}
+          style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
+        />
+        <input
+          type="email"
+          aria-label="Email address"
+          placeholder={placeholder}
+          value={form.email}
+          onChange={(e) => onEmailChange(surface, e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && onSubmit(surface)}
+          disabled={form.status === "loading"}
+          style={{
+            padding: "15px 22px",
+            fontSize: 14,
+            fontFamily: "'DM Sans',sans-serif",
+            background: "var(--np-surface)",
+            color: "var(--np-text)",
+            border: `1px solid ${form.status === "error" ? "rgba(248,113,113,0.5)" : "var(--np-border)"}`,
+            borderRadius: "10px 0 0 10px",
+            width: 320,
+            outline: "none",
+            borderRight: "none",
+            transition: "border-color 0.2s",
+            opacity: form.status === "loading" ? 0.6 : 1,
+            ...inputStyle,
+          }}
+          onFocus={(e) => { e.currentTarget.style.borderColor = "rgba(212,165,74,0.4)"; }}
+          onBlur={(e) => { e.currentTarget.style.borderColor = form.status === "error" ? "rgba(248,113,113,0.5)" : "var(--np-border)"; }}
+        />
+        <button
+          aria-label="Subscribe to newsletter"
+          onClick={() => onSubmit(surface)}
+          disabled={form.status === "loading"}
+          style={{
+            padding: "15px 32px",
+            fontSize: 13,
+            fontFamily: "'DM Sans',sans-serif",
+            fontWeight: 600,
+            background: "var(--np-text)",
+            color: "var(--np-bg)",
+            border: "none",
+            borderRadius: "0 10px 10px 0",
+            cursor: form.status === "loading" ? "not-allowed" : "pointer",
+            textTransform: "uppercase",
+            letterSpacing: "0.04em",
+            transition: "all 0.2s",
+            opacity: form.status === "loading" ? 0.6 : 1,
+            ...buttonStyle,
+          }}
+          onMouseEnter={(e) => { if (form.status !== "loading") e.currentTarget.style.opacity = "0.85"; }}
+          onMouseLeave={(e) => { if (form.status !== "loading") e.currentTarget.style.opacity = "1"; }}
+        >
+          {form.status === "loading" ? "Subscribing…" : buttonLabel}
+        </button>
+      </div>
+      {form.status === "error" && (
+        <p style={{ fontSize: 13, color: "#f87171", marginTop: 10, textAlign: align, ...errorStyle }}>{form.error}</p>
+      )}
+      {note ? (
+        <p style={{ fontSize: 12, color: "var(--np-text-faint)", marginTop: 10, textAlign: align, lineHeight: 1.6 }}>
+          {note}
+        </p>
+      ) : null}
+    </div>
   );
 }
 
@@ -123,7 +242,7 @@ function CountUp({ target, decimals = 0, prefix = "", suffix = "", active, delay
   const duration = 1800; // ms
 
   useEffect(() => {
-    if (!active) { setValue(0); return; }
+    if (!active) return undefined;
     const delayTimer = setTimeout(() => {
       startRef.current = performance.now();
       const animate = (now) => {
@@ -139,11 +258,29 @@ function CountUp({ target, decimals = 0, prefix = "", suffix = "", active, delay
     return () => { clearTimeout(delayTimer); if (rafRef.current) cancelAnimationFrame(rafRef.current); };
   }, [active, target, delay]);
 
-  const display = decimals > 0 ? value.toFixed(decimals) : Math.round(value).toString();
+  const visibleValue = active ? value : 0;
+  const display = decimals > 0 ? visibleValue.toFixed(decimals) : Math.round(visibleValue).toString();
   return <>{prefix}{display}{suffix}</>;
 }
 
+function LazySectionFallback({ height = 320 }) {
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        minHeight: height,
+        borderRadius: 16,
+        background: "var(--np-surface-dim)",
+        border: "1px solid var(--np-border)",
+      }}
+    />
+  );
+}
+
+
 // ─── MAIN APP ───────────────────────────────────────────────────────────
+
+
 export default function NuclearPulse() {
   const [selectedPlant, setSelectedPlant] = useState(null);
   const [selectedStock, setSelectedStock] = useState(null);
@@ -157,14 +294,21 @@ export default function NuclearPulse() {
   const [stocksLoading, setStocksLoading] = useState(true);
   const [stocksError, setStocksError] = useState(false);
   const [stocksRetry, setStocksRetry] = useState(0);
-  const [news, setNews] = useState([]);
+  const [news, setNews] = useState(() => getInstantNews());
   const [newsLoading, setNewsLoading] = useState(true);
   const [newsError, setNewsError] = useState(false);
-  const [subEmail, setSubEmail] = useState("");
-  const [subStatus, setSubStatus] = useState("idle"); // idle | loading | success | error
-  const [subErrorMsg, setSubErrorMsg] = useState("");
+  const [newsLastUpdated, setNewsLastUpdated] = useState(null);
+  const [newsletterForms, setNewsletterForms] = useState({
+    hero: { ...NEWSLETTER_FORM_DEFAULT },
+    inline: { ...NEWSLETTER_FORM_DEFAULT },
+    footer: { ...NEWSLETTER_FORM_DEFAULT },
+    popup: { ...NEWSLETTER_FORM_DEFAULT },
+  });
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [showSubscribePopup, setShowSubscribePopup] = useState(false);
 
   // Data section state
+  const [dataView, setDataView] = useState("countries");
   const [dataSort, setDataSort] = useState("capacity");
   const [dataShowAll, setDataShowAll] = useState(false);
   const [expandedCountry, setExpandedCountry] = useState(null);
@@ -176,12 +320,17 @@ export default function NuclearPulse() {
   const [learnFilter, setLearnFilter] = useState("All");
   const [flippedCards, setFlippedCards] = useState({});
   const [highlightedFact, setHighlightedFact] = useState(null);
+  const [globeLayer, setGlobeLayer] = useState("reactors");
 
-  // Compare section state
+  // Proof comparison state
   const [compareMetric, setCompareMetric] = useState("co2");
   const [hoveredSource, setHoveredSource] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { isDark, toggle: toggleDarkMode } = useDarkMode();
+  const [isMobileViewport, setIsMobileViewport] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.innerWidth <= 768;
+  });
 
   // Parallax hero
   const { scrollY } = useScroll();
@@ -201,21 +350,110 @@ export default function NuclearPulse() {
   const stocksRef = useRef(null);
   const newsRef = useRef(null);
   const dataRef = useRef(null);
-  const compareRef = useRef(null);
   const timelineRef = useRef(null);
   const learnRef = useRef(null);
   const smrRef = useRef(null);
-  // Plain lookup map (not a hook) used by scrollTo and IntersectionObserver
-  const sectionRefs = {
-    globe: globeRef,
-    stocks: stocksRef,
-    news: newsRef,
-    data: dataRef,
-    compare: compareRef,
-    timeline: timelineRef,
-    learn: learnRef,
-    smr: smrRef,
-  };
+  const navSections = useMemo(() => ([
+    { key: "data", ref: dataRef },
+    { key: "globe", ref: globeRef },
+    { key: "news", ref: newsRef },
+    { key: "stocks", ref: stocksRef },
+    { key: "smr", ref: smrRef },
+    { key: "learn", ref: learnRef },
+    { key: "timeline", ref: timelineRef },
+  ]), []);
+  // Plain lookup map used by scrollTo and section refs in JSX.
+  const sectionRefs = useMemo(
+    () => Object.fromEntries(navSections.map(({ key, ref }) => [key, ref])),
+    [navSections],
+  );
+
+  function updateNewsletterForm(surface, patch) {
+    setNewsletterForms((prev) => ({ ...prev, [surface]: { ...prev[surface], ...patch } }));
+  }
+
+  function handleNewsletterEmailChange(surface, value) {
+    setNewsletterForms((prev) => ({
+      ...prev,
+      [surface]: {
+        ...prev[surface],
+        email: value,
+        status: prev[surface].status === "error" ? "idle" : prev[surface].status,
+        error: prev[surface].status === "error" ? "" : prev[surface].error,
+      },
+    }));
+  }
+
+  function handleNewsletterWebsiteChange(surface, value) {
+    updateNewsletterForm(surface, { website: value });
+  }
+
+  const dismissSubscribePopup = useCallback(() => {
+    setShowSubscribePopup(false);
+    if (typeof window !== "undefined") {
+      window.sessionStorage.setItem(NEWSLETTER_POPUP_DISMISSED_KEY, "1");
+    }
+  }, []);
+
+  const maybeOpenSubscribePopup = useCallback(() => {
+    if (typeof window === "undefined") return;
+    if (isSubscribed) return;
+    if (window.sessionStorage.getItem(NEWSLETTER_POPUP_SHOWN_KEY)) return;
+    if (window.sessionStorage.getItem(NEWSLETTER_POPUP_DISMISSED_KEY)) return;
+    window.sessionStorage.setItem(NEWSLETTER_POPUP_SHOWN_KEY, "1");
+    setShowSubscribePopup(true);
+  }, [isSubscribed]);
+  const popupDialogRef = useDialog(showSubscribePopup, dismissSubscribePopup);
+
+  async function handleSubscribe(surface = "footer") {
+    const form = newsletterForms[surface];
+    const trimmed = form.email.trim();
+    if (!trimmed) {
+      updateNewsletterForm(surface, { status: "error", error: "Please enter your email address." });
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(trimmed)) {
+      updateNewsletterForm(surface, { status: "error", error: "Please enter a valid email address." });
+      return;
+    }
+
+    updateNewsletterForm(surface, { status: "loading", error: "" });
+
+    try {
+      const res = await fetch("/api/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: trimmed, website: form.website }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        updateNewsletterForm(surface, { status: "error", error: data.error || "Something went wrong. Please try again." });
+        return;
+      }
+
+      setIsSubscribed(true);
+      setShowSubscribePopup(false);
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(NEWSLETTER_STORAGE_KEY, "1");
+        window.sessionStorage.setItem(NEWSLETTER_POPUP_DISMISSED_KEY, "1");
+      }
+      setNewsletterForms((prev) => ({
+        hero: { ...prev.hero, status: "success", error: "" },
+        inline: { ...prev.inline, status: "success", error: "" },
+        footer: { ...prev.footer, status: "success", error: "" },
+        popup: { ...prev.popup, status: "success", error: "" },
+      }));
+    } catch {
+      updateNewsletterForm(surface, { status: "error", error: "Could not connect. Please try again." });
+    }
+  }
+
+  const subEmail = newsletterForms.footer.email;
+  const setSubEmail = (value) => handleNewsletterEmailChange("footer", value);
+  const subWebsite = newsletterForms.footer.website;
+  const setSubWebsite = (value) => handleNewsletterWebsiteChange("footer", value);
+  const subStatus = isSubscribed ? "success" : newsletterForms.footer.status;
+  const subErrorMsg = newsletterForms.footer.error;
 
   // Scroll to top on mount (prevents browser scroll restoration on refresh)
   useEffect(() => {
@@ -224,16 +462,67 @@ export default function NuclearPulse() {
     // Deep-link: open plant modal if ?plant= param is present
     const param = new URLSearchParams(window.location.search).get("plant");
     if (param) {
-      const match = NUCLEAR_PLANTS.find(p => p.name.toLowerCase() === decodeURIComponent(param).toLowerCase());
+      const match = NUCLEAR_PLANTS.find(p => p.name.toLowerCase() === param.toLowerCase());
       if (match) setSelectedPlant(match);
     }
+  }, [sectionRefs]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.localStorage.getItem(NEWSLETTER_STORAGE_KEY) === "1") {
+      setIsSubscribed(true);
+      setNewsletterForms((prev) => ({
+        hero: { ...prev.hero, status: "success" },
+        inline: { ...prev.inline, status: "success" },
+        footer: { ...prev.footer, status: "success" },
+        popup: { ...prev.popup, status: "success" },
+      }));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || isSubscribed) return undefined;
+    if (window.sessionStorage.getItem(NEWSLETTER_POPUP_SHOWN_KEY) || window.sessionStorage.getItem(NEWSLETTER_POPUP_DISMISSED_KEY)) return undefined;
+
+    const timer = window.setTimeout(() => maybeOpenSubscribePopup(), 45000);
+
+    const onScroll = () => {
+      const doc = document.documentElement;
+      const scrollable = doc.scrollHeight - window.innerHeight;
+      if (scrollable <= 0) return;
+      if ((window.scrollY / scrollable) >= 0.5) {
+        maybeOpenSubscribePopup();
+      }
+    };
+
+    const onMouseOut = (event) => {
+      if (window.innerWidth < 1024) return;
+      if (event.relatedTarget || event.clientY > 20) return;
+      maybeOpenSubscribePopup();
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    document.addEventListener("mouseout", onMouseOut);
+
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("scroll", onScroll);
+      document.removeEventListener("mouseout", onMouseOut);
+    };
+  }, [isSubscribed, maybeOpenSubscribePopup]);
+
+  useEffect(() => {
+    const onResize = () => setIsMobileViewport(window.innerWidth <= 768);
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
   }, []);
 
   // Sync selectedPlant to URL so modals are shareable
   useEffect(() => {
     if (selectedPlant) {
       const url = new URL(window.location.href);
-      url.searchParams.set("plant", encodeURIComponent(selectedPlant.name));
+      url.searchParams.set("plant", selectedPlant.name);
       window.history.replaceState(null, "", url.toString());
     } else {
       const url = new URL(window.location.href);
@@ -242,20 +531,32 @@ export default function NuclearPulse() {
     }
   }, [selectedPlant]);
 
-  // Highlight active nav section as user scrolls
+  // Highlight active nav section based on scroll position.
   useEffect(() => {
-    const observers = [];
-    Object.entries(sectionRefs).forEach(([key, ref]) => {
-      if (!ref.current) return;
-      const observer = new IntersectionObserver(
-        ([entry]) => { if (entry.isIntersecting) setActiveSection(key); },
-        { threshold: 0.25, rootMargin: "-80px 0px -50% 0px" }
-      );
-      observer.observe(ref.current);
-      observers.push(observer);
-    });
-    return () => observers.forEach(o => o.disconnect());
-  }, []);
+    const updateActiveSection = () => {
+      const offset = 140;
+      let current = "data";
+
+      navSections.forEach(({ key, ref }) => {
+        if (!ref.current) return;
+        const top = ref.current.getBoundingClientRect().top + window.scrollY;
+        if (window.scrollY + offset >= top) {
+          current = key;
+        }
+      });
+
+      setActiveSection((prev) => (prev === current ? prev : current));
+    };
+
+    updateActiveSection();
+    window.addEventListener("scroll", updateActiveSection, { passive: true });
+    window.addEventListener("resize", updateActiveSection);
+
+    return () => {
+      window.removeEventListener("scroll", updateActiveSection);
+      window.removeEventListener("resize", updateActiveSection);
+    };
+  }, [navSections]);
 
   // Fetch live stock data from Finnhub API
   useEffect(() => {
@@ -311,10 +612,12 @@ export default function NuclearPulse() {
         const articles = await fetchNuclearNews();
         setNews(articles);
         setNewsError(false);
-      } catch (error) {
+        setNewsLastUpdated(new Date());
+      } catch {
         // Fall back to curated articles so the section is never empty
         setNews(getInstantNews());
         setNewsError(true);
+        setNewsLastUpdated(new Date());
       } finally {
         setNewsLoading(false);
       }
@@ -326,27 +629,6 @@ export default function NuclearPulse() {
     const interval = setInterval(loadNews, 15 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
-
-  // Newsletter subscribe handler
-  async function handleSubscribe() {
-    const trimmed = subEmail.trim();
-    if (!trimmed) { setSubStatus("error"); setSubErrorMsg("Please enter your email address."); return; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(trimmed)) { setSubStatus("error"); setSubErrorMsg("Please enter a valid email address."); return; }
-    setSubStatus("loading");
-    try {
-      const res = await fetch("/api/subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: subEmail.trim() }),
-      });
-      const data = await res.json();
-      if (!res.ok) { setSubStatus("error"); setSubErrorMsg(data.error || "Something went wrong. Please try again."); return; }
-      setSubStatus("success");
-    } catch {
-      setSubStatus("error");
-      setSubErrorMsg("Could not connect. Please try again.");
-    }
-  }
 
   // Stats counter animation
   const statsRef = useRef(null);
@@ -360,6 +642,7 @@ export default function NuclearPulse() {
   }, [statsInView]);
 
   const scrollTo = (section) => {
+    setActiveSection(section);
     sectionRefs[section]?.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
@@ -381,32 +664,73 @@ export default function NuclearPulse() {
     return filtered;
   }, [news, newsFilter, newsSort]);
 
+  const uniqueNewsSources = useMemo(() => new Set(news.map((item) => item.source)).size, [news]);
+
+  const newsStatusLabel = newsError ? "Curated fallback" : "Live feeds";
+  const newsStatusTone = newsError ? "rgba(212,165,74,0.12)" : "rgba(74,222,128,0.12)";
+  const newsStatusColor = newsError ? "#d4a54a" : "#4ade80";
+
+  async function refreshNews() {
+    setNewsError(false);
+    setNewsLoading(true);
+    clearNewsCache();
+    try {
+      const articles = await fetchNuclearNews();
+      setNews(articles);
+      setNewsError(false);
+      setNewsLastUpdated(new Date());
+    } catch {
+      setNews(getInstantNews());
+      setNewsError(true);
+      setNewsLastUpdated(new Date());
+    } finally {
+      setNewsLoading(false);
+    }
+  }
+
+  function getNewsMapLayer(article) {
+    const text = `${article?.title || ""} ${article?.curiosityHook || ""} ${article?.whyItMatters || ""} ${article?.tag || ""}`.toLowerCase();
+    return /uranium|mine|mining|mill|enrichment|fuel|haleu|conversion|fabrication/.test(text)
+      ? "uranium"
+      : "reactors";
+  }
+
   const filteredPlants = useMemo(() => {
     let result = NUCLEAR_PLANTS;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      result = result.filter(p => p.name.toLowerCase().includes(q) || p.country.toLowerCase().includes(q) || p.type.toLowerCase().includes(q));
+      result = result.filter((plant) =>
+        plant.name.toLowerCase().includes(q)
+        || plant.country.toLowerCase().includes(q)
+        || plant.type.toLowerCase().includes(q)
+      );
     }
     if (plantFilter !== "All") {
-      result = result.filter(p => p.status === plantFilter);
+      result = result.filter((plant) => plant.status === plantFilter);
     }
     return result;
   }, [searchQuery, plantFilter]);
 
-  const countryCounts = useMemo(() => {
-    const counts = {};
-    NUCLEAR_PLANTS.forEach(p => { counts[p.country] = (counts[p.country] || 0) + 1; });
-    return Object.entries(counts).sort((a, b) => b[1] - a[1]);
-  }, []);
+  const filteredSupplySites = useMemo(() => {
+    let result = URANIUM_SUPPLY_SITES;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter((site) =>
+        site.name.toLowerCase().includes(q)
+        || site.country.toLowerCase().includes(q)
+        || site.region.toLowerCase().includes(q)
+        || site.stage.toLowerCase().includes(q)
+        || site.operator.toLowerCase().includes(q)
+      );
+    }
+    return result;
+  }, [searchQuery]);
+
+  const activeGlobeItems = globeLayer === "reactors" ? filteredPlants : filteredSupplySites;
 
   // Plants grouped by country for Data section expansion
   const plantsByCountry = useMemo(() => {
-    const map = {};
-    NUCLEAR_PLANTS.forEach(p => {
-      if (!map[p.country]) map[p.country] = [];
-      map[p.country].push(p);
-    });
-    return map;
+    return groupPlantsByCountry(NUCLEAR_PLANTS);
   }, []);
 
   // Sorted nuclear share data + bar width helper
@@ -428,6 +752,37 @@ export default function NuclearPulse() {
     return { sortedNuclearShare: sorted, getBarWidth: c => (getValue(c) / max) * 100, totalCountries: sorted.length, halfCount: half };
   }, [dataSort]);
 
+  const activeComparisonMetric = useMemo(
+    () => ENERGY_COMPARISON.find((metric) => metric.key === compareMetric) || ENERGY_COMPARISON[0],
+    [compareMetric],
+  );
+
+  const comparisonRows = useMemo(() => {
+    const metric = activeComparisonMetric;
+    const max = Math.max(...metric.data.map((item) => item.value)) || 1;
+    const bestValue = metric.lowerIsBetter
+      ? Math.min(...metric.data.map((item) => item.value))
+      : Math.max(...metric.data.map((item) => item.value));
+
+    return metric.data.map((item) => ({
+      ...item,
+      width: (item.value / max) * 100,
+      isBest: item.value === bestValue,
+    }));
+  }, [activeComparisonMetric]);
+
+  const formatComparisonValue = (value) => {
+    if (Number.isInteger(value)) return value.toLocaleString("en-US");
+    if (value >= 1000) return value.toLocaleString("en-US");
+    if (value >= 1) return value.toFixed(1).replace(/\.0$/, "");
+    return value.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
+  };
+
+  useEffect(() => {
+    setHoveredCountry(null);
+    setHoveredSource(null);
+  }, [dataView, dataSort, compareMetric]);
+
   // Filtered learn facts
   const filteredFacts = useMemo(() => {
     if (learnFilter === "All") return LEARN_FACTS;
@@ -442,22 +797,27 @@ export default function NuclearPulse() {
       {/* Nav */}
       <nav className="np-nav" style={{
         display: "flex", justifyContent: "space-between", alignItems: "center",
-        padding: "16px 40px", borderBottom: "1px solid var(--np-border)",
+        padding: "16px var(--np-section-x)", borderBottom: "1px solid var(--np-border)",
         position: "sticky", top: 0, zIndex: 100, background: "var(--np-nav-bg)",
         backdropFilter: "blur(24px)",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}
              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
           <span style={{ fontSize: 24 }}>⚛</span>
-          <span style={{ fontFamily: "'Playfair Display',serif", fontSize: 21, fontWeight: 700, letterSpacing: "-0.02em" }}>
-            Nuclear<span style={{ fontStyle: "italic", fontWeight: 400, color: "var(--np-text-muted)", marginLeft: 5 }}>Pulse</span>
-          </span>
+          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <span style={{ fontFamily: "'Playfair Display',serif", fontSize: 21, fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1 }}>
+              Nuclear<span style={{ fontStyle: "italic", fontWeight: 400, color: "var(--np-text-muted)", marginLeft: 5 }}>Pulse</span>
+            </span>
+            <span style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.16em", color: "var(--np-text-faint)", fontWeight: 700 }}>
+              Strategic Energy Briefing
+            </span>
+          </div>
         </div>
         <div className="np-nav-links" style={{ display: "flex", gap: 28 }}>
-          {["Data", "Globe", "News", "Stocks", "SMR", "Learn", "Compare", "Timeline"].map(item => {
-            const isActive = activeSection === item.toLowerCase();
+          {NAV_ITEMS.map(item => {
+            const isActive = activeSection === item.key;
             return (
-              <button key={item} onClick={() => scrollTo(item.toLowerCase())} style={{
+              <button key={item.key} onClick={() => scrollTo(item.key)} style={{
                 background: "none", border: "none", cursor: "pointer",
                 fontFamily: "'DM Sans',sans-serif", fontSize: 13, fontWeight: 500,
                 color: isActive ? "#d4a54a" : "var(--np-text-muted)",
@@ -467,7 +827,7 @@ export default function NuclearPulse() {
               }}
                 onMouseEnter={e => e.currentTarget.style.color = "var(--np-text)"}
                 onMouseLeave={e => e.currentTarget.style.color = isActive ? "#d4a54a" : "var(--np-text-muted)"}
-              >{item}</button>
+              >{item.label}</button>
             );
           })}
         </div>
@@ -508,7 +868,6 @@ export default function NuclearPulse() {
                   onSelectStock={setSelectedStock}
                   onSelectCountry={setSelectedCountry}
                   onClose={() => setShowSearch(false)}
-                  scrollTo={scrollTo}
                 />
               )}
             </AnimatePresence>
@@ -524,9 +883,9 @@ export default function NuclearPulse() {
         </div>
         {mobileMenuOpen && (
           <div className="np-mobile-menu">
-            {["Data", "Globe", "News", "Stocks", "SMR", "Learn", "Compare", "Timeline"].map(item => (
-              <button key={item} onClick={() => { scrollTo(item.toLowerCase()); setMobileMenuOpen(false); }}>
-                {item}
+            {NAV_ITEMS.map(item => (
+              <button key={item.key} onClick={() => { scrollTo(item.key); setMobileMenuOpen(false); }}>
+                {item.label}
               </button>
             ))}
             <div style={{ padding: "8px 12px" }}>
@@ -540,71 +899,118 @@ export default function NuclearPulse() {
         )}
       </nav>
 
+      <div
+        className="np-first-fold"
+        style={{
+          minHeight: "calc(100svh - 108px)",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
+          background: "var(--np-bg)",
+        }}
+      >
       {/* Hero */}
-      <section className="np-hero" style={{ textAlign: "center", padding: "120px 40px 72px", position: "relative", background: "linear-gradient(to bottom, var(--np-bg-alt) 0%, var(--np-bg) 100%)", overflow: "hidden" }}>
-        {/* Parallax content wrapper */}
-        <motion.div style={{ y: heroY, opacity: heroOpacity }}>
-          {/* Staggered word headline */}
+      <section className="np-hero" style={{
+        textAlign: "center",
+        padding: "44px 40px 8px",
+        position: "relative",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: isDark
+          ? "radial-gradient(circle at top, rgba(212,165,74,0.12), transparent 30%), linear-gradient(180deg, #17120c 0%, #0e0b08 62%, #090705 100%)"
+          : "radial-gradient(circle at top, rgba(212,165,74,0.14), transparent 34%), linear-gradient(180deg, #f2ebde 0%, #e4dbcb 38%, #0c0907 100%)",
+        overflow: "hidden",
+        flex: 1,
+      }}>
+        <div aria-hidden="true" className="np-hero-grid" />
+        <motion.div style={isMobileViewport ? { width: "100%" } : { y: heroY, opacity: heroOpacity, width: "100%" }}>
           <motion.h1
             initial="hidden"
             animate="visible"
             variants={{ visible: { transition: { staggerChildren: 0.1, delayChildren: 0.15 } } }}
             style={{
-              fontFamily: "'Playfair Display',serif", fontSize: "clamp(44px,7vw,88px)", fontWeight: 400,
-              lineHeight: 1.08, letterSpacing: "-0.025em", maxWidth: 900, margin: "0 auto", color: "var(--np-text)",
+              fontFamily: "'Playfair Display',serif", fontSize: "clamp(40px,7vw,84px)", fontWeight: 400,
+              lineHeight: 0.94, letterSpacing: "-0.04em", maxWidth: 900, margin: "0 auto", color: isDark ? "#f5f0e8" : "#f7f3ed",
+              textTransform: "uppercase",
+              textShadow: isDark ? "0 12px 40px rgba(0,0,0,0.36)" : "0 10px 35px rgba(0,0,0,0.22)",
             }}
           >
-            {["Explore", "the", "world's"].map((w, i) => (
+            {["Baseload", "for", "the"].map((w, i) => (
               <motion.span key={i} variants={wordReveal} style={{ display: "inline-block", marginRight: "0.22em" }}>{w}</motion.span>
             ))}
             <br />
-            <motion.em variants={wordReveal} style={{ color: "#d4a54a", display: "inline-block", marginRight: "0.22em", fontStyle: "italic" }}>nuclear energy</motion.em>
-            <motion.span variants={wordReveal} style={{ display: "inline-block" }}>landscape.</motion.span>
+            <motion.em variants={wordReveal} style={{ color: "#d4a54a", display: "inline-block", marginRight: "0.22em", fontStyle: "normal" }}>industrial century.</motion.em>
           </motion.h1>
 
           <motion.p
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.9, ease: EASE, delay: 0.85 }}
-            style={{ fontSize: 16, color: "var(--np-text-muted)", maxWidth: 540, margin: "32px auto 0", lineHeight: 1.75, fontWeight: 400 }}
+            style={{ fontSize: 16, color: isDark ? "rgba(245,240,232,0.76)" : "rgba(245,240,232,0.78)", maxWidth: 680, margin: "16px auto 0", lineHeight: 1.75, fontWeight: 500 }}
           >
-            Live data on {NUCLEAR_PLANTS.length}+ global reactors, industry stocks, research breakthroughs, and the future of clean energy.
+            The grid will not be rebuilt with slogans. Track {NUCLEAR_PLANTS.length}+ reactors, uranium-sensitive markets, national buildouts, and the political fight over firm power in one scroll-heavy briefing.
           </motion.p>
 
           <motion.div
-            className="np-hero-search"
             initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: EASE, delay: 1.1 }}
-            style={{ display: "flex", justifyContent: "center", marginTop: 44, gap: 0 }}
+            transition={{ duration: 0.8, ease: EASE, delay: 1.02 }}
+            style={{
+              marginTop: 24,
+              maxWidth: 760,
+              marginInline: "auto",
+              padding: isMobileViewport ? "18px 18px 16px" : "22px 22px 18px",
+              borderRadius: 20,
+              border: "1px solid rgba(212,165,74,0.18)",
+              background: isDark ? "rgba(13,11,8,0.72)" : "rgba(20,18,14,0.26)",
+              backdropFilter: "blur(14px)",
+              boxShadow: "0 20px 50px rgba(0,0,0,0.18)",
+            }}
           >
-          <input type="text" placeholder='Try "Canada" or "CANDU"' value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-            style={{
-              padding: "16px 26px", fontSize: 15, fontFamily: "'DM Sans',sans-serif",
-              background: "var(--np-surface)", color: "var(--np-text)", border: "1px solid var(--np-border-strong)",
-              borderRadius: "10px 0 0 10px", width: 360, outline: "none",
-              transition: "all 0.2s", borderRight: "none"
-            }}
-            onFocus={e => e.currentTarget.style.borderColor = "rgba(212,165,74,0.4)"}
-            onBlur={e => e.currentTarget.style.borderColor = "var(--np-border-strong)"} />
-          <button onClick={() => scrollTo("globe")}
-            style={{
-              padding: "16px 32px", fontSize: 14, fontFamily: "'DM Sans',sans-serif", fontWeight: 600,
-              background: "var(--np-text)", color: "var(--np-bg)", border: "none", borderRadius: "0 10px 10px 0",
-              cursor: "pointer", letterSpacing: "0.04em", transition: "all 0.2s",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.15)"
-            }}
-            onMouseEnter={e => { e.currentTarget.style.opacity = "0.85"; e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.25)"; }}
-            onMouseLeave={e => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.15)"; }}>
-            Explore
-          </button>
-          </motion.div>{/* end search motion.div */}
-        </motion.div>{/* end parallax wrapper */}
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#d4a54a" }}>
+              Weekly briefing
+            </div>
+            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(24px,3vw,34px)", lineHeight: 1.08, marginTop: 10, color: "#f5f0e8" }}>
+              Get the weekly atomic briefing.
+            </div>
+            <div style={{ fontSize: 14, color: "rgba(245,240,232,0.74)", maxWidth: 620, margin: "10px auto 0", lineHeight: 1.7 }}>
+              One sharp email each week on reactor buildouts, uranium markets, policy fights, and the moves that actually matter. No spam. Unsubscribe anytime.
+            </div>
+            <div style={{ marginTop: 18 }}>
+              <NewsletterCapture
+                surface="hero"
+                form={newsletterForms.hero}
+                success={isSubscribed}
+                successMessage="You're in. The next briefing lands in your inbox this week."
+                onEmailChange={handleNewsletterEmailChange}
+                onWebsiteChange={handleNewsletterWebsiteChange}
+                onSubmit={handleSubscribe}
+                placeholder="Enter your email for the weekly briefing"
+                buttonLabel="Get briefing"
+                align="center"
+                rowStyle={{ justifyContent: "center" }}
+                inputStyle={{
+                  width: isMobileViewport ? "100%" : 390,
+                  background: isDark ? "rgba(255,255,255,0.06)" : "rgba(20,18,14,0.18)",
+                  color: "#f5f0e8",
+                  borderColor: "rgba(245,240,232,0.14)",
+                }}
+                buttonStyle={{
+                  background: "#f5f0e8",
+                  color: "#14120e",
+                }}
+                note="Readers get the signal behind the week in nuclear, not a flood of headlines."
+              />
+            </div>
+          </motion.div>
+
+        </motion.div>
       </section>
 
       {/* Stats */}
       <section ref={statsRef} className="np-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(6,1fr)", gap: 1, background: "var(--np-bg)", margin: "0 0 0 0" }}>
         {GLOBAL_STATS.map((s, i) => (
           <a key={i} href={s.sourceUrl} target="_blank" rel="noopener noreferrer" style={{
-            background: "var(--np-bg)", padding: "32px 20px", textAlign: "center",
+            background: "var(--np-bg)", padding: "18px 20px 22px", textAlign: "center",
             opacity: showStats ? 1 : 0, transform: showStats ? "translateY(0)" : "translateY(16px)",
             transition: `all 0.5s ease ${i * 0.08}s`,
             textDecoration: "none", color: "inherit", display: "block",
@@ -622,9 +1028,10 @@ export default function NuclearPulse() {
           </a>
         ))}
       </section>
+      </div>
 
       {/* ROTATING QUOTES */}
-      <section style={{ padding: "100px 40px", textAlign: "center", background: "var(--np-bg)" }}>
+      <section style={{ padding: "var(--np-section-y) var(--np-section-x)", textAlign: "center", background: "var(--np-bg)" }}>
         <div style={{ maxWidth: 880, margin: "0 auto" }}>
           <div style={{ width: 40, height: 1, background: "rgba(212,165,74,0.5)", margin: "0 auto 48px" }} />
           <div style={{ minHeight: 160, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
@@ -660,213 +1067,594 @@ export default function NuclearPulse() {
       </section>
 
       {/* DATA SECTION */}
-      <section ref={sectionRefs.data} className="np-data-section" style={{ padding: "100px 40px", background: "var(--np-surface-dim)", scrollMarginTop: 80 }}>
+      <section ref={sectionRefs.data} className="np-data-section" style={{ padding: "var(--np-section-y) var(--np-section-x)", background: "var(--np-surface-dim)", scrollMarginTop: 80 }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }} variants={staggerContainer}>
             <SectionLabel>Global Data</SectionLabel>
             <motion.h2 variants={fadeUp} style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(32px,4vw,52px)", fontWeight: 400, letterSpacing: "-0.02em", marginBottom: 8 }}>
-              Nuclear share of <em style={{ color: "var(--np-text-muted)" }}>electricity.</em>
+              Global nuclear <em style={{ color: "var(--np-text-muted)" }}>proof.</em>
             </motion.h2>
-            <motion.p variants={fadeUp} style={{ color: "var(--np-text-muted)", fontSize: 15, marginBottom: 24, lineHeight: 1.6 }}>IAEA 2024 data — percentage of national electricity from nuclear power.</motion.p>
+            <motion.p variants={fadeUp} style={{ color: "var(--np-text-muted)", fontSize: 15, marginBottom: 24, lineHeight: 1.6, maxWidth: 740 }}>
+              See which countries are betting biggest on nuclear, and why the numbers keep making the case for it. This is the signal behind the weekly briefing.
+            </motion.p>
 
-            {/* Sort controls */}
-            <motion.div variants={fadeUp} style={{ display: "flex", gap: 8, marginBottom: 28 }}>
-              {[
-                { key: "capacity", label: "By Capacity" },
-                { key: "share", label: "By Nuclear %" },
-                { key: "reactors", label: "By Reactors" },
-              ].map(s => (
-                <button key={s.key} onClick={() => setDataSort(s.key)} style={{
-                  background: dataSort === s.key ? "var(--np-text)" : "var(--np-surface-dim)",
-                  color: dataSort === s.key ? "var(--np-bg)" : "var(--np-text-muted)",
-                  border: "1px solid " + (dataSort === s.key ? "var(--np-text)" : "var(--np-border)"),
-                  borderRadius: 8, padding: "7px 16px", fontSize: 12, fontWeight: 600,
-                  cursor: "pointer", fontFamily: "'DM Sans',sans-serif", transition: "all 0.2s",
-                  letterSpacing: "0.02em",
-                }}>{s.label}</button>
-              ))}
-            </motion.div>
-          </motion.div>
-
-          {/* Nuclear share rows */}
-          <motion.div key={dataSort} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-40px" }} variants={staggerContainer}>
-            {(dataShowAll ? sortedNuclearShare : sortedNuclearShare.slice(0, halfCount)).map((c, i) => (
-              <motion.div key={c.country} variants={fadeUp}>
-                <div
-                  onClick={() => setExpandedCountry(expandedCountry === c.country ? null : c.country)}
-                  onMouseEnter={() => setHoveredCountry(c.country)}
-                  onMouseLeave={() => setHoveredCountry(null)}
-                  className="np-data-row"
-                  style={{
-                    display: "grid", gridTemplateColumns: "36px 90px 1fr 64px 100px 20px", alignItems: "center", gap: 12,
-                    padding: "11px 8px", borderBottom: "1px solid var(--np-border)", cursor: "pointer",
-                    borderRadius: 6, transition: "background 0.2s",
-                    background: hoveredCountry === c.country ? "rgba(212,165,74,0.04)" : expandedCountry === c.country ? "rgba(212,165,74,0.06)" : "transparent",
-                  }}
-                >
-                  <span style={{ fontSize: 20 }}>{c.flag}</span>
-                  <span style={{ fontWeight: 500, fontSize: 14 }}>{c.country}</span>
-                  <div className="np-data-bar" style={{ position: "relative", height: 20, borderRadius: 3, background: "var(--np-surface-dim)" }}>
-                    <motion.div
-                      initial={{ width: 0 }}
-                      whileInView={{ width: `${getBarWidth(c)}%` }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 1.2, ease: "easeOut", delay: i * 0.04 }}
-                      style={{
-                        position: "absolute", left: 0, top: 0, height: "100%", borderRadius: 3,
-                        background: hoveredCountry === c.country ? "linear-gradient(90deg,#d4a54a,#c4935a)" : "linear-gradient(90deg,#d4a54a,#8b7355)",
-                      }}
-                    />
-                    {/* Tooltip on hover */}
-                    {hoveredCountry === c.country && (
-                      <div style={{
-                        position: "absolute", bottom: "calc(100% + 8px)", left: "50%", transform: "translateX(-50%)",
-                        background: "var(--np-dark-bg)", color: "var(--np-dark-text)", padding: "8px 14px", borderRadius: 8,
-                        fontSize: 12, whiteSpace: "nowrap", zIndex: 10, pointerEvents: "none",
-                        boxShadow: "0 4px 20px rgba(0,0,0,0.3)", border: "1px solid rgba(212,165,74,0.2)",
-                      }}>
-                        <span style={{ fontWeight: 700, color: "#d4a54a" }}>{c.country}</span> — {c.nuclear}% nuclear · {c.reactors} reactors · {c.capacity}
-                      </div>
-                    )}
+            <motion.div
+              variants={fadeUp}
+              className="np-data-shell"
+              style={{
+                border: `1px solid ${isDark ? "rgba(245,240,232,0.08)" : "var(--np-border)"}`,
+                borderRadius: 24,
+                background: isDark
+                  ? "linear-gradient(180deg, rgba(245,240,232,0.045) 0%, rgba(245,240,232,0.02) 100%)"
+                  : "linear-gradient(180deg, var(--np-surface) 0%, rgba(255,255,255,0.72) 100%)",
+                overflow: "hidden",
+                boxShadow: isDark ? "0 20px 50px rgba(0,0,0,0.24)" : "0 20px 50px rgba(30,25,18,0.06)",
+              }}
+            >
+              <div
+                className="np-data-toolbar"
+                style={{
+                  padding: "20px 24px 18px",
+                  borderBottom: `1px solid ${isDark ? "rgba(245,240,232,0.08)" : "var(--np-border)"}`,
+                  display: "grid",
+                  gap: 12,
+                  background: isDark
+                    ? "linear-gradient(180deg, rgba(212,165,74,0.12) 0%, rgba(245,240,232,0.025) 100%)"
+                    : "linear-gradient(180deg, rgba(212,165,74,0.06) 0%, rgba(212,165,74,0.015) 100%)",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
+                  <div style={{ display: "grid", gap: 8 }}>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      {[
+                        { key: "countries", label: "Countries" },
+                        { key: "proof", label: "Energy Proof" },
+                      ].map((view) => (
+                        <button
+                          key={view.key}
+                          className="np-data-pill"
+                          onClick={() => {
+                            setDataView(view.key);
+                            if (view.key !== "countries") setExpandedCountry(null);
+                          }}
+                          style={{
+                            background: dataView === view.key ? "var(--np-text)" : isDark ? "rgba(245,240,232,0.04)" : "var(--np-surface)",
+                            color: dataView === view.key ? "var(--np-bg)" : "var(--np-text-muted)",
+                            border: `1px solid ${dataView === view.key ? "var(--np-text)" : isDark ? "rgba(245,240,232,0.08)" : "var(--np-border)"}`,
+                          }}
+                        >
+                          {view.label}
+                        </button>
+                      ))}
+                    </div>
+                    <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--np-text-faint)", fontWeight: 700, marginTop: 2 }}>
+                      {dataView === "countries" ? "Rank countries by buildout signal" : "Compare major power sources by one shared metric"}
+                    </div>
                   </div>
-                  <span className="np-data-value" style={{ fontFamily: "'DM Mono',monospace", fontSize: 14, fontWeight: 700, textAlign: "right", whiteSpace: "nowrap" }}>
-                    {dataSort === "capacity" ? c.capacity : dataSort === "reactors" ? `${c.reactors}` : `${c.nuclear}%`}
-                  </span>
-                  <span className="np-data-sub" style={{ fontSize: 11, color: "var(--np-text-faint)", textAlign: "right" }}>
-                    {dataSort === "capacity" ? `${c.nuclear}% · ${c.reactors}r` : dataSort === "reactors" ? `${c.nuclear}% · ${c.capacity}` : `${c.reactors} reactors · ${c.capacity}`}
-                  </span>
-                  <span style={{ fontSize: 12, color: "var(--np-text-muted)", transition: "transform 0.3s", transform: expandedCountry === c.country ? "rotate(180deg)" : "rotate(0)" }}>▼</span>
+
+                  <div style={{ display: "grid", gap: 6, minWidth: 230 }}>
+                    <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: "#d4a54a" }}>
+                      {dataView === "countries" ? "Country lens" : "Proof lens"}
+                    </div>
+                    <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, lineHeight: 1.05, letterSpacing: "-0.03em", color: "var(--np-text)" }}>
+                      {dataView === "countries" ? "Where nuclear is already real." : activeComparisonMetric.label}
+                    </div>
+                    <div style={{ fontSize: 13, lineHeight: 1.6, color: "var(--np-text-muted)" }}>
+                      {dataView === "countries"
+                        ? `${totalCountries} countries ranked by ${dataSort === "capacity" ? "installed capacity" : dataSort === "reactors" ? "reactor count" : "share of electricity from nuclear"}.`
+                        : activeComparisonMetric.description}
+                    </div>
+                  </div>
                 </div>
 
-                {/* Expandable country detail */}
-                <AnimatePresence>
-                  {expandedCountry === c.country && (
+                <AnimatePresence mode="wait" initial={false}>
+                  {dataView === "countries" ? (
                     <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.3, ease: "easeInOut" }}
-                      style={{ overflow: "hidden" }}
+                      key="country-controls"
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.22, ease: "easeOut" }}
+                      style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 6 }}
                     >
-                      <div style={{ padding: "16px 8px 20px 48px", borderBottom: "1px solid rgba(212,165,74,0.1)" }}>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
-                          {(plantsByCountry[c.country] || []).map((p, pi) => (
-                            <span key={pi} onClick={(e) => { e.stopPropagation(); setSelectedPlant(p); }} style={{
-                              background: "var(--np-surface-dim)", border: "1px solid var(--np-border)",
-                              borderRadius: 8, padding: "6px 12px", fontSize: 12, cursor: "pointer",
-                              transition: "all 0.2s", display: "inline-flex", alignItems: "center", gap: 6,
+                      {[
+                        { key: "capacity", label: "Capacity" },
+                        { key: "reactors", label: "Reactors" },
+                        { key: "share", label: "Nuclear Share" },
+                      ].map((sort) => (
+                        <button
+                          key={sort.key}
+                          className="np-data-chip"
+                          onClick={() => setDataSort(sort.key)}
+                          style={{
+                            background: dataSort === sort.key ? "rgba(212,165,74,0.12)" : "transparent",
+                            color: dataSort === sort.key ? "#d4a54a" : "var(--np-text-muted)",
+                            border: `1px solid ${dataSort === sort.key ? "rgba(212,165,74,0.35)" : "var(--np-border)"}`,
+                          }}
+                        >
+                          {sort.label}
+                        </button>
+                      ))}
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="proof-controls"
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.22, ease: "easeOut" }}
+                      style={{ display: "grid", gap: 14 }}
+                    >
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                        {ENERGY_COMPARISON.map((metric) => (
+                          <button
+                            key={metric.key}
+                            className="np-data-chip"
+                            onClick={() => setCompareMetric(metric.key)}
+                            style={{
+                              background: compareMetric === metric.key ? "rgba(212,165,74,0.12)" : "transparent",
+                              color: compareMetric === metric.key ? "#d4a54a" : "var(--np-text-muted)",
+                              border: `1px solid ${compareMetric === metric.key ? "rgba(212,165,74,0.35)" : "var(--np-border)"}`,
                             }}
-                              onMouseEnter={e => { e.currentTarget.style.background = "rgba(212,165,74,0.1)"; e.currentTarget.style.borderColor = "rgba(212,165,74,0.3)"; }}
-                              onMouseLeave={e => { e.currentTarget.style.background = "var(--np-surface-dim)"; e.currentTarget.style.borderColor = "var(--np-border)"; }}
-                            >
-                              <span style={{ fontWeight: 600 }}>{p.name}</span>
-                              <span style={{ color: "var(--np-text-muted)", fontSize: 11 }}>{p.capacity.toLocaleString()} MW · {p.type.split(" ")[0]}</span>
-                              <span style={{ width: 6, height: 6, borderRadius: "50%", background: STATUS_COLORS[p.status] ?? STATUS_COLORS.Idle }} />
-                            </span>
-                          ))}
+                          >
+                            {metric.label}
+                          </button>
+                        ))}
+                      </div>
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "minmax(0, 1fr) auto",
+                          gap: 14,
+                          padding: "16px 18px",
+                          borderRadius: 16,
+                          background: isDark ? "rgba(212,165,74,0.1)" : "rgba(212,165,74,0.06)",
+                          border: `1px solid ${isDark ? "rgba(212,165,74,0.22)" : "rgba(212,165,74,0.16)"}`,
+                          alignItems: "center",
+                        }}
+                      >
+                        <div style={{ display: "grid", gap: 6 }}>
+                          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", color: "#d4a54a" }}>
+                            Source
+                          </div>
+                          <a href={activeComparisonMetric.sourceUrl} target="_blank" rel="noopener noreferrer" style={{ color: "var(--np-text)", textDecoration: "none", fontWeight: 600 }}>
+                            {activeComparisonMetric.source}
+                          </a>
                         </div>
-                        <button onClick={(e) => {
-                          e.stopPropagation();
-                          setSearchQuery(c.country);
-                          scrollTo("globe");
-                        }} style={{
-                          background: "none", border: "1px solid rgba(212,165,74,0.3)", borderRadius: 8,
-                          padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer",
-                          color: "#d4a54a", fontFamily: "'DM Sans',sans-serif", transition: "all 0.2s",
-                        }}
-                          onMouseEnter={e => { e.currentTarget.style.background = "rgba(212,165,74,0.1)"; }}
-                          onMouseLeave={e => { e.currentTarget.style.background = "none"; }}
-                        >
-                          View on globe →
-                        </button>
-                        <button onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedCountry(c.country);
-                        }} style={{
-                          background: "none", border: "1px solid rgba(212,165,74,0.3)", borderRadius: 8,
-                          padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer",
-                          color: "#d4a54a", fontFamily: "'DM Sans',sans-serif", transition: "all 0.2s",
-                        }}
-                          onMouseEnter={e => { e.currentTarget.style.background = "rgba(212,165,74,0.1)"; }}
-                          onMouseLeave={e => { e.currentTarget.style.background = "none"; }}
-                        >
-                          Country profile →
-                        </button>
+                        <div style={{ textAlign: "right" }}>
+                          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--np-text-faint)" }}>
+                            Unit
+                          </div>
+                          <div style={{ fontSize: 13, color: "var(--np-text-muted)", fontWeight: 600 }}>
+                            {activeComparisonMetric.unit}
+                          </div>
+                        </div>
                       </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
-              </motion.div>
-            ))}
+              </div>
+
+              <div style={{ padding: "18px 24px 24px" }}>
+                <AnimatePresence mode="wait" initial={false}>
+                  {dataView === "countries" ? (
+                    <motion.div
+                      key="countries-panel"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.24, ease: "easeOut" }}
+                    >
+                      <div style={{ display: "grid", gap: 6 }}>
+                        {(dataShowAll ? sortedNuclearShare : sortedNuclearShare.slice(0, halfCount)).map((c, i) => (
+                          <div key={c.country} style={{ borderBottom: "1px solid var(--np-border)" }}>
+                            <div
+                              onClick={() => setExpandedCountry(expandedCountry === c.country ? null : c.country)}
+                              onMouseEnter={() => setHoveredCountry(c.country)}
+                              onMouseLeave={() => setHoveredCountry(null)}
+                              className="np-data-row"
+                              style={{
+                                display: "grid",
+                                gridTemplateColumns: "36px 110px 1fr 84px 132px 24px",
+                                alignItems: "center",
+                                gap: 12,
+                                padding: "14px 8px",
+                                cursor: "pointer",
+                                borderRadius: 12,
+                                transition: "background 0.2s ease",
+                                background: hoveredCountry === c.country ? "rgba(212,165,74,0.04)" : expandedCountry === c.country ? "rgba(212,165,74,0.06)" : "transparent",
+                              }}
+                            >
+                              <span style={{ fontSize: 20 }}>{c.flag}</span>
+                              <span style={{ fontWeight: 600, fontSize: 14, color: "var(--np-text)" }}>{c.country}</span>
+                              <div className="np-data-bar" style={{ position: "relative", height: 20, borderRadius: 999, background: "var(--np-surface-dim)", overflow: "hidden" }}>
+                                <motion.div
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${Math.max(getBarWidth(c), 1.5)}%` }}
+                                  transition={{ duration: 0.75, ease: "easeOut", delay: i * 0.03 }}
+                                  style={{
+                                    position: "absolute",
+                                    inset: 0,
+                                    width: `${Math.max(getBarWidth(c), 1.5)}%`,
+                                    borderRadius: 999,
+                                    background: "linear-gradient(90deg, #d4a54a 0%, #8b7355 100%)",
+                                  }}
+                                />
+                              </div>
+                              <span className="np-data-value" style={{ fontFamily: "'DM Mono',monospace", fontSize: 14, fontWeight: 700, textAlign: "right", whiteSpace: "nowrap", color: "var(--np-text)" }}>
+                                {dataSort === "capacity" ? c.capacity : dataSort === "reactors" ? c.reactors : `${c.nuclear}%`}
+                              </span>
+                              <span className="np-data-sub" style={{ fontFamily: "'DM Mono',monospace", fontSize: 11, color: "var(--np-text-faint)", textAlign: "right", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                                {dataSort === "capacity"
+                                  ? `${c.nuclear}% share | ${c.reactors} reactors`
+                                  : dataSort === "reactors"
+                                    ? `${c.nuclear}% share | ${c.capacity}`
+                                    : `${c.reactors} reactors | ${c.capacity}`}
+                              </span>
+                              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 12, color: expandedCountry === c.country ? "#d4a54a" : "var(--np-text-faint)", textAlign: "center" }}>
+                                {expandedCountry === c.country ? "-" : "+"}
+                              </span>
+                            </div>
+
+                            <AnimatePresence initial={false}>
+                              {expandedCountry === c.country && (
+                                <motion.div
+                                  initial={{ height: 0, opacity: 0 }}
+                                  animate={{ height: "auto", opacity: 1 }}
+                                  exit={{ height: 0, opacity: 0 }}
+                                  transition={{ duration: 0.24, ease: "easeInOut" }}
+                                  style={{ overflow: "hidden" }}
+                                >
+                                  <div style={{ padding: "0 8px 18px 56px", display: "grid", gap: 14 }}>
+                                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                                      {(plantsByCountry[normalizeCountryName(c.country)] || []).map((p) => (
+                                        <button
+                                          key={p.name}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedPlant(p);
+                                          }}
+                                          style={{
+                                            background: "var(--np-surface-dim)",
+                                            border: "1px solid var(--np-border)",
+                                            borderRadius: 999,
+                                            padding: "8px 12px",
+                                            fontSize: 12,
+                                            cursor: "pointer",
+                                            transition: "all 0.2s ease",
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            gap: 8,
+                                            color: "var(--np-text)",
+                                            fontFamily: "'DM Sans',sans-serif",
+                                          }}
+                                          onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = "rgba(212,165,74,0.08)";
+                                            e.currentTarget.style.borderColor = "rgba(212,165,74,0.3)";
+                                          }}
+                                          onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = "var(--np-surface-dim)";
+                                            e.currentTarget.style.borderColor = "var(--np-border)";
+                                          }}
+                                        >
+                                          <span style={{ width: 6, height: 6, borderRadius: "50%", background: STATUS_COLORS[p.status] ?? STATUS_COLORS.Idle, display: "inline-block" }} />
+                                          <span style={{ fontWeight: 600 }}>{p.name}</span>
+                                          <span style={{ color: "var(--np-text-muted)", fontSize: 11 }}>{p.capacity.toLocaleString("en-US")} MW</span>
+                                        </button>
+                                      ))}
+                                    </div>
+                                    <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setSearchQuery(c.country);
+                                          scrollTo("globe");
+                                        }}
+                                        className="np-data-chip"
+                                        style={{
+                                          background: "transparent",
+                                          color: "#d4a54a",
+                                          border: "1px solid rgba(212,165,74,0.3)",
+                                        }}
+                                      >
+                                        View on globe
+                                      </button>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setSelectedCountry(c.country);
+                                        }}
+                                        className="np-data-chip"
+                                        style={{
+                                          background: "transparent",
+                                          color: "#d4a54a",
+                                          border: "1px solid rgba(212,165,74,0.3)",
+                                        }}
+                                      >
+                                        Country profile
+                                      </button>
+                                    </div>
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div style={{ textAlign: "center", marginTop: 22 }}>
+                        <button
+                          className="np-data-chip"
+                          onClick={() => setDataShowAll((value) => !value)}
+                          style={{
+                            background: "transparent",
+                            color: "var(--np-text-muted)",
+                            border: "1px solid var(--np-border)",
+                            padding: "10px 22px",
+                          }}
+                        >
+                          {dataShowAll ? "Show less" : `Show all ${totalCountries} countries`}
+                        </button>
+                      </div>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="proof-panel"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.24, ease: "easeOut" }}
+                      style={{ display: "grid", gap: 20 }}
+                    >
+                      <div style={{ display: "grid", gap: 6 }}>
+                        {comparisonRows.map((row, i) => {
+                          const color = ENERGY_SOURCE_COLORS[row.name] || "#8b7355";
+                          const isNuclear = row.name === "Nuclear";
+                          return (
+                            <div
+                              key={row.name}
+                              className="np-data-row np-proof-row"
+                              onMouseEnter={() => setHoveredSource(row.name)}
+                              onMouseLeave={() => setHoveredSource(null)}
+                              style={{
+                                display: "grid",
+                                gridTemplateColumns: "20px 96px 1fr 92px 150px",
+                                alignItems: "center",
+                                gap: 12,
+                                padding: "14px 8px",
+                                borderBottom: "1px solid var(--np-border)",
+                                borderRadius: 12,
+                                background: hoveredSource === row.name ? "rgba(212,165,74,0.04)" : "transparent",
+                                transition: "background 0.2s ease",
+                              }}
+                            >
+                              <span style={{ width: 10, height: 10, borderRadius: "50%", background: isNuclear ? "#d4a54a" : color, display: "inline-block" }} />
+                              <span style={{ fontWeight: isNuclear ? 700 : 600, fontSize: 14, color: isNuclear ? "var(--np-text)" : "var(--np-text-muted)" }}>
+                                {row.name}
+                              </span>
+                              <div className="np-data-bar" style={{ position: "relative", height: 20, borderRadius: 999, background: "var(--np-surface-dim)", overflow: "hidden" }}>
+                                <motion.div
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${Math.max(row.width, 1.5)}%` }}
+                                  transition={{ duration: 0.65, ease: "easeOut", delay: i * 0.03 }}
+                                  style={{
+                                    position: "absolute",
+                                    inset: 0,
+                                    width: `${Math.max(row.width, 1.5)}%`,
+                                    borderRadius: 999,
+                                    background: isNuclear ? "linear-gradient(90deg, #d4a54a 0%, #c4935a 100%)" : color,
+                                    opacity: isNuclear ? 1 : hoveredSource === row.name ? 0.82 : 0.64,
+                                  }}
+                                />
+                              </div>
+                              <span className="np-data-value" style={{ fontFamily: "'DM Mono',monospace", fontSize: 14, fontWeight: 700, textAlign: "right", whiteSpace: "nowrap", color: "var(--np-text)" }}>
+                                {`${formatComparisonValue(row.value)}${activeComparisonMetric.unit === "%" ? "%" : ""}`}
+                              </span>
+                              <span className="np-data-sub" style={{ fontFamily: "'DM Mono',monospace", fontSize: 11, color: row.isBest ? (isNuclear ? "#d4a54a" : "#4ade80") : "var(--np-text-faint)", textAlign: "right", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                                {row.isBest ? "Best result" : activeComparisonMetric.lowerIsBetter ? "Lower is better" : "Higher is better"}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "minmax(0, 1fr) auto",
+                          gap: 18,
+                          padding: "18px 20px",
+                          borderRadius: 18,
+                          background: isDark ? "rgba(212,165,74,0.1)" : "rgba(212,165,74,0.06)",
+                          border: `1px solid ${isDark ? "rgba(212,165,74,0.22)" : "rgba(212,165,74,0.14)"}`,
+                          alignItems: "center",
+                        }}
+                      >
+                        <div style={{ display: "grid", gap: 6 }}>
+                          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", color: "#d4a54a" }}>
+                            Why this matters
+                          </div>
+                          <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: "var(--np-text)", fontWeight: 600 }}>
+                            {activeComparisonMetric.insight}
+                          </p>
+                        </div>
+                        <div style={{ textAlign: "right" }}>
+                          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--np-text-faint)" }}>
+                            Direction
+                          </div>
+                          <div style={{ fontSize: 13, color: "var(--np-text-muted)", fontWeight: 600 }}>
+                            {activeComparisonMetric.lowerIsBetter ? "Lower wins" : "Higher wins"}
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </motion.div>
           </motion.div>
-
-          {/* Show more */}
-          <div style={{ textAlign: "center", marginTop: 20 }}>
-            <button
-              onClick={() => setDataShowAll(v => !v)}
-              style={{
-                background: "none", border: "1px solid var(--np-border)", borderRadius: 10,
-                padding: "10px 28px", fontSize: 13, fontWeight: 600, cursor: "pointer",
-                color: "var(--np-text-muted)", fontFamily: "'DM Sans',sans-serif",
-                transition: "all 0.2s", display: "inline-flex", alignItems: "center", gap: 8,
-              }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(212,165,74,0.4)"; e.currentTarget.style.color = "#d4a54a"; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--np-border)"; e.currentTarget.style.color = "var(--np-text-muted)"; }}
-            >
-              {dataShowAll ? "Show less ▲" : `Show all ${totalCountries} countries ▼`}
-            </button>
-          </div>
-
         </div>
       </section>
-
       {/* GLOBE SECTION */}
-      <ErrorBoundary section="Globe" dark={false}>
-      <section ref={sectionRefs.globe} style={{ padding: "0 40px 80px", scrollMarginTop: 80 }}>
-        <div className="np-globe-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24 }}>
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-40px" }} variants={staggerContainer}>
-            <SectionLabel>Interactive Map</SectionLabel>
-            <motion.h2 variants={fadeUp} style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(32px,4vw,52px)", fontWeight: 400, letterSpacing: "-0.02em", margin: 0 }}>
-              Every reactor on <em style={{ color: "var(--np-text-muted)" }}>Earth.</em>
-            </motion.h2>
-            <motion.p variants={fadeUp} style={{ color: "var(--np-text-muted)", fontSize: 14, marginTop: 8 }}>Drag to rotate · Click markers for details · {filteredPlants.length} plants shown</motion.p>
-          </motion.div>
-          <div style={{ display: "flex", gap: 14, fontSize: 11, alignItems: "center" }}>
-            {Object.entries(STATUS_COLORS).map(([label, color]) => (
-              <span key={label} onClick={() => setPlantFilter(plantFilter === label ? "All" : label)}
-                style={{ display: "flex", alignItems: "center", gap: 5, cursor: "pointer", opacity: plantFilter !== "All" && plantFilter !== label ? 0.3 : 1, transition: "opacity 0.2s" }}>
-                <span style={{ width: 9, height: 9, borderRadius: "50%", background: color, display: "inline-block" }} /> {label}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <div className="np-globe-layout" style={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: 24, minHeight: 520 }}>
-          <div style={{ background: "radial-gradient(ellipse at 50% 40%, #0d1b2a 0%, #0a1520 60%, #060e15 100%)", borderRadius: 16, border: "1px solid var(--np-border)", overflow: "hidden", position: "relative" }}>
-            <Globe onSelectPlant={setSelectedPlant} plants={filteredPlants} />
-          </div>
-          <div style={{ background: "var(--np-surface-dim)", borderRadius: 16, border: "1px solid var(--np-border)", padding: "16px 18px", overflowY: "auto", maxHeight: 520 }}>
-            <div style={{ fontWeight: 600, fontSize: 13, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--np-text-muted)", marginBottom: 12, position: "sticky", top: 0, background: "var(--np-nav-bg)", padding: "4px 0", backdropFilter: "blur(8px)" }}>
-              {filteredPlants.length} Plants {searchQuery && `· "${searchQuery}"`}
+      <ErrorBoundary section="Globe">
+      <section ref={sectionRefs.globe} style={{ padding: "var(--np-section-y) var(--np-section-x) 48px", scrollMarginTop: 80, background: "var(--np-bg)" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+          <div className="np-globe-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24, gap: 20 }}>
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-40px" }} variants={staggerContainer}>
+              <SectionLabel>Interactive Map</SectionLabel>
+              <motion.h2 variants={fadeUp} style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(32px,4vw,52px)", fontWeight: 400, letterSpacing: "-0.02em", margin: 0 }}>
+                Every reactor on{" "}
+                <em style={{ color: "var(--np-accent)", fontStyle: "italic", textShadow: "0 0 18px rgba(212,165,74,0.08)" }}>
+                  Earth.
+                </em>
+              </motion.h2>
+              <motion.p variants={fadeUp} style={{ color: "var(--np-text-muted)", fontSize: 14, marginTop: 8, lineHeight: 1.6 }}>
+                {globeLayer === "reactors"
+                  ? `Drag to rotate, click markers for details, and track ${filteredPlants.length} live plant profiles.`
+                  : `Trace ${filteredSupplySites.length} uranium mines and fuel-cycle sites behind the reactor buildout story.`}
+              </motion.p>
+            </motion.div>
+            <div style={{ display: "flex", gap: 14, fontSize: 11, alignItems: "center", flexWrap: "wrap" }}>
+              {Object.entries(globeLayer === "reactors" ? STATUS_COLORS : SUPPLY_STAGE_COLORS).map(([label, color]) => (
+                <span
+                  key={label}
+                  onClick={() => {
+                    if (globeLayer !== "reactors") return;
+                    setPlantFilter(plantFilter === label ? "All" : label);
+                  }}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 5,
+                    cursor: globeLayer === "reactors" ? "pointer" : "default",
+                    opacity: globeLayer === "reactors" && plantFilter !== "All" && plantFilter !== label ? 0.35 : 1,
+                    transition: "opacity 0.2s ease",
+                    color: "var(--np-text-muted)",
+                  }}
+                >
+                  <span style={{ width: 9, height: 9, borderRadius: "50%", background: color, display: "inline-block" }} />
+                  {label}
+                </span>
+              ))}
             </div>
-            {filteredPlants.map((p, i) => (
-              <div key={i} onClick={() => setSelectedPlant(p)} style={{
-                padding: "10px 12px", borderRadius: 8, cursor: "pointer", display: "flex",
-                justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--np-border)",
-                transition: "background 0.15s",
+          </div>
+
+          <div className="np-globe-layout" style={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: 24, minHeight: 520 }}>
+            <div
+              className="np-globe-stage"
+              style={{
+                background: "radial-gradient(ellipse at 50% 40%, #0d1b2a 0%, #0a1520 60%, #060e15 100%)",
+                borderRadius: 16,
+                border: "1px solid var(--np-border)",
+                overflow: "hidden",
+                position: "relative",
               }}
-                onMouseEnter={e => e.currentTarget.style.background = "rgba(212,165,74,0.08)"}
-                onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: 13.5 }}>{p.name}</div>
-                  <div style={{ fontSize: 11, color: "var(--np-text-muted)" }}>{p.country} · {p.type}</div>
+            >
+              <Suspense fallback={<LazySectionFallback height={520} />}>
+                <Globe onSelectPlant={setSelectedPlant} plants={activeGlobeItems} mode={globeLayer} />
+              </Suspense>
+            </div>
+
+            <div style={{ background: "var(--np-surface-dim)", borderRadius: 16, border: "1px solid var(--np-border)", padding: "16px 18px 28px", overflowY: "auto", maxHeight: 520 }}>
+              <div style={{ position: "sticky", top: 0, background: "linear-gradient(180deg, rgba(30,25,18,0.96) 0%, rgba(30,25,18,0.9) 72%, rgba(30,25,18,0) 100%)", padding: "6px 0 14px", backdropFilter: "blur(8px)", zIndex: 2, borderRadius: 14 }}>
+                <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                  {[{ key: "reactors", label: "Plants" }, { key: "uranium", label: "Mines" }].map((view) => {
+                    const active = globeLayer === view.key;
+                    return (
+                      <button
+                        key={view.key}
+                        type="button"
+                        onClick={() => {
+                          setGlobeLayer(view.key);
+                          if (view.key === "reactors") setPlantFilter("All");
+                        }}
+                        style={{
+                          borderRadius: 999,
+                          border: `1px solid ${active ? "rgba(212,165,74,0.45)" : "var(--np-border)"}`,
+                          background: active ? "#f5f0e8" : "rgba(255,255,255,0.02)",
+                          color: active ? "var(--np-bg)" : "var(--np-text-muted)",
+                          padding: "8px 14px",
+                          fontSize: 12,
+                          fontWeight: 700,
+                          letterSpacing: "0.06em",
+                          textTransform: "uppercase",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {view.label}
+                      </button>
+                    );
+                  })}
                 </div>
-                <div style={{ textAlign: "right" }}>
-                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 12.5, fontWeight: 600 }}>{p.capacity.toLocaleString()} MW</div>
-                  <div style={{ fontSize: 10, color: STATUS_COLORS[p.status] ?? STATUS_COLORS.Idle }}>● {p.status}</div>
+                <div style={{ fontWeight: 600, fontSize: 13, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--np-text-muted)" }}>
+                  {activeGlobeItems.length} {globeLayer === "reactors" ? "Plants" : "Mines"} {searchQuery && `· "${searchQuery}"`}
                 </div>
               </div>
-            ))}
+              <div style={{ display: "none", fontWeight: 600, fontSize: 13, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--np-text-muted)", marginBottom: 12 }}>
+                {filteredPlants.length} Plants {searchQuery && `· "${searchQuery}"`}
+              </div>
+              <div style={{ paddingBottom: 10 }}>
+              {globeLayer === "reactors" ? filteredPlants.map((plant) => (
+                <div
+                  key={plant.name}
+                  onClick={() => setSelectedPlant(plant)}
+                  style={{
+                    padding: "10px 12px",
+                    borderRadius: 8,
+                    cursor: "pointer",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    borderBottom: "1px solid var(--np-border)",
+                    transition: "background 0.15s ease",
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(212,165,74,0.08)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                >
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: 13.5, color: "var(--np-text)" }}>{plant.name}</div>
+                    <div style={{ fontSize: 11, color: "var(--np-text-muted)" }}>{plant.country} · {plant.type}</div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 12.5, fontWeight: 600, color: "var(--np-text)" }}>
+                      {plant.capacity.toLocaleString("en-US")} MW
+                    </div>
+                    <div style={{ fontSize: 10, color: STATUS_COLORS[plant.status] ?? STATUS_COLORS.Idle }}>
+                      ● {plant.status}
+                    </div>
+                  </div>
+                </div>
+              )) : filteredSupplySites.map((site) => (
+                <div
+                  key={site.id}
+                  style={{
+                    padding: "12px 12px",
+                    borderRadius: 8,
+                    borderBottom: "1px solid var(--np-border)",
+                    display: "grid",
+                    gap: 6,
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: 13.5, color: "var(--np-text)" }}>{site.name}</div>
+                      <div style={{ fontSize: 11, color: "var(--np-text-muted)" }}>{site.country} · {site.region}</div>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 11.5, fontWeight: 700, color: SUPPLY_STAGE_COLORS[site.stage] || "var(--np-accent)" }}>
+                        {site.stage}
+                      </div>
+                      <div style={{ fontSize: 10, color: "var(--np-text-faint)" }}>{site.status}</div>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 11.5, color: "var(--np-text-muted)", lineHeight: 1.55 }}>{site.detail}</div>
+                  <div style={{ fontSize: 10.5, color: "var(--np-text-faint)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    {site.operator}
+                  </div>
+                </div>
+              ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -874,14 +1662,37 @@ export default function NuclearPulse() {
 
       {/* NEWS SECTION */}
       <ErrorBoundary section="News">
-      <section ref={sectionRefs.news} style={{ padding: "100px 40px", scrollMarginTop: 80, background: "linear-gradient(to bottom, var(--np-bg-alt) 0%, var(--np-bg) 100%)" }}>
+      <section ref={sectionRefs.news} style={{ padding: "var(--np-section-y) var(--np-section-x)", scrollMarginTop: 80, background: "linear-gradient(to bottom, var(--np-bg-alt) 0%, var(--np-bg) 100%)" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }} variants={staggerContainer}>
             <SectionLabel>Industry News</SectionLabel>
             <motion.h2 variants={fadeUp} style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(32px,4vw,52px)", fontWeight: 400, letterSpacing: "-0.02em", marginBottom: 8 }}>
-              Latest <em style={{ color: "var(--np-text-muted)" }}>news.</em>
+              Nuclear <em style={{ color: "var(--np-text-muted)" }}>dispatch.</em>
             </motion.h2>
-            <motion.p variants={fadeUp} style={{ color: "var(--np-text-muted)", fontSize: 15, marginBottom: 36, maxWidth: 540, lineHeight: 1.6 }}>Curated developments from the global nuclear energy industry.</motion.p>
+            <motion.p variants={fadeUp} style={{ color: "var(--np-text-muted)", fontSize: 15, marginBottom: 20, maxWidth: 640, lineHeight: 1.6 }}>Live reactor, policy, uranium, and buildout coverage from the sources moving the nuclear conversation.</motion.p>
+            <motion.div variants={fadeUp} style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", marginBottom: 28 }}>
+              <span style={{
+                fontSize: 11,
+                textTransform: "uppercase",
+                letterSpacing: "0.12em",
+                fontWeight: 700,
+                color: newsStatusColor,
+                background: newsStatusTone,
+                border: `1px solid ${newsError ? "rgba(212,165,74,0.25)" : "rgba(74,222,128,0.22)"}`,
+                padding: "6px 10px",
+                borderRadius: 999,
+              }}>
+                {newsStatusLabel}
+              </span>
+              <span style={{ fontSize: 12, color: "var(--np-text-faint)" }}>
+                {news.length} stories · {uniqueNewsSources} sources
+              </span>
+              {newsLastUpdated && (
+                <span style={{ fontSize: 12, color: "var(--np-text-faint)" }}>
+                  Updated {newsLastUpdated.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+                </span>
+              )}
+            </motion.div>
           </motion.div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, marginBottom: 32, flexWrap: "wrap" }}>
             {/* Tag filters */}
@@ -927,7 +1738,7 @@ export default function NuclearPulse() {
               fontSize: 12, color: "var(--np-text-muted)",
             }}>
               <span>Live feeds temporarily unavailable — showing curated articles.</span>
-              <button onClick={() => { setNewsError(false); setNewsLoading(true); fetchNuclearNews().then(a => { setNews(a); setNewsLoading(false); }).catch(() => { setNews(getInstantNews()); setNewsError(true); setNewsLoading(false); }); }}
+              <button onClick={refreshNews}
                 style={{
                   background: "none", border: "1px solid rgba(212,165,74,0.4)", color: "#d4a54a",
                   padding: "4px 12px", borderRadius: 6, fontSize: 11, fontWeight: 600,
@@ -938,7 +1749,7 @@ export default function NuclearPulse() {
             </div>
           )}
           <AnimatePresence mode="wait">
-            {newsLoading ? (
+            {newsLoading && news.length === 0 ? (
               <motion.div key="skeleton"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 className="np-news-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(340px,1fr))", gap: 24 }}>
@@ -956,7 +1767,9 @@ export default function NuclearPulse() {
                 initial="hidden" animate="visible"
                 variants={{ visible: { transition: { staggerChildren: 0.06 } } }}
                 className="np-news-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(340px,1fr))", gap: 24 }}>
-                {filteredNews.length > 0 ? filteredNews.slice(0, newsLimit).map((n, i) => (
+                {filteredNews.length > 0 ? filteredNews.slice(0, newsLimit).map((n, i) => {
+                  const inferredLocation = inferNewsLocation(n);
+                  return (
                   <motion.a key={n.url || i}
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -990,13 +1803,14 @@ export default function NuclearPulse() {
                       fontFamily: "'Playfair Display',serif", fontSize: 19, fontWeight: 500,
                       lineHeight: 1.4, margin: 0, color: "var(--np-text)", marginBottom: n.curiosityHook ? 10 : 12
                     }}>{n.title}</h3>
-                    {n.curiosityHook && (
-                      <p style={{
-                        fontSize: 13, color: "var(--np-text-muted)", lineHeight: 1.6,
-                        margin: "0 0 12px", display: "-webkit-box",
-                        WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
-                      }}>{n.curiosityHook}</p>
-                    )}
+                    <p style={{
+                      fontSize: 13, color: "var(--np-text-muted)", lineHeight: 1.6,
+                      margin: "0 0 12px", display: "-webkit-box",
+                      WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden",
+                    }}>{n.curiosityHook || n.whyItMatters}</p>
+                    <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--np-text-faint)", marginBottom: 8 }}>
+                      Why it matters
+                    </div>
                     <div style={{
                       fontSize: 12, color: "var(--np-text-muted)", fontWeight: 500,
                       display: "flex", alignItems: "center", gap: 6
@@ -1004,8 +1818,37 @@ export default function NuclearPulse() {
                       <span>{n.source}</span>
                       <span style={{ fontSize: 14 }}>→</span>
                     </div>
-                  </motion.a>
-                )) : (
+                      {inferredLocation && (
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setGlobeLayer(getNewsMapLayer(n));
+                            setPlantFilter("All");
+                            setSearchQuery(inferredLocation);
+                            scrollTo("globe");
+                          }}
+                          style={{
+                            marginTop: 12,
+                            background: "none",
+                            border: "1px solid rgba(212,165,74,0.25)",
+                            color: "#d4a54a",
+                            borderRadius: 999,
+                            padding: "6px 10px",
+                            fontSize: 11,
+                            fontWeight: 700,
+                            letterSpacing: "0.08em",
+                            textTransform: "uppercase",
+                            cursor: "pointer",
+                            fontFamily: "'DM Sans',sans-serif",
+                          }}
+                        >
+                          Focus map: {inferredLocation}
+                        </button>
+                      )}
+                    </motion.a>
+                  );
+                }) : (
                   <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: 60, color: "var(--np-text-muted)" }}>
                     No news articles available. Try selecting a different category.
                   </div>
@@ -1048,9 +1891,54 @@ export default function NuclearPulse() {
       </section>
       </ErrorBoundary>
 
+      <section style={{ padding: "0 var(--np-section-x) var(--np-section-y)", background: "var(--np-bg)" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+          <div style={{
+            borderRadius: 24,
+            border: "1px solid rgba(212,165,74,0.16)",
+            background: isDark
+              ? "linear-gradient(135deg, rgba(212,165,74,0.08) 0%, rgba(245,240,232,0.03) 100%)"
+              : "linear-gradient(135deg, rgba(212,165,74,0.08) 0%, rgba(255,255,255,0.72) 100%)",
+            padding: isMobileViewport ? "24px 18px" : "30px 34px",
+            boxShadow: isDark ? "0 16px 40px rgba(0,0,0,0.18)" : "0 14px 36px rgba(30,25,18,0.08)",
+          }}>
+            <div style={{ display: "grid", gridTemplateColumns: isMobileViewport ? "1fr" : "minmax(0, 1.1fr) minmax(320px, 420px)", gap: 22, alignItems: "center" }}>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#d4a54a" }}>
+                  The signal behind the week
+                </div>
+                <div style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(28px,3vw,42px)", lineHeight: 1.08, marginTop: 10 }}>
+                  Get the moves that matter, once a week.
+                </div>
+                <div style={{ fontSize: 15, color: "var(--np-text-muted)", lineHeight: 1.7, marginTop: 12, maxWidth: 620 }}>
+                  If you made it this far, you already care about the buildout story. The briefing turns reactor maps, uranium signals, policy shifts, and market moves into one clean weekly read.
+                </div>
+              </div>
+              <div>
+                <NewsletterCapture
+                  surface="inline"
+                  form={newsletterForms.inline}
+                  success={isSubscribed}
+                  successMessage="Subscribed. You’ll get the next weekly atomic briefing in your inbox."
+                  onEmailChange={handleNewsletterEmailChange}
+                  onWebsiteChange={handleNewsletterWebsiteChange}
+                  onSubmit={handleSubscribe}
+                  placeholder="Email for the weekly briefing"
+                  buttonLabel="Join free"
+                  rowStyle={{ justifyContent: "flex-start" }}
+                  inputStyle={{ width: "100%" }}
+                  buttonStyle={{ minWidth: isMobileViewport ? "100%" : 152 }}
+                  note="Weekly. Free. No spam. Unsubscribe anytime."
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* STOCKS SECTION */}
       <ErrorBoundary section="Stocks" dark={true}>
-      <section ref={sectionRefs.stocks} style={{ padding: "100px 40px", background: "var(--np-dark-bg)", color: "var(--np-dark-text)", scrollMarginTop: 80 }}>
+      <section ref={sectionRefs.stocks} style={{ padding: "var(--np-section-y) var(--np-section-x)", background: "var(--np-dark-bg)", color: "var(--np-dark-text)", scrollMarginTop: 80 }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }} variants={staggerContainer}>
           <SectionLabel dark>Market Overview</SectionLabel>
@@ -1131,7 +2019,7 @@ export default function NuclearPulse() {
       </ErrorBoundary>
 
       {/* SMR TRACKER SECTION */}
-      <section ref={sectionRefs.smr} style={{ padding: "100px 40px", background: "var(--np-dark-bg)", color: "var(--np-dark-text)", scrollMarginTop: 80 }}>
+      <section ref={sectionRefs.smr} style={{ padding: "var(--np-section-y) var(--np-section-x)", background: "var(--np-dark-bg)", color: "var(--np-dark-text)", scrollMarginTop: 80 }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }} variants={staggerContainer}>
             <SectionLabel dark>SMR Tracker</SectionLabel>
@@ -1158,7 +2046,7 @@ export default function NuclearPulse() {
             initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.05 }} variants={staggerContainer}
             style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 14 }}
           >
-            {[...SMR_PROJECTS].sort((a, b) => SMR_STATUS_ORDER.indexOf(a.status) - SMR_STATUS_ORDER.indexOf(b.status)).map((project, i) => (
+            {[...SMR_PROJECTS].sort((a, b) => SMR_STATUS_ORDER.indexOf(a.status) - SMR_STATUS_ORDER.indexOf(b.status)).map((project) => (
               <motion.div key={project.name} variants={fadeUp} style={{
                 background: "rgba(245,240,232,0.04)", border: "1px solid rgba(245,240,232,0.08)",
                 borderRadius: 12, padding: "18px 20px",
@@ -1214,7 +2102,7 @@ export default function NuclearPulse() {
       </section>
 
       {/* LEARN SECTION */}
-      <section ref={sectionRefs.learn} style={{ padding: "100px 40px", scrollMarginTop: 80 }}>
+      <section ref={sectionRefs.learn} style={{ padding: "var(--np-section-y) var(--np-section-x)", scrollMarginTop: 80 }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
 
           {/* Reactor Types */}
@@ -1312,7 +2200,11 @@ export default function NuclearPulse() {
                             </div>
                             {/* View */}
                             {reactorViewMode === "3d"
-                              ? <Reactor3D type={r.type} />
+                              ? (
+                                <Suspense fallback={<LazySectionFallback height={320} />}>
+                                  <Reactor3D type={r.type} />
+                                </Suspense>
+                              )
                               : <div style={{ padding: "16px 20px" }}><ReactorDiagram type={r.type} width={900} /></div>
                             }
                           </div>
@@ -1467,147 +2359,8 @@ export default function NuclearPulse() {
         </div>
       </section>
 
-      {/* COMPARE SECTION — Nuclear vs Other Energy */}
-      <section ref={sectionRefs.compare} style={{ padding: "100px 40px", scrollMarginTop: 80 }}>
-        <div style={{ maxWidth: 900, margin: "0 auto" }}>
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }} variants={staggerContainer}>
-            <SectionLabel>Energy Comparison</SectionLabel>
-            <motion.h2 variants={fadeUp} style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(32px,4vw,52px)", fontWeight: 400, letterSpacing: "-0.02em", marginBottom: 8 }}>
-              Nuclear vs other <em style={{ color: "var(--np-text-muted)" }}>energy.</em>
-            </motion.h2>
-            <motion.p variants={fadeUp} style={{ color: "var(--np-text-muted)", fontSize: 15, marginBottom: 32, maxWidth: 600, lineHeight: 1.6 }}>
-              How does nuclear stack up against wind, solar, hydro, gas, and coal? Select a metric to compare.
-            </motion.p>
-
-            {/* Metric tab pills */}
-            <motion.div variants={fadeUp} style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 32 }}>
-              {ENERGY_COMPARISON.map(m => (
-                <button key={m.key} onClick={() => setCompareMetric(m.key)} style={{
-                  background: compareMetric === m.key ? "var(--np-text)" : "var(--np-surface-dim)",
-                  color: compareMetric === m.key ? "var(--np-bg)" : "var(--np-text-muted)",
-                  border: "1px solid " + (compareMetric === m.key ? "var(--np-text)" : "var(--np-border)"),
-                  borderRadius: 20, padding: "8px 18px", fontSize: 12, fontWeight: 600,
-                  cursor: "pointer", fontFamily: "'DM Sans',sans-serif", transition: "all 0.2s",
-                  letterSpacing: "0.02em",
-                }}>{m.label}</button>
-              ))}
-            </motion.div>
-          </motion.div>
-
-          {/* Animated bar chart */}
-          <AnimatePresence mode="wait">
-            {ENERGY_COMPARISON.filter(m => m.key === compareMetric).map(metric => {
-              const maxVal = Math.max(...metric.data.map(d => d.value));
-              const bestVal = metric.lowerIsBetter
-                ? Math.min(...metric.data.map(d => d.value))
-                : Math.max(...metric.data.map(d => d.value));
-
-              return (
-                <motion.div
-                  key={metric.key}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -12 }}
-                  transition={{ duration: 0.3, ease: "easeOut" }}
-                >
-                  {/* Description + unit */}
-                  <div style={{ marginBottom: 24 }}>
-                    <p style={{ fontSize: 14, color: "var(--np-text-muted)", lineHeight: 1.5, margin: "0 0 4px" }}>{metric.description}</p>
-                    <span style={{ fontSize: 11, color: "var(--np-text-faint)", fontFamily: "'DM Mono',monospace" }}>Unit: {metric.unit} · {metric.lowerIsBetter ? "Lower is better" : "Higher is better"}</span>
-                  </div>
-
-                  {/* Bars */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    {metric.data.map((d, i) => {
-                      const isNuclear = d.name === "Nuclear";
-                      const isBest = d.value === bestVal;
-                      const barPct = maxVal > 0 ? (d.value / maxVal) * 100 : 0;
-                      const color = ENERGY_SOURCE_COLORS[d.name] || "#8b7355";
-
-                      return (
-                        <div
-                          key={d.name}
-                          className="np-compare-bar"
-                          onMouseEnter={() => setHoveredSource(d.name)}
-                          onMouseLeave={() => setHoveredSource(null)}
-                          style={{
-                            display: "grid", gridTemplateColumns: "80px 1fr 90px", alignItems: "center", gap: 12,
-                            padding: "6px 0", position: "relative",
-                          }}
-                        >
-                          <span style={{
-                            fontSize: 13, fontWeight: isNuclear ? 700 : 500,
-                            color: isNuclear ? "var(--np-text)" : "var(--np-text-muted)",
-                          }}>{d.name}</span>
-
-                          <div style={{ position: "relative", height: 28, borderRadius: 6, background: "var(--np-surface-dim)", overflow: "hidden" }}>
-                            <motion.div
-                              initial={{ width: 0 }}
-                              whileInView={{ width: `${Math.max(barPct, 1.5)}%` }}
-                              viewport={{ once: true }}
-                              transition={{ duration: 1, ease: "easeOut", delay: i * 0.08 }}
-                              style={{
-                                position: "absolute", left: 0, top: 0, height: "100%", borderRadius: 6,
-                                background: isNuclear
-                                  ? "linear-gradient(90deg, #d4a54a, #c4935a)"
-                                  : color,
-                                opacity: isNuclear ? 1 : hoveredSource === d.name ? 0.85 : 0.55,
-                                transition: "opacity 0.2s",
-                              }}
-                            />
-
-                            {/* Hover tooltip */}
-                            {hoveredSource === d.name && (
-                              <div style={{
-                                position: "absolute", bottom: "calc(100% + 6px)", left: "50%", transform: "translateX(-50%)",
-                                background: "var(--np-dark-bg)", color: "var(--np-dark-text)", padding: "6px 12px", borderRadius: 8,
-                                fontSize: 11, whiteSpace: "nowrap", zIndex: 10, pointerEvents: "none",
-                                boxShadow: "0 4px 20px rgba(0,0,0,0.3)", border: "1px solid rgba(212,165,74,0.2)",
-                              }}>
-                                <span style={{ fontWeight: 700, color: isNuclear ? "#d4a54a" : color }}>{d.name}</span> — {d.value} {metric.unit}
-                                {isBest && <span style={{ marginLeft: 6, color: "#4ade80", fontSize: 10, fontWeight: 700 }}>BEST</span>}
-                              </div>
-                            )}
-                          </div>
-
-                          <span style={{
-                            fontFamily: "'DM Mono',monospace", fontSize: 14, fontWeight: 700, textAlign: "right",
-                            color: isBest ? (isNuclear ? "#d4a54a" : "#4ade80") : "var(--np-text)",
-                          }}>
-                            {d.value}{metric.unit === "%" ? "%" : ""}
-                            {isBest && <span style={{ fontSize: 9, marginLeft: 4, color: "#4ade80", fontWeight: 700 }}>★</span>}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Insight callout */}
-                  <div style={{
-                    marginTop: 24, padding: "18px 22px", borderRadius: 12,
-                    background: "rgba(212,165,74,0.06)", border: "1px solid rgba(212,165,74,0.15)",
-                  }}>
-                    <p style={{ fontSize: 14, color: "var(--np-text)", lineHeight: 1.6, margin: 0, fontWeight: 500 }}>
-                      {metric.insight}
-                    </p>
-                    <a
-                      href={metric.sourceUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ fontSize: 11, color: "#d4a54a", textDecoration: "none", fontWeight: 600, marginTop: 8, display: "inline-block" }}
-                    >
-                      Source: {metric.source} ↗
-                    </a>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
-        </div>
-      </section>
-
       {/* TIMELINE SECTION */}
-      <section ref={sectionRefs.timeline} style={{ padding: "100px 40px", background: "var(--np-dark-bg)", color: "var(--np-dark-text)", scrollMarginTop: 80 }}>
+      <section ref={sectionRefs.timeline} style={{ padding: "var(--np-section-y) var(--np-section-x)", background: "var(--np-dark-bg)", color: "var(--np-dark-text)", scrollMarginTop: 80 }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }} variants={staggerContainer}>
             <SectionLabel dark>History</SectionLabel>
@@ -1621,12 +2374,12 @@ export default function NuclearPulse() {
       </section>
 
       {/* Newsletter CTA */}
-      <section style={{ padding: "96px 40px", textAlign: "center", background: "var(--np-surface-dim)" }}>
+      <section style={{ padding: "var(--np-section-y) var(--np-section-x)", textAlign: "center", background: "var(--np-surface-dim)" }}>
         <div style={{ maxWidth: 560, margin: "0 auto" }}>
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }} variants={staggerContainer}>
             <SectionLabel>Newsletter</SectionLabel>
             <motion.h2 variants={fadeUp} style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(28px,3.5vw,44px)", fontWeight: 400, marginBottom: 12, lineHeight: 1.2 }}>
-              Stay informed on the <em style={{ color: "var(--np-text-muted)" }}>nuclear renaissance.</em>
+              Stay close to the <em style={{ color: "var(--np-text-muted)" }}>weekly atomic briefing.</em>
             </motion.h2>
             <motion.p variants={fadeUp} style={{ color: "var(--np-text-muted)", fontSize: 15, marginBottom: 36, lineHeight: 1.6 }}>Weekly briefings on reactor developments, policy, and market movements — sourced from World Nuclear News, ANS, IAEA, and more.</motion.p>
           </motion.div>
@@ -1638,15 +2391,23 @@ export default function NuclearPulse() {
           ) : (
             <div>
               <div className="np-newsletter-row" style={{ display: "flex", justifyContent: "center" }}>
-                <input type="email" placeholder="Enter your email"
+                <input
+                  aria-hidden="true"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  value={subWebsite}
+                  onChange={e => setSubWebsite(e.target.value)}
+                  style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
+                />
+                <input type="email" aria-label="Email address" placeholder="Enter your email"
                   value={subEmail}
-                  onChange={e => { setSubEmail(e.target.value); if (subStatus === "error") setSubStatus("idle"); }}
+                  onChange={e => setSubEmail(e.target.value)}
                   onKeyDown={e => e.key === "Enter" && handleSubscribe()}
                   disabled={subStatus === "loading"}
                   style={{ padding: "15px 22px", fontSize: 14, fontFamily: "'DM Sans',sans-serif", background: "var(--np-surface)", color: "var(--np-text)", border: `1px solid ${subStatus === "error" ? "rgba(248,113,113,0.5)" : "var(--np-border)"}`, borderRadius: "10px 0 0 10px", width: 320, outline: "none", borderRight: "none", transition: "border-color 0.2s", opacity: subStatus === "loading" ? 0.6 : 1 }}
                   onFocus={e => e.currentTarget.style.borderColor = "rgba(212,165,74,0.4)"}
                   onBlur={e => e.currentTarget.style.borderColor = subStatus === "error" ? "rgba(248,113,113,0.5)" : "var(--np-border)"} />
-                <button onClick={handleSubscribe} disabled={subStatus === "loading"}
+                <button aria-label="Subscribe to newsletter" onClick={handleSubscribe} disabled={subStatus === "loading"}
                   style={{ padding: "15px 32px", fontSize: 13, fontFamily: "'DM Sans',sans-serif", fontWeight: 600, background: "var(--np-text)", color: "var(--np-bg)", border: "none", borderRadius: "0 10px 10px 0", cursor: subStatus === "loading" ? "not-allowed" : "pointer", textTransform: "uppercase", letterSpacing: "0.04em", transition: "all 0.2s", opacity: subStatus === "loading" ? 0.6 : 1 }}
                   onMouseEnter={e => { if (subStatus !== "loading") e.currentTarget.style.opacity = "0.85"; }}
                   onMouseLeave={e => { if (subStatus !== "loading") e.currentTarget.style.opacity = "1"; }}>
@@ -1661,12 +2422,110 @@ export default function NuclearPulse() {
         </div>
       </section>
 
+      <AnimatePresence>
+        {showSubscribePopup && !isSubscribed && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={dismissSubscribePopup}
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(14,12,10,0.64)",
+              backdropFilter: "blur(10px)",
+              zIndex: 1100,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 18,
+            }}
+          >
+            <motion.div
+              ref={popupDialogRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="newsletter-popup-title"
+              tabIndex={-1}
+              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0, y: 18, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 18, scale: 0.96 }}
+              transition={{ type: "spring", damping: 28, stiffness: 320 }}
+              style={{
+                width: "min(92vw, 520px)",
+                borderRadius: 24,
+                border: "1px solid rgba(212,165,74,0.2)",
+                background: "linear-gradient(180deg, rgba(22,18,13,0.98) 0%, rgba(13,11,8,0.98) 100%)",
+                boxShadow: "0 28px 80px rgba(0,0,0,0.35)",
+                padding: isMobileViewport ? "24px 18px 20px" : "28px 26px 24px",
+                color: "#f5f0e8",
+                position: "relative",
+              }}
+            >
+              <button
+                type="button"
+                aria-label="Close newsletter popup"
+                onClick={dismissSubscribePopup}
+                style={{
+                  position: "absolute",
+                  top: 12,
+                  right: 12,
+                  width: 34,
+                  height: 34,
+                  borderRadius: "50%",
+                  border: "1px solid rgba(245,240,232,0.12)",
+                  background: "rgba(255,255,255,0.04)",
+                  color: "#f5f0e8",
+                  cursor: "pointer",
+                  fontSize: 20,
+                  lineHeight: 1,
+                }}
+              >
+                ×
+              </button>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#d4a54a" }}>
+                Weekly atomic briefing
+              </div>
+              <h3 id="newsletter-popup-title" style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(28px,4vw,40px)", lineHeight: 1.08, margin: "10px 0 10px" }}>
+                Don’t lose the signal.
+              </h3>
+              <p style={{ fontSize: 15, color: "rgba(245,240,232,0.72)", lineHeight: 1.7, margin: "0 0 18px" }}>
+                Get one sharp weekly email on reactor buildouts, uranium markets, policy fights, and the stories worth your attention.
+              </p>
+              <NewsletterCapture
+                surface="popup"
+                form={newsletterForms.popup}
+                success={false}
+                onEmailChange={handleNewsletterEmailChange}
+                onWebsiteChange={handleNewsletterWebsiteChange}
+                onSubmit={handleSubscribe}
+                placeholder="Email for the weekly briefing"
+                buttonLabel="Join free"
+                inputStyle={{
+                  width: "100%",
+                  background: "rgba(255,255,255,0.05)",
+                  color: "#f5f0e8",
+                  borderColor: "rgba(245,240,232,0.12)",
+                }}
+                buttonStyle={{
+                  background: "#f5f0e8",
+                  color: "#14120e",
+                }}
+                note="Free weekly email. No spam. Unsubscribe anytime."
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Footer */}
-      <footer style={{ background: "var(--np-dark-bg)", color: "var(--np-dark-text-muted)", padding: "48px 40px", fontSize: 12, borderTop: "1px solid rgba(212,165,74,0.1)" }}>
+      <footer style={{ background: "var(--np-dark-bg)", color: "var(--np-dark-text-muted)", padding: "var(--np-section-y-footer) var(--np-section-x)", fontSize: 12, borderTop: "1px solid rgba(212,165,74,0.1)" }}>
         <div className="np-footer-inner" style={{ maxWidth: 1200, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
             <span style={{ fontFamily: "'Playfair Display',serif", fontSize: 17, color: "#f5f0e8", fontWeight: 700 }}>⚛ Nuclear<em style={{ fontWeight: 400, color: "#d4a54a" }}> Pulse</em></span>
-            <div style={{ marginTop: 8, lineHeight: 1.5 }}>Comprehensive nuclear energy information hub.</div>
+            <div style={{ marginTop: 8, lineHeight: 1.5 }}>Live nuclear intelligence for the next industrial century.</div>
           </div>
           <div style={{ textAlign: "right", lineHeight: 1.6 }}>
             <div>Data sourced from IAEA PRIS, World Nuclear Association, and public markets.</div>
@@ -1677,17 +2536,28 @@ export default function NuclearPulse() {
 
       {/* Modals */}
       <AnimatePresence>
-        {selectedPlant && <PlantModal plant={selectedPlant} onClose={() => setSelectedPlant(null)} />}
+        {selectedPlant && (
+          <Suspense fallback={null}>
+            <PlantModal key={selectedPlant.name} plant={selectedPlant} onClose={() => setSelectedPlant(null)} />
+          </Suspense>
+        )}
       </AnimatePresence>
       <AnimatePresence>
-        {selectedStock && <StockModal stock={selectedStock} onClose={() => setSelectedStock(null)} />}
+        {selectedStock && (
+          <Suspense fallback={null}>
+            <StockModal stock={selectedStock} onClose={() => setSelectedStock(null)} />
+          </Suspense>
+        )}
       </AnimatePresence>
       <AnimatePresence>
-        {selectedCountry && <CountryModal country={selectedCountry} onClose={() => setSelectedCountry(null)} onSelectPlant={setSelectedPlant} />}
+        {selectedCountry && (
+          <Suspense fallback={null}>
+            <CountryModal country={selectedCountry} onClose={() => setSelectedCountry(null)} onSelectPlant={setSelectedPlant} />
+          </Suspense>
+        )}
       </AnimatePresence>
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
         @keyframes tickerScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
         ::selection{background:rgba(212,165,74,0.25);color:#1e1912}
       `}</style>
@@ -1695,5 +2565,3 @@ export default function NuclearPulse() {
     </MotionConfig>
   );
 }
-
-

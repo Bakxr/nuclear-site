@@ -1,16 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import useDialog from "../hooks/useDialog.js";
 
 export default function StockModal({ stock, onClose }) {
+  const dialogRef = useDialog(!!stock, onClose);
   const [timeRange, setTimeRange] = useState("3M");
-
-  // Lock background scroll while modal is open
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = prev; };
-  }, []);
 
   if (!stock) return null;
 
@@ -36,6 +31,11 @@ export default function StockModal({ stock, onClose }) {
       }}
     >
       <motion.div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="stock-modal-title"
+        tabIndex={-1}
         onClick={e => e.stopPropagation()}
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -47,7 +47,7 @@ export default function StockModal({ stock, onClose }) {
           boxShadow: "0 24px 80px rgba(0,0,0,0.5)",
         }}
       >
-        <button onClick={onClose} style={{
+        <button aria-label="Close stock details" onClick={onClose} style={{
           position: "absolute", top: 16, right: 20, background: "none", border: "none",
           color: "var(--np-dark-text-muted)", fontSize: 28, cursor: "pointer", lineHeight: 1,
         }}>×</button>
@@ -55,7 +55,7 @@ export default function StockModal({ stock, onClose }) {
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24 }}>
           <div>
             <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 13, color: "#d4a54a", fontWeight: 600, letterSpacing: "0.08em", marginBottom: 4 }}>{stock.sector}</div>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 28, fontWeight: 700, color: "#d4a54a" }}>{stock.ticker}</div>
+            <div id="stock-modal-title" style={{ fontFamily: "'DM Mono',monospace", fontSize: 28, fontWeight: 700, color: "#d4a54a" }}>{stock.ticker}</div>
             <div style={{ fontSize: 14, color: "rgba(245,240,232,0.5)", marginTop: 2 }}>{stock.name}</div>
           </div>
           <div style={{ textAlign: "right" }}>

@@ -1,40 +1,34 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { fetchPlantImage, getOSMTiles, normalizeReactorType } from "../services/plantAPI.js";
 import { REACTOR_TYPES, STATUS_COLORS } from "../data/constants.js";
 import ReactorDiagram from "./reactorDiagrams/index.jsx";
-import Reactor3D from "./reactorDiagrams/Reactor3D.jsx";
+import useDialog from "../hooks/useDialog.js";
+
+const Reactor3D = lazy(() => import("./reactorDiagrams/Reactor3D.jsx"));
+
+function ReactorViewerFallback() {
+  return <div style={{ height: 320, background: "var(--np-surface-dim)" }} />;
+}
 
 export default function PlantModal({ plant, onClose }) {
   // All hooks must be called unconditionally before any early return
+  const dialogRef = useDialog(!!plant, onClose);
   const [imageUrl, setImageUrl] = useState(null);
   const [imageLoading, setImageLoading] = useState(true);
   const [imgLoaded, setImgLoaded] = useState(false);
   const [reactorView, setReactorView] = useState("3d");
   const [copied, setCopied] = useState(false);
 
-  const normalizedType = useMemo(() => plant ? normalizeReactorType(plant.type) : null, [plant?.type]);
-  const reactorInfo = useMemo(
-    () => REACTOR_TYPES.find(r => r.type === normalizedType),
-    [normalizedType]
-  );
-  const annualTWh = useMemo(() => plant ? (plant.capacity * 8760 * 0.9 / 1e6).toFixed(1) : "0", [plant?.capacity]);
-  const co2Avoided = useMemo(() => (annualTWh * 0.42).toFixed(1), [annualTWh]);
-  const osmData = useMemo(() => plant ? getOSMTiles(plant.lat, plant.lng, 11) : null, [plant?.lat, plant?.lng]);
-
-  // Lock background scroll while modal is open
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = prev; };
-  }, []);
+  const normalizedType = plant ? normalizeReactorType(plant.type) : null;
+  const reactorInfo = REACTOR_TYPES.find((reactor) => reactor.type === normalizedType);
+  const annualTWh = plant ? (plant.capacity * 8760 * 0.9 / 1e6).toFixed(1) : "0";
+  const co2Avoided = (Number(annualTWh) * 0.42).toFixed(1);
+  const osmData = plant ? getOSMTiles(plant.lat, plant.lng, 11) : null;
 
   useEffect(() => {
     if (!plant) return;
     let cancelled = false;
-    setImageLoading(true);
-    setImageUrl(null);
-    setImgLoaded(false);
     fetchPlantImage(plant.name).then(url => {
       if (!cancelled) {
         setImageUrl(url);
@@ -42,17 +36,17 @@ export default function PlantModal({ plant, onClose }) {
       }
     });
     return () => { cancelled = true; };
-  }, [plant?.name]);
+  }, [plant]);
 
-  const copyLink = useCallback(() => {
+  function copyLink() {
     if (!plant) return;
     const url = new URL(window.location.href);
-    url.searchParams.set("plant", encodeURIComponent(plant.name));
+    url.searchParams.set("plant", plant.name);
     navigator.clipboard.writeText(url.toString()).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
-  }, [plant?.name]);
+  }
 
   if (!plant) return null;
 
@@ -81,6 +75,11 @@ export default function PlantModal({ plant, onClose }) {
       }}
     >
       <motion.div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="plant-modal-title"
+        tabIndex={-1}
         onClick={e => e.stopPropagation()}
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -94,7 +93,7 @@ export default function PlantModal({ plant, onClose }) {
         }}
       >
         {/* Close button — fixed to modal so it stays visible while scrolling */}
-        <button onClick={onClose} style={{
+        <button aria-label="Close plant details" onClick={onClose} style={{
           position: "absolute", top: 12, right: 12, width: 36, height: 36,
           background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)",
           border: "none", borderRadius: "50%", fontSize: 22, cursor: "pointer",
@@ -160,7 +159,7 @@ export default function PlantModal({ plant, onClose }) {
               <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", color: "#d4a54a", fontWeight: 700, marginBottom: 4 }}>
                 Nuclear Power Station
               </div>
-              <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(22px, 4vw, 32px)", fontWeight: 500, margin: 0, color: "#fff", lineHeight: 1.15 }}>
+              <h3 id="plant-modal-title" style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(22px, 4vw, 32px)", fontWeight: 500, margin: 0, color: "#fff", lineHeight: 1.15 }}>
                 {plant.name}
               </h3>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6 }}>
@@ -261,7 +260,11 @@ export default function PlantModal({ plant, onClose }) {
             </div>
             {/* View */}
             {reactorView === "3d"
-              ? <Reactor3D type={normalizedType} />
+              ? (
+                <Suspense fallback={<ReactorViewerFallback />}>
+                  <Reactor3D type={normalizedType} />
+                </Suspense>
+              )
               : <div style={{ padding: "0 20px 16px" }}><ReactorDiagram type={normalizedType} width={680} /></div>
             }
           </div>

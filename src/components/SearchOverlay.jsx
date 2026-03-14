@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { motion } from "framer-motion";
 import { NUCLEAR_SHARE, STATUS_COLORS } from "../data/constants.js";
 
 function highlight(text, query) {
@@ -17,7 +17,7 @@ function highlight(text, query) {
   );
 }
 
-export default function SearchOverlay({ query, plants, news, stocks, onSelectPlant, onSelectStock, onSelectCountry, onClose, scrollTo }) {
+export default function SearchOverlay({ query, plants, news, stocks, onSelectPlant, onSelectStock, onSelectCountry, onClose }) {
   const [cursor, setCursor] = useState(-1);
   const overlayRef = useRef(null);
 
@@ -65,6 +65,13 @@ export default function SearchOverlay({ query, plants, news, stocks, onSelectPla
   useEffect(() => { setCursor(-1); }, [q]);
 
   // Keyboard navigation
+  const handleSelect = useCallback((item) => {
+    if (item.type === "plant") { onSelectPlant(item.data); onClose(); }
+    if (item.type === "stock") { onSelectStock(item.data); onClose(); }
+    if (item.type === "news") { window.open(item.data.url, "_blank", "noopener,noreferrer"); onClose(); }
+    if (item.type === "country") { onSelectCountry(item.data.country); onClose(); }
+  }, [onClose, onSelectCountry, onSelectPlant, onSelectStock]);
+
   useEffect(() => {
     const handler = (e) => {
       if (e.key === "Escape") { onClose(); return; }
@@ -79,7 +86,7 @@ export default function SearchOverlay({ query, plants, news, stocks, onSelectPla
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [cursor, allResults, totalCount]);
+  }, [allResults, cursor, handleSelect, onClose, totalCount]);
 
   // Scroll highlighted item into view
   useEffect(() => {
@@ -88,13 +95,6 @@ export default function SearchOverlay({ query, plants, news, stocks, onSelectPla
       el?.scrollIntoView({ block: "nearest" });
     }
   }, [cursor]);
-
-  function handleSelect(item) {
-    if (item.type === "plant") { onSelectPlant(item.data); onClose(); }
-    if (item.type === "stock") { onSelectStock(item.data); onClose(); }
-    if (item.type === "news") { window.open(item.data.url, "_blank", "noopener,noreferrer"); onClose(); }
-    if (item.type === "country") { onSelectCountry(item.data.country); onClose(); }
-  }
 
   let globalIdx = 0;
 
@@ -109,6 +109,7 @@ export default function SearchOverlay({ query, plants, news, stocks, onSelectPla
 
   return (
     <motion.div
+      aria-label="Search results"
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
@@ -116,7 +117,7 @@ export default function SearchOverlay({ query, plants, news, stocks, onSelectPla
       ref={overlayRef}
       style={{
         position: "absolute", top: "calc(100% + 8px)", right: 0,
-        width: 480, maxHeight: 520, overflowY: "auto",
+        width: "min(480px, calc(100vw - 32px))", maxHeight: 520, overflowY: "auto",
         background: "var(--np-surface)", border: "1px solid var(--np-border-strong)",
         borderRadius: 14, boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
         zIndex: 200,
@@ -141,12 +142,17 @@ export default function SearchOverlay({ query, plants, news, stocks, onSelectPla
             if (section.key === "plant") {
               const p = result;
               return (
-                <div key={p.name} data-idx={myIdx} onClick={() => handleSelect({ type: "plant", data: p })}
+                <button
+                  type="button"
+                  key={p.name}
+                  data-idx={myIdx}
+                  onClick={() => handleSelect({ type: "plant", data: p })}
                   style={{
                     padding: "10px 16px", cursor: "pointer", display: "flex",
                     justifyContent: "space-between", alignItems: "center",
                     background: isActive ? "rgba(212,165,74,0.08)" : "transparent",
                     transition: "background 0.1s",
+                    width: "100%", border: "none", textAlign: "left", fontFamily: "'DM Sans',sans-serif",
                   }}
                   onMouseEnter={() => setCursor(myIdx)}
                 >
@@ -158,7 +164,7 @@ export default function SearchOverlay({ query, plants, news, stocks, onSelectPla
                     <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 12, fontWeight: 600 }}>{p.capacity.toLocaleString()} MW</div>
                     <div style={{ fontSize: 10, color: STATUS_COLORS[p.status] || STATUS_COLORS.Idle }}>● {p.status}</div>
                   </div>
-                </div>
+                </button>
               );
             }
 
@@ -166,12 +172,17 @@ export default function SearchOverlay({ query, plants, news, stocks, onSelectPla
               const s = result;
               const isUp = (s.pct || 0) >= 0;
               return (
-                <div key={s.ticker} data-idx={myIdx} onClick={() => handleSelect({ type: "stock", data: s })}
+                <button
+                  type="button"
+                  key={s.ticker}
+                  data-idx={myIdx}
+                  onClick={() => handleSelect({ type: "stock", data: s })}
                   style={{
                     padding: "10px 16px", cursor: "pointer", display: "flex",
                     justifyContent: "space-between", alignItems: "center",
                     background: isActive ? "rgba(212,165,74,0.08)" : "transparent",
                     transition: "background 0.1s",
+                    width: "100%", border: "none", textAlign: "left", fontFamily: "'DM Sans',sans-serif",
                   }}
                   onMouseEnter={() => setCursor(myIdx)}
                 >
@@ -183,7 +194,7 @@ export default function SearchOverlay({ query, plants, news, stocks, onSelectPla
                     {s.price > 0 && <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 13, fontWeight: 600 }}>${s.price.toFixed(2)}</div>}
                     {s.pct !== undefined && <div style={{ fontSize: 11, color: isUp ? "#4ade80" : "#f87171" }}>{isUp ? "+" : ""}{s.pct.toFixed(2)}%</div>}
                   </div>
-                </div>
+                </button>
               );
             }
 
@@ -220,12 +231,17 @@ export default function SearchOverlay({ query, plants, news, stocks, onSelectPla
             if (section.key === "country") {
               const c = result;
               return (
-                <div key={c.country} data-idx={myIdx} onClick={() => handleSelect({ type: "country", data: c })}
+                <button
+                  type="button"
+                  key={c.country}
+                  data-idx={myIdx}
+                  onClick={() => handleSelect({ type: "country", data: c })}
                   style={{
                     padding: "10px 16px", cursor: "pointer", display: "flex",
                     justifyContent: "space-between", alignItems: "center",
                     background: isActive ? "rgba(212,165,74,0.08)" : "transparent",
                     transition: "background 0.1s",
+                    width: "100%", border: "none", textAlign: "left", fontFamily: "'DM Sans',sans-serif",
                   }}
                   onMouseEnter={() => setCursor(myIdx)}
                 >
@@ -239,7 +255,7 @@ export default function SearchOverlay({ query, plants, news, stocks, onSelectPla
                   <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 15, fontWeight: 700, color: "#d4a54a" }}>
                     {c.nuclear}%
                   </div>
-                </div>
+                </button>
               );
             }
 

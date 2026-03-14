@@ -1,21 +1,27 @@
 import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY  // service key needed to update any row
-);
+import { verifyUnsubscribeToken } from "./_lib/unsubscribe.js";
 
 export default async function handler(req, res) {
-  const { email } = req.query;
+  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
+    return res.status(500).send(page('Server configuration is incomplete.', false));
+  }
 
-  if (!email) {
+  const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_KEY
+  );
+
+  const { token } = req.query;
+  const verification = verifyUnsubscribeToken(token);
+
+  if (!verification.valid) {
     return res.status(400).send(page('Invalid unsubscribe link.', false));
   }
 
   const { error } = await supabase
     .from('subscribers')
     .update({ active: false })
-    .eq('email', decodeURIComponent(email).toLowerCase().trim());
+    .eq('email', verification.email);
 
   if (error) {
     console.error('[unsubscribe]', error.message);

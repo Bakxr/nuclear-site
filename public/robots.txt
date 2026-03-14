@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://atomic-energy.vercel.app/sitemap.xml

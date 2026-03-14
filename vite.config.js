@@ -4,6 +4,17 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/three')) return 'three-vendor'
+          if (id.includes('node_modules/recharts') || id.includes('node_modules/d3')) return 'charts-vendor'
+          if (id.includes('node_modules/framer-motion')) return 'motion-vendor'
+        },
+      },
+    },
+  },
   plugins: [
     react(),
     VitePWA({

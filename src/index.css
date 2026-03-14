@@ -20,6 +20,10 @@
   --np-card-bg: #f5f0e8;
   --np-card-border: rgba(30, 25, 18, 0.05);
   --np-containment-bg: #e8e2d6;
+  --np-section-x: 40px;
+  --np-section-y: 96px;
+  --np-section-y-tight: 72px;
+  --np-section-y-footer: 48px;
 }
 
 :root.dark {
@@ -41,6 +45,10 @@
   --np-card-bg: #1e1912;
   --np-card-border: rgba(245, 240, 232, 0.06);
   --np-containment-bg: #1a1714;
+  --np-section-x: 40px;
+  --np-section-y: 96px;
+  --np-section-y-tight: 72px;
+  --np-section-y-footer: 48px;
 }
 
 * {
@@ -55,6 +63,17 @@ body {
   font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.np-hero-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(30, 25, 18, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(30, 25, 18, 0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.75), transparent 88%);
+  pointer-events: none;
 }
 
 #root {
@@ -91,7 +110,7 @@ body {
   }
 }
 
-/* Hamburger button — hidden on desktop */
+/* Hamburger button hidden on desktop */
 .np-hamburger {
   display: none;
   background: none;
@@ -101,15 +120,53 @@ body {
   color: var(--np-text);
 }
 
-/* Mobile dropdown menu — hidden on desktop */
+/* Mobile dropdown menu hidden on desktop */
 .np-mobile-menu {
   display: none;
+}
+
+.np-data-pill,
+.np-data-chip {
+  appearance: none;
+  border-radius: 999px;
+  padding: 9px 16px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.np-data-pill:hover,
+.np-data-chip:hover {
+  transform: translateY(-1px);
+}
+
+.np-data-shell a:hover {
+  color: #d4a54a !important;
+}
+
+.np-first-fold {
+  min-height: calc(100svh - 108px);
 }
 
 /* ====================================================================
    TABLET  (max-width: 768px)
    ==================================================================== */
 @media (max-width: 768px) {
+  :root,
+  :root.dark {
+    --np-section-x: 20px;
+    --np-section-y: 88px;
+    --np-section-y-tight: 64px;
+  }
+
+  .np-first-fold {
+    min-height: auto !important;
+  }
+
   /* Nav */
   .np-nav {
     padding: 12px 16px !important;
@@ -162,19 +219,28 @@ body {
   .np-stats-grid {
     grid-template-columns: repeat(3, 1fr) !important;
     gap: 0 !important;
+    background: transparent !important;
   }
   .np-stats-grid a {
-    border-right: 1px solid var(--np-border) !important;
-    border-bottom: 1px solid var(--np-border) !important;
-    padding: 24px 12px !important;
-  }
-  .np-stats-grid a:nth-child(3n) {
     border-right: none !important;
+    border-bottom: none !important;
+    padding: 20px 12px !important;
+    background: transparent !important;
   }
-
-  /* Hero */
   .np-hero {
-    padding: 64px 20px 40px !important;
+    padding: 56px 20px 18px !important;
+  }
+  .np-hero-signals {
+    grid-template-columns: 1fr !important;
+    margin-top: 24px !important;
+    gap: 10px !important;
+  }
+  .np-hero-signal-card {
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 14px 0 !important;
+    background: transparent !important;
   }
 
   /* Globe */
@@ -182,16 +248,48 @@ body {
     grid-template-columns: 1fr !important;
     min-height: auto !important;
   }
+  .np-globe-main {
+    grid-template-columns: 1fr !important;
+  }
+  .np-globe-rail {
+    grid-template-columns: 1fr !important;
+  }
+  .np-globe-stage {
+    min-height: 400px !important;
+  }
   .np-globe-header {
     flex-direction: column !important;
     align-items: flex-start !important;
     gap: 12px !important;
+  }
+  .np-globe-controls {
+    top: 10px !important;
+    right: 10px !important;
+    gap: 6px !important;
+  }
+  .np-globe-controls button {
+    min-width: 36px !important;
+    height: 34px !important;
+    padding: 0 10px !important;
+  }
+  .np-globe-status {
+    left: 10px !important;
+    right: 10px !important;
+    bottom: 10px !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    padding: 8px 10px !important;
+    font-size: 10px !important;
+    letter-spacing: 0.06em !important;
   }
 
   /* Data section — tighter horizontal padding */
   .np-data-section {
     padding-left: 20px !important;
     padding-right: 20px !important;
+  }
+  .np-data-toolbar {
+    padding: 18px !important;
   }
 
   /* Data rows — hide sub-info column, widen value column */
@@ -210,10 +308,22 @@ body {
   .np-compare-bar {
     grid-template-columns: 60px 1fr 70px !important;
   }
+  .np-proof-row {
+    grid-template-columns: 16px 64px 1fr 70px 96px !important;
+  }
+  .np-data-pill,
+  .np-data-chip {
+    padding: 8px 13px !important;
+    letter-spacing: 0.04em !important;
+  }
 
   /* PlantModal body grid */
   .np-plant-modal-body-grid {
     grid-template-columns: 1fr !important;
+  }
+
+  .np-country-stats {
+    grid-template-columns: repeat(2, 1fr) !important;
   }
 
   /* Timeline — single column */
@@ -240,26 +350,29 @@ body {
    MOBILE  (max-width: 640px)
    ==================================================================== */
 @media (max-width: 640px) {
+  :root,
+  :root.dark {
+    --np-section-x: 16px;
+    --np-section-y: 80px;
+    --np-section-y-tight: 56px;
+  }
   /* Stats — 2 columns, flush join with hero */
   .np-stats-grid {
     grid-template-columns: repeat(2, 1fr) !important;
     gap: 0 !important;
   }
   .np-stats-grid a {
-    border-right: 1px solid var(--np-border) !important;
-    border-bottom: 1px solid var(--np-border) !important;
-    padding: 20px 12px !important;
-  }
-  .np-stats-grid a:nth-child(3n) {
-    border-right: 1px solid var(--np-border) !important;
-  }
-  .np-stats-grid a:nth-child(2n) {
     border-right: none !important;
+    border-bottom: none !important;
+    padding: 18px 10px !important;
   }
 
   /* Hero */
   .np-hero {
-    padding: 48px 16px 32px !important;
+    padding: 44px 16px 10px !important;
+  }
+  .np-hero-signals {
+    gap: 4px !important;
   }
   .np-hero-search {
     flex-direction: column !important;
@@ -272,6 +385,9 @@ body {
   .np-hero-search button {
     border-radius: 0 0 10px 10px !important;
     width: 100% !important;
+  }
+  .np-globe-stage {
+    min-height: 340px !important;
   }
 
   /* Reduce section side-padding */
@@ -300,8 +416,22 @@ body {
     grid-template-columns: 26px 58px 1fr 66px 18px !important;
     gap: 6px !important;
   }
+  .np-proof-row {
+    grid-template-columns: 14px 52px 1fr 60px 70px !important;
+  }
   .np-data-value {
     font-size: 11px !important;
+  }
+  .np-data-shell {
+    border-radius: 18px !important;
+  }
+  .np-data-toolbar {
+    padding: 16px !important;
+  }
+  .np-data-pill,
+  .np-data-chip {
+    font-size: 11px !important;
+    padding: 8px 12px !important;
   }
 
   /* Reactor viewer header — stack title above buttons on mobile */
@@ -322,6 +452,11 @@ body {
   .np-plant-modal-body > div:last-child {
     padding: 16px 16px 16px !important;
   }
+
+  .np-country-stats {
+    grid-template-columns: 1fr !important;
+  }
+
 
   /* Newsletter — stacked */
   .np-newsletter-row {
@@ -385,4 +520,7 @@ h1, h2 {
     animation-duration: 40s !important;
     animation-iteration-count: infinite !important;
   }
+}
+
+@media (max-width: 640px) {
 }

@@ -1,23 +1,20 @@
 import { motion } from "framer-motion";
 import { useMemo } from "react";
-import { COUNTRY_PROFILES } from "../data/countryProfiles.js";
-import { NUCLEAR_PLANTS } from "../data/plants.js";
-import { NUCLEAR_SHARE, STATUS_COLORS } from "../data/constants.js";
+import { STATUS_COLORS } from "../data/constants.js";
+import useDialog from "../hooks/useDialog.js";
+import { getCountryProfile, getCountryShare, getPlantsForCountry, normalizeCountryName } from "../utils/countries.js";
 
 export default function CountryModal({ country, onClose, onSelectPlant }) {
-  if (!country) return null;
-
-  const profile = COUNTRY_PROFILES[country];
-  const shareData = NUCLEAR_SHARE.find(c => c.country === country);
+  const dialogRef = useDialog(!!country, onClose);
+  const normalizedCountry = useMemo(() => normalizeCountryName(country), [country]);
+  const profile = useMemo(() => getCountryProfile(normalizedCountry), [normalizedCountry]);
+  const shareData = useMemo(() => getCountryShare(normalizedCountry), [normalizedCountry]);
   const plants = useMemo(
-    () => NUCLEAR_PLANTS.filter(p => p.country === country),
-    [country]
+    () => getPlantsForCountry(normalizedCountry),
+    [normalizedCountry]
   );
 
-  if (!profile || !shareData) return null;
-
-  const operatingCount = plants.filter(p => p.status === "Operating").length;
-  const totalCapacity = plants.reduce((sum, p) => sum + p.capacity, 0);
+  if (!country || !profile || !shareData) return null;
 
   return (
     <motion.div
@@ -32,6 +29,11 @@ export default function CountryModal({ country, onClose, onSelectPlant }) {
       }}
     >
       <motion.div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="country-modal-title"
+        tabIndex={-1}
         onClick={e => e.stopPropagation()}
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -53,17 +55,17 @@ export default function CountryModal({ country, onClose, onSelectPlant }) {
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
               <span style={{ fontSize: 36 }}>{shareData.flag}</span>
               <div>
-                <h3 style={{
+                <h3 id="country-modal-title" style={{
                   fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 500,
                   margin: 0, color: "var(--np-text)", lineHeight: 1.1,
-                }}>{country}</h3>
+                }}>{shareData.country}</h3>
                 <span style={{ fontSize: 12, color: "var(--np-text-muted)", fontWeight: 600 }}>
                   {shareData.nuclear}% nuclear electricity
                 </span>
               </div>
             </div>
           </div>
-          <button onClick={onClose} style={{
+          <button aria-label="Close country details" onClick={onClose} style={{
             background: "var(--np-surface-dim)", border: "none", borderRadius: "50%",
             width: 36, height: 36, fontSize: 20, cursor: "pointer",
             color: "var(--np-text-muted)", display: "flex", alignItems: "center", justifyContent: "center",
@@ -74,7 +76,7 @@ export default function CountryModal({ country, onClose, onSelectPlant }) {
         <div style={{ overflowY: "auto", padding: "20px 28px 24px", flex: 1 }}>
 
           {/* 4-stat grid */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 24 }}>
+          <div className="np-country-stats" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 24 }}>
             {profile.keyFacts.map((fact, i) => (
               <div key={i} style={{
                 background: "var(--np-surface-dim)", borderRadius: 10, padding: "12px 14px", textAlign: "center",
@@ -113,7 +115,8 @@ export default function CountryModal({ country, onClose, onSelectPlant }) {
             </h4>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {plants.map((p, i) => (
-                <span
+                <button
+                  type="button"
                   key={i}
                   onClick={() => {
                     onClose();
@@ -123,7 +126,7 @@ export default function CountryModal({ country, onClose, onSelectPlant }) {
                     background: "var(--np-surface-dim)", border: "1px solid var(--np-card-border)",
                     borderRadius: 8, padding: "6px 12px", fontSize: 12, cursor: "pointer",
                     transition: "all 0.2s", display: "inline-flex", alignItems: "center", gap: 6,
-                    color: "var(--np-text)",
+                    color: "var(--np-text)", fontFamily: "'DM Sans',sans-serif",
                   }}
                   onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(212,165,74,0.3)"; e.currentTarget.style.background = "rgba(212,165,74,0.08)"; }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--np-card-border)"; e.currentTarget.style.background = "var(--np-surface-dim)"; }}
@@ -134,7 +137,7 @@ export default function CountryModal({ country, onClose, onSelectPlant }) {
                     width: 6, height: 6, borderRadius: "50%",
                     background: STATUS_COLORS[p.status] || STATUS_COLORS.Idle,
                   }} />
-                </span>
+                </button>
               ))}
             </div>
           </div>

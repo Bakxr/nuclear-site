@@ -1,7 +1,4 @@
 export default function PWRDiagram({ width = 680, accent = "#d4a54a" }) {
-  const s = width / 680;
-  const sc = (v) => Math.round(v * s);
-
   return (
     <svg viewBox="0 0 680 280" width={width} height={Math.round(width * 280 / 680)} style={{ display: "block", maxWidth: "100%", height: "auto" }} aria-label="Pressurized Water Reactor diagram">
       <defs>

@@ -31,3 +31,4 @@ jobs:
           FINNHUB_API_KEY:      ${{ secrets.VITE_FINNHUB_API_KEY }}
           NEWSLETTER_FROM:      ${{ secrets.NEWSLETTER_FROM }}
           SITE_URL:             ${{ secrets.SITE_URL }}
+          UNSUBSCRIBE_SECRET:   ${{ secrets.UNSUBSCRIBE_SECRET }}

@@ -2,6 +2,15 @@ import { useState, useEffect, useRef } from "react";
 import * as THREE from "three";
 import * as d3 from "d3";
 import { STATUS_COLORS, STATUS_COLORS_HEX } from "../data/constants.js";
+import { SUPPLY_STAGE_COLORS } from "../data/supplySites.js";
+
+const CAMERA_DEFAULT_Z = 3.05;
+const CAMERA_MIN_Z = 1.85;
+const CAMERA_MAX_Z = 4.4;
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
 
 function latLngToVector3(lat, lng, radius) {
   const phi = (90 - lat) * (Math.PI / 180);
@@ -77,20 +86,51 @@ function fetchLand() {
   return landFetchPromise;
 }
 
-export default function Globe({ onSelectPlant, plants }) {
+export default function Globe({ onSelectPlant, plants, mode = "reactors" }) {
   const mountRef = useRef(null);
+  const cameraRef = useRef(null);
+  const canvasRef = useRef(null);
   const [hoveredPlant, setHoveredPlant] = useState(null);
   const [tooltip, setTooltip] = useState({ visible: false, x: 0, y: 0 });
+  const [zoomLevel, setZoomLevel] = useState(CAMERA_DEFAULT_Z);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isInteractive, setIsInteractive] = useState(false);
   const isDragging = useRef(false);
   const hasDragged = useRef(false);
   const previousMouse = useRef({ x: 0, y: 0 });
   const rotation = useRef({ x: 0.3, y: -1.0 });
   const autoRotate = useRef(true);
   const autoRotateTimer = useRef(null);
+  const onSelectPlantRef = useRef(onSelectPlant);
+  const modeRef = useRef(mode);
 
   // Shared refs between the two effects
   const pivotGroupRef = useRef(null);
   const markersRef = useRef([]);
+
+  useEffect(() => {
+    onSelectPlantRef.current = onSelectPlant;
+  }, [onSelectPlant]);
+
+  useEffect(() => {
+    modeRef.current = mode;
+  }, [mode]);
+
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      setIsFullscreen(document.fullscreenElement === mountRef.current);
+      window.setTimeout(() => window.dispatchEvent(new Event("resize")), 50);
+    };
+
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
+  }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    canvas.style.pointerEvents = isInteractive ? "auto" : "none";
+  }, [isInteractive]);
 
   // ── Effect 1: One-time scene setup (renderer, lights, globe, atmosphere, animation loop) ──
   useEffect(() => {
@@ -101,11 +141,14 @@ export default function Globe({ onSelectPlant, plants }) {
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000);
-    camera.position.z = 2.8;
+    camera.position.z = CAMERA_DEFAULT_Z;
+    cameraRef.current = camera;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
     renderer.setSize(w, h);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    canvasRef.current = renderer.domElement;
+    renderer.domElement.style.pointerEvents = "none";
     mount.appendChild(renderer.domElement);
 
     // Lights
@@ -117,6 +160,23 @@ export default function Globe({ onSelectPlant, plants }) {
     rim.position.set(-3, -2, -3);
     scene.add(rim);
 
+    // Star field background
+    const starsGeom = new THREE.BufferGeometry();
+    const starCount = 1400;
+    const starPositions = new Float32Array(starCount * 3);
+    for (let i = 0; i < starCount; i++) {
+      const radius = 9 + Math.random() * 7;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos((Math.random() * 2) - 1);
+      starPositions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+      starPositions[i * 3 + 1] = radius * Math.cos(phi);
+      starPositions[i * 3 + 2] = radius * Math.sin(phi) * Math.sin(theta);
+    }
+    starsGeom.setAttribute("position", new THREE.BufferAttribute(starPositions, 3));
+    const starsMat = new THREE.PointsMaterial({ color: 0xd7e6ff, size: 0.035, transparent: true, opacity: 0.75 });
+    const starField = new THREE.Points(starsGeom, starsMat);
+    scene.add(starField);
+
     // Pivot group for all rotating elements
     const pivotGroup = new THREE.Group();
     scene.add(pivotGroup);
@@ -124,7 +184,7 @@ export default function Globe({ onSelectPlant, plants }) {
 
     // Ocean sphere
     const oceanGeom = new THREE.SphereGeometry(0.995, 96, 96);
-    const oceanMat = new THREE.MeshPhongMaterial({ color: 0x1a3a5c, shininess: 60, transparent: true, opacity: 0.95 });
+    const oceanMat = new THREE.MeshPhongMaterial({ color: 0x102a46, emissive: 0x081726, shininess: 90, transparent: true, opacity: 0.96 });
     const ocean = new THREE.Mesh(oceanGeom, oceanMat);
     pivotGroup.add(ocean);
 
@@ -148,16 +208,16 @@ export default function Globe({ onSelectPlant, plants }) {
       ctx.fillRect(0, 0, 2048, 1024);
 
       if (land) {
-        ctx.fillStyle = "#c8b89a";
-        ctx.strokeStyle = "#a89878";
+        ctx.fillStyle = "#d5c2a2";
+        ctx.strokeStyle = "#8f826c";
         ctx.lineWidth = 0.5;
         ctx.beginPath();
         path(land);
         ctx.fill();
         ctx.stroke();
 
-        ctx.strokeStyle = "rgba(212,165,74,0.12)";
-        ctx.lineWidth = 0.5;
+        ctx.strokeStyle = "rgba(212,165,74,0.16)";
+        ctx.lineWidth = 0.6;
         const graticule = d3.geoGraticule().step([15, 15])();
         ctx.beginPath();
         path(graticule);
@@ -185,6 +245,15 @@ export default function Globe({ onSelectPlant, plants }) {
       transparent: true,
     });
     scene.add(new THREE.Mesh(atmosGeom, atmosMat));
+
+    const haloGeom = new THREE.SphereGeometry(1.12, 64, 64);
+    const haloMat = new THREE.MeshBasicMaterial({
+      color: 0xd4a54a,
+      transparent: true,
+      opacity: 0.05,
+      side: THREE.BackSide,
+    });
+    scene.add(new THREE.Mesh(haloGeom, haloMat));
 
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
@@ -253,7 +322,7 @@ export default function Globe({ onSelectPlant, plants }) {
       mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
       raycaster.setFromCamera(mouse, camera);
       const hits = raycaster.intersectObjects(markersRef.current);
-      if (hits.length > 0) onSelectPlant(hits[0].object.userData.plant);
+      if (hits.length > 0 && modeRef.current === "reactors") onSelectPlantRef.current?.(hits[0].object.userData.plant);
     };
 
     // ── Touch handlers (mobile) ──────────────────────────────────────────
@@ -290,8 +359,15 @@ export default function Globe({ onSelectPlant, plants }) {
         mouse.y = -((t.clientY - rect.top) / rect.height) * 2 + 1;
         raycaster.setFromCamera(mouse, camera);
         const hits = raycaster.intersectObjects(markersRef.current);
-        if (hits.length > 0) onSelectPlant(hits[0].object.userData.plant);
+        if (hits.length > 0 && modeRef.current === "reactors") onSelectPlantRef.current?.(hits[0].object.userData.plant);
       }
+    };
+
+    const onWheel = (e) => {
+      e.preventDefault();
+      const nextZ = clamp(camera.position.z + (e.deltaY * 0.0028), CAMERA_MIN_Z, CAMERA_MAX_Z);
+      camera.position.z = nextZ;
+      setZoomLevel(nextZ);
     };
 
     const el = renderer.domElement;
@@ -300,6 +376,7 @@ export default function Globe({ onSelectPlant, plants }) {
     el.addEventListener("mouseup", onMouseUp);
     el.addEventListener("mouseleave", onMouseUp);
     el.addEventListener("click", onClick);
+    el.addEventListener("wheel", onWheel, { passive: false });
     el.addEventListener("touchstart", onTouchStart, { passive: true });
     el.addEventListener("touchmove", onTouchMove, { passive: false });
     el.addEventListener("touchend", onTouchEnd, { passive: true });
@@ -320,6 +397,7 @@ export default function Globe({ onSelectPlant, plants }) {
       el.removeEventListener("mouseup", onMouseUp);
       el.removeEventListener("mouseleave", onMouseUp);
       el.removeEventListener("click", onClick);
+      el.removeEventListener("wheel", onWheel);
       el.removeEventListener("touchstart", onTouchStart);
       el.removeEventListener("touchmove", onTouchMove);
       el.removeEventListener("touchend", onTouchEnd);
@@ -329,10 +407,16 @@ export default function Globe({ onSelectPlant, plants }) {
       oceanMat.dispose();
       atmosGeom.dispose();
       atmosMat.dispose();
+      haloGeom.dispose();
+      haloMat.dispose();
+      starsGeom.dispose();
+      starsMat.dispose();
       globeGeom?.dispose();
       globeMat?.dispose();
       landTexture?.dispose();
       renderer.dispose();
+      cameraRef.current = null;
+      canvasRef.current = null;
       pivotGroupRef.current = null;
       if (mount.contains(el)) mount.removeChild(el);
     };
@@ -355,9 +439,11 @@ export default function Globe({ onSelectPlant, plants }) {
     const markers = [];
     plants.forEach((plant, i) => {
       const pos = latLngToVector3(plant.lat, plant.lng, 1.015);
-      const color = STATUS_COLORS_HEX[plant.status] ?? STATUS_COLORS_HEX.Shutdown;
+      const color = mode === "reactors"
+        ? (STATUS_COLORS_HEX[plant.status] ?? STATUS_COLORS_HEX.Shutdown)
+        : (SUPPLY_STAGE_COLORS[plant.stage] || "#d4a54a");
 
-      const markerGeom = new THREE.SphereGeometry(0.012, 10, 10);
+      const markerGeom = new THREE.SphereGeometry(mode === "reactors" ? 0.012 : 0.016, 10, 10);
       const markerMat = new THREE.MeshBasicMaterial({ color });
       const marker = new THREE.Mesh(markerGeom, markerMat);
       marker.position.copy(pos);
@@ -366,7 +452,7 @@ export default function Globe({ onSelectPlant, plants }) {
       pivotGroup.add(marker);
 
       // Glow ring
-      const ringGeom = new THREE.RingGeometry(0.014, 0.024, 16);
+      const ringGeom = new THREE.RingGeometry(mode === "reactors" ? 0.014 : 0.018, mode === "reactors" ? 0.024 : 0.032, 16);
       const ringMat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.3, side: THREE.DoubleSide });
       const ring = new THREE.Mesh(ringGeom, ringMat);
       ring.position.copy(pos);
@@ -387,10 +473,193 @@ export default function Globe({ onSelectPlant, plants }) {
         m.material?.dispose();
       });
     };
-  }, [plants]);
+  }, [plants, mode]);
+
+  function setCameraZoom(nextZ) {
+    const camera = cameraRef.current;
+    if (!camera) return;
+    const safeZoom = clamp(nextZ, CAMERA_MIN_Z, CAMERA_MAX_Z);
+    camera.position.z = safeZoom;
+    setZoomLevel(safeZoom);
+  }
+
+  function resetView() {
+    rotation.current = { x: 0.3, y: -1.0 };
+    autoRotate.current = true;
+    setHoveredPlant(null);
+    setTooltip((prev) => ({ ...prev, visible: false }));
+    setCameraZoom(CAMERA_DEFAULT_Z);
+  }
+
+  function disengage() {
+    setIsInteractive(false);
+    setHoveredPlant(null);
+    setTooltip((prev) => ({ ...prev, visible: false }));
+  }
+
+  async function toggleFullscreen() {
+    const mount = mountRef.current;
+    if (!mount) return;
+
+    if (document.fullscreenElement === mount) {
+      await document.exitFullscreen();
+      return;
+    }
+
+    await mount.requestFullscreen?.();
+  }
+
+  const controlButtonStyle = {
+    border: "1px solid rgba(212,165,74,0.28)",
+    background: "rgba(20,18,14,0.72)",
+    color: "#f5f0e8",
+    fontFamily: "'DM Sans',sans-serif",
+    fontWeight: 700,
+    cursor: "pointer",
+    backdropFilter: "blur(12px)",
+    boxShadow: "0 8px 24px rgba(0,0,0,0.22)",
+  };
 
   return (
-    <div ref={mountRef} style={{ width: "100%", height: "100%", position: "relative", cursor: "grab", borderRadius: 16, overflow: "hidden" }}>
+    <div
+      ref={mountRef}
+      onClick={() => {
+        if (!isInteractive) setIsInteractive(true);
+      }}
+      style={{
+        width: "100%",
+        height: "100%",
+        position: "relative",
+        cursor: isInteractive ? "grab" : "pointer",
+        borderRadius: 16,
+        overflow: "hidden",
+        touchAction: isInteractive ? "none" : "auto",
+      }}
+    >
+      {isInteractive && (
+      <div className="np-globe-controls" style={{
+        position: "absolute",
+        top: 14,
+        right: 14,
+        zIndex: 12,
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+      }}>
+        <button
+          type="button"
+          aria-label="Zoom in"
+          onClick={() => setCameraZoom(zoomLevel - 0.28)}
+          style={{
+            ...controlButtonStyle,
+            minWidth: 40,
+            height: 38,
+            padding: "0 12px",
+            borderRadius: 999,
+            fontSize: 20,
+            letterSpacing: "0",
+          }}
+        >
+          +
+        </button>
+        <button
+          type="button"
+          aria-label="Zoom out"
+          onClick={() => setCameraZoom(zoomLevel + 0.28)}
+          style={{
+            ...controlButtonStyle,
+            minWidth: 40,
+            height: 38,
+            padding: "0 12px",
+            borderRadius: 999,
+            fontSize: 20,
+            letterSpacing: "0",
+          }}
+        >
+          -
+        </button>
+        <button
+          type="button"
+          aria-label="Reset globe view"
+          onClick={() => resetView()}
+          style={{
+            ...controlButtonStyle,
+            minWidth: 58,
+            height: 38,
+            padding: "0 14px",
+            borderRadius: 999,
+            fontSize: 11,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+          }}
+        >
+          Reset
+        </button>
+        <button
+          type="button"
+          aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+          onClick={() => toggleFullscreen()}
+          style={{
+            ...controlButtonStyle,
+            minWidth: 58,
+            height: 38,
+            padding: "0 14px",
+            borderRadius: 999,
+            fontSize: 11,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+          }}
+        >
+          {isFullscreen ? "Exit" : "Full"}
+        </button>
+        <button
+          type="button"
+          aria-label="Release globe controls"
+          onClick={() => disengage()}
+          style={{
+            ...controlButtonStyle,
+            minWidth: 58,
+            height: 38,
+            padding: "0 14px",
+            borderRadius: 999,
+            fontSize: 11,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+          }}
+        >
+          Done
+        </button>
+      </div>
+      )}
+      <div className="np-globe-status" style={{
+        position: "absolute",
+        left: 14,
+        bottom: 14,
+        zIndex: 12,
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        padding: "9px 12px",
+        borderRadius: 999,
+        background: "rgba(20,18,14,0.66)",
+        border: "1px solid rgba(212,165,74,0.22)",
+        color: "rgba(245,240,232,0.82)",
+        fontSize: 11,
+        fontWeight: 700,
+        letterSpacing: "0.08em",
+        textTransform: "uppercase",
+        backdropFilter: "blur(12px)",
+      }}>
+        {isInteractive ? (
+          <>
+            <span>Zoom {Math.round(((CAMERA_MAX_Z - zoomLevel) / (CAMERA_MAX_Z - CAMERA_MIN_Z)) * 100)}%</span>
+            <span style={{ opacity: 0.42 }}>|</span>
+            <span style={{ opacity: 0.72 }}>Wheel / drag / tap markers</span>
+          </>
+        ) : (
+          <span style={{ opacity: 0.82 }}>Click map to engage controls</span>
+        )}
+      </div>
       {hoveredPlant && tooltip.visible && (
         <div style={{
           position: "absolute", left: Math.min(tooltip.x + 14, 300), top: tooltip.y - 10,
@@ -400,12 +669,30 @@ export default function Globe({ onSelectPlant, plants }) {
           backdropFilter: "blur(10px)", boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
         }}>
           <div style={{ fontWeight: 700, fontSize: 15 }}>{hoveredPlant.name}</div>
-          <div style={{ opacity: 0.6, marginTop: 2 }}>{hoveredPlant.country}</div>
-          <div style={{ color: "#d4a54a", marginTop: 6, fontFamily: "'DM Mono',monospace", fontSize: 14 }}>{hoveredPlant.capacity.toLocaleString()} MW</div>
-          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
-            <span style={{ fontSize: 11, color: STATUS_COLORS[hoveredPlant.status] ?? STATUS_COLORS.Shutdown }}>● {hoveredPlant.status}</span>
-            <span style={{ fontSize: 11, opacity: 0.5 }}>{hoveredPlant.reactors} reactor{hoveredPlant.reactors > 1 ? "s" : ""}</span>
-          </div>
+          {mode === "reactors" ? (
+            <>
+              <div style={{ opacity: 0.6, marginTop: 2 }}>{hoveredPlant.country}</div>
+              <div style={{ color: "#d4a54a", marginTop: 6, fontFamily: "'DM Mono',monospace", fontSize: 14 }}>{hoveredPlant.capacity.toLocaleString()} MW</div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+                <span style={{ fontSize: 11, color: STATUS_COLORS[hoveredPlant.status] ?? STATUS_COLORS.Shutdown }}>● {hoveredPlant.status}</span>
+                <span style={{ fontSize: 11, opacity: 0.5 }}>{hoveredPlant.reactors} reactor{hoveredPlant.reactors > 1 ? "s" : ""}</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={{ opacity: 0.6, marginTop: 2 }}>{hoveredPlant.country} · {hoveredPlant.region}</div>
+              <div style={{ color: SUPPLY_STAGE_COLORS[hoveredPlant.stage] || "#d4a54a", marginTop: 6, fontFamily: "'DM Mono',monospace", fontSize: 13 }}>
+                {hoveredPlant.stage}
+              </div>
+              <div style={{ marginTop: 6, fontSize: 11, color: "rgba(245,240,232,0.7)", lineHeight: 1.5 }}>
+                {hoveredPlant.detail}
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, gap: 10 }}>
+                <span style={{ fontSize: 11, color: "rgba(245,240,232,0.72)" }}>{hoveredPlant.status}</span>
+                <span style={{ fontSize: 11, opacity: 0.5, textAlign: "right" }}>{hoveredPlant.operator}</span>
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>

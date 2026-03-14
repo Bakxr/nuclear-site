@@ -2,7 +2,7 @@ import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 import { TIMELINE_EVENTS, ERA_COLORS } from "../data/timeline.js";
 
-function TimelineCard({ event, index, isLeft }) {
+function TimelineCard({ event, isLeft }) {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, amount: 0.3 });
   const eraColor = ERA_COLORS[event.era] || "#d4a54a";
@@ -114,7 +114,7 @@ export default function Timeline() {
       }} />
 
       {TIMELINE_EVENTS.map((event, i) => (
-        <TimelineCard key={event.year} event={event} index={i} isLeft={i % 2 === 0} />
+        <TimelineCard key={event.year} event={event} isLeft={i % 2 === 0} />
       ))}
     </div>
   );
