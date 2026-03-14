@@ -17,6 +17,7 @@ const MAX_TOTAL = 24;
 
 const cache = globalThis.__nuclearNewsCache ?? new Map();
 globalThis.__nuclearNewsCache = cache;
+const CACHE_KEY = "news";
 
 const NUCLEAR_KW = [
   "nuclear", "reactor", "uranium", "fission", "fusion", "smr", "haleu",
@@ -194,7 +195,7 @@ export default async function handler(req, res) {
   if (!ensureAllowedOrigin(req, res, ["GET", "OPTIONS"])) return;
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
 
-  const cached = cache.get("news");
+  const cached = cache.get(CACHE_KEY);
   if (cached && Date.now() - cached.ts < CACHE_TTL) {
     return res.status(200).json(cached.payload);
   }
@@ -226,6 +227,12 @@ export default async function handler(req, res) {
     .slice(0, MAX_TOTAL);
 
   if (!deduped.length) {
+    if (cached?.payload) {
+      return res.status(200).json({
+        ...cached.payload,
+        stale: true,
+      });
+    }
     return res.status(502).json({ error: "No live articles available." });
   }
 
@@ -234,6 +241,6 @@ export default async function handler(req, res) {
     fetchedAt: new Date().toISOString(),
   };
 
-  cache.set("news", { ts: Date.now(), payload });
+  cache.set(CACHE_KEY, { ts: Date.now(), payload });
   return res.status(200).json(payload);
 }

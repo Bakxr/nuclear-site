@@ -26,84 +26,104 @@ export default function SearchOverlay({ query, plants, news, stocks, onSelectPla
   const plantResults = useMemo(() => {
     if (!q) return [];
     return plants
-      .filter(p => p.name.toLowerCase().includes(q) || p.country.toLowerCase().includes(q) || p.type.toLowerCase().includes(q))
+      .filter((plant) => plant.name.toLowerCase().includes(q) || plant.country.toLowerCase().includes(q) || plant.type.toLowerCase().includes(q))
       .slice(0, 5);
   }, [q, plants]);
 
   const stockResults = useMemo(() => {
     if (!q) return [];
     return stocks
-      .filter(s => s.ticker.toLowerCase().includes(q) || s.name.toLowerCase().includes(q) || (s.sector || "").toLowerCase().includes(q))
+      .filter((stock) => stock.ticker.toLowerCase().includes(q) || stock.name.toLowerCase().includes(q) || (stock.sector || "").toLowerCase().includes(q))
       .slice(0, 4);
   }, [q, stocks]);
 
   const newsResults = useMemo(() => {
     if (!q) return [];
     return news
-      .filter(n => n.title.toLowerCase().includes(q) || (n.source || "").toLowerCase().includes(q) || (n.tag || "").toLowerCase().includes(q))
+      .filter((item) => item.title.toLowerCase().includes(q) || (item.source || "").toLowerCase().includes(q) || (item.tag || "").toLowerCase().includes(q))
       .slice(0, 4);
   }, [q, news]);
 
   const countryResults = useMemo(() => {
     if (!q) return [];
     return NUCLEAR_SHARE
-      .filter(c => c.country.toLowerCase().includes(q))
+      .filter((country) => country.country.toLowerCase().includes(q))
       .slice(0, 3);
   }, [q]);
 
-  // Flat list of all results for keyboard navigation
   const allResults = useMemo(() => [
-    ...plantResults.map(r => ({ type: "plant", data: r })),
-    ...stockResults.map(r => ({ type: "stock", data: r })),
-    ...newsResults.map(r => ({ type: "news", data: r })),
-    ...countryResults.map(r => ({ type: "country", data: r })),
+    ...plantResults.map((result) => ({ type: "plant", data: result })),
+    ...stockResults.map((result) => ({ type: "stock", data: result })),
+    ...newsResults.map((result) => ({ type: "news", data: result })),
+    ...countryResults.map((result) => ({ type: "country", data: result })),
   ], [plantResults, stockResults, newsResults, countryResults]);
 
   const totalCount = allResults.length;
 
-  // Reset cursor when results change
-  useEffect(() => { setCursor(-1); }, [q]);
+  useEffect(() => {
+    setCursor(-1);
+  }, [q]);
 
-  // Keyboard navigation
   const handleSelect = useCallback((item) => {
-    if (item.type === "plant") { onSelectPlant(item.data); onClose(); }
-    if (item.type === "stock") { onSelectStock(item.data); onClose(); }
-    if (item.type === "news") { window.open(item.data.url, "_blank", "noopener,noreferrer"); onClose(); }
-    if (item.type === "country") { onSelectCountry(item.data.country); onClose(); }
+    if (item.type === "plant") {
+      onSelectPlant(item.data);
+      onClose();
+    }
+    if (item.type === "stock") {
+      onSelectStock(item.data);
+      onClose();
+    }
+    if (item.type === "news") {
+      window.open(item.data.url, "_blank", "noopener,noreferrer");
+      onClose();
+    }
+    if (item.type === "country") {
+      onSelectCountry(item.data.country);
+      onClose();
+    }
   }, [onClose, onSelectCountry, onSelectPlant, onSelectStock]);
 
   useEffect(() => {
-    const handler = (e) => {
-      if (e.key === "Escape") { onClose(); return; }
-      if (e.key === "ArrowDown") { e.preventDefault(); setCursor(c => Math.min(c + 1, totalCount - 1)); }
-      if (e.key === "ArrowUp") { e.preventDefault(); setCursor(c => Math.max(c - 1, -1)); }
-      if (e.key === "Enter" && cursor >= 0) {
-        e.preventDefault();
+    const handler = (event) => {
+      if (event.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        setCursor((current) => Math.min(current + 1, totalCount - 1));
+      }
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        setCursor((current) => Math.max(current - 1, -1));
+      }
+      if (event.key === "Enter" && cursor >= 0) {
+        event.preventDefault();
         const item = allResults[cursor];
         if (!item) return;
         handleSelect(item);
       }
     };
+
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [allResults, cursor, handleSelect, onClose, totalCount]);
 
-  // Scroll highlighted item into view
   useEffect(() => {
     if (cursor >= 0 && overlayRef.current) {
-      const el = overlayRef.current.querySelector(`[data-idx="${cursor}"]`);
-      el?.scrollIntoView({ block: "nearest" });
+      const element = overlayRef.current.querySelector(`[data-idx="${cursor}"]`);
+      element?.scrollIntoView({ block: "nearest" });
     }
   }, [cursor]);
 
   let globalIdx = 0;
 
   const sections = [
-    { key: "plant", label: "Plants", results: plantResults, icon: "⚡" },
-    { key: "stock", label: "Stocks", results: stockResults, icon: "📈" },
-    { key: "news",  label: "News",   results: newsResults,  icon: "📰" },
-    { key: "country", label: "Countries", results: countryResults, icon: "🌍" },
-  ].filter(s => s.results.length > 0);
+    { key: "plant", label: "Plants", results: plantResults, prefix: "Plant" },
+    { key: "stock", label: "Stocks", results: stockResults, prefix: "Market" },
+    { key: "news", label: "News", results: newsResults, prefix: "News" },
+    { key: "country", label: "Countries", results: countryResults, prefix: "Map" },
+  ].filter((section) => section.results.length > 0);
 
   if (!q || totalCount === 0) return null;
 
@@ -116,144 +136,203 @@ export default function SearchOverlay({ query, plants, news, stocks, onSelectPla
       transition={{ duration: 0.15, ease: "easeOut" }}
       ref={overlayRef}
       style={{
-        position: "absolute", top: "calc(100% + 8px)", right: 0,
-        width: "min(480px, calc(100vw - 32px))", maxHeight: 520, overflowY: "auto",
-        background: "var(--np-surface)", border: "1px solid var(--np-border-strong)",
-        borderRadius: 14, boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+        position: "absolute",
+        top: "calc(100% + 8px)",
+        right: 0,
+        width: "min(480px, calc(100vw - 32px))",
+        maxHeight: 520,
+        overflowY: "auto",
+        background: "var(--np-surface)",
+        border: "1px solid var(--np-border-strong)",
+        borderRadius: 14,
+        boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
         zIndex: 200,
       }}
     >
-      {sections.map(section => (
+      {sections.map((section) => (
         <div key={section.key}>
-          {/* Section header */}
-          <div style={{
-            padding: "10px 16px 6px",
-            fontSize: 10, fontWeight: 700, textTransform: "uppercase",
-            letterSpacing: "0.1em", color: "var(--np-text-faint)",
-            borderBottom: "1px solid var(--np-border)",
-          }}>
-            {section.icon} {section.label}
+          <div
+            style={{
+              padding: "10px 16px 6px",
+              fontSize: 10,
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "0.1em",
+              color: "var(--np-text-faint)",
+              borderBottom: "1px solid var(--np-border)",
+            }}
+          >
+            {section.prefix} {section.label}
           </div>
 
-          {section.results.map(result => {
+          {section.results.map((result) => {
             const myIdx = globalIdx++;
             const isActive = cursor === myIdx;
 
             if (section.key === "plant") {
-              const p = result;
+              const plant = result;
               return (
                 <button
                   type="button"
-                  key={p.name}
+                  key={plant.name}
                   data-idx={myIdx}
-                  onClick={() => handleSelect({ type: "plant", data: p })}
+                  onClick={() => handleSelect({ type: "plant", data: plant })}
                   style={{
-                    padding: "10px 16px", cursor: "pointer", display: "flex",
-                    justifyContent: "space-between", alignItems: "center",
+                    padding: "10px 16px",
+                    cursor: "pointer",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
                     background: isActive ? "rgba(212,165,74,0.08)" : "transparent",
                     transition: "background 0.1s",
-                    width: "100%", border: "none", textAlign: "left", fontFamily: "'DM Sans',sans-serif",
+                    width: "100%",
+                    border: "none",
+                    textAlign: "left",
+                    fontFamily: "'DM Sans',sans-serif",
                   }}
                   onMouseEnter={() => setCursor(myIdx)}
                 >
                   <div>
-                    <div style={{ fontWeight: 600, fontSize: 13.5, color: "var(--np-text)" }}>{highlight(p.name, query)}</div>
-                    <div style={{ fontSize: 11, color: "var(--np-text-muted)", marginTop: 1 }}>{highlight(p.country, query)} · {p.type}</div>
+                    <div style={{ fontWeight: 600, fontSize: 13.5, color: "var(--np-text)" }}>{highlight(plant.name, query)}</div>
+                    <div style={{ fontSize: 11, color: "var(--np-text-muted)", marginTop: 1 }}>{highlight(plant.country, query)} | {plant.type}</div>
                   </div>
                   <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 12 }}>
-                    <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 12, fontWeight: 600 }}>{p.capacity.toLocaleString()} MW</div>
-                    <div style={{ fontSize: 10, color: STATUS_COLORS[p.status] || STATUS_COLORS.Idle }}>● {p.status}</div>
+                    <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 12, fontWeight: 600 }}>{plant.capacity.toLocaleString()} MW</div>
+                    <div style={{ fontSize: 10, color: STATUS_COLORS[plant.status] || STATUS_COLORS.Idle }}>* {plant.status}</div>
                   </div>
                 </button>
               );
             }
 
             if (section.key === "stock") {
-              const s = result;
-              const isUp = (s.pct || 0) >= 0;
+              const stock = result;
+              const isUp = (stock.pct || 0) >= 0;
               return (
                 <button
                   type="button"
-                  key={s.ticker}
+                  key={stock.ticker}
                   data-idx={myIdx}
-                  onClick={() => handleSelect({ type: "stock", data: s })}
+                  onClick={() => handleSelect({ type: "stock", data: stock })}
                   style={{
-                    padding: "10px 16px", cursor: "pointer", display: "flex",
-                    justifyContent: "space-between", alignItems: "center",
+                    padding: "10px 16px",
+                    cursor: "pointer",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
                     background: isActive ? "rgba(212,165,74,0.08)" : "transparent",
                     transition: "background 0.1s",
-                    width: "100%", border: "none", textAlign: "left", fontFamily: "'DM Sans',sans-serif",
+                    width: "100%",
+                    border: "none",
+                    textAlign: "left",
+                    fontFamily: "'DM Sans',sans-serif",
                   }}
                   onMouseEnter={() => setCursor(myIdx)}
                 >
                   <div>
-                    <div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, fontSize: 14, color: "#d4a54a" }}>{highlight(s.ticker, query)}</div>
-                    <div style={{ fontSize: 11, color: "var(--np-text-muted)", marginTop: 1 }}>{highlight(s.name, query)}</div>
+                    <div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, fontSize: 14, color: "#d4a54a" }}>{highlight(stock.ticker, query)}</div>
+                    <div style={{ fontSize: 11, color: "var(--np-text-muted)", marginTop: 1 }}>{highlight(stock.name, query)}</div>
                   </div>
                   <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 12 }}>
-                    {s.price > 0 && <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 13, fontWeight: 600 }}>${s.price.toFixed(2)}</div>}
-                    {s.pct !== undefined && <div style={{ fontSize: 11, color: isUp ? "#4ade80" : "#f87171" }}>{isUp ? "+" : ""}{s.pct.toFixed(2)}%</div>}
+                    {stock.price > 0 && <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 13, fontWeight: 600 }}>${stock.price.toFixed(2)}</div>}
+                    {stock.pct !== undefined && <div style={{ fontSize: 11, color: isUp ? "#4ade80" : "#f87171" }}>{isUp ? "+" : ""}{stock.pct.toFixed(2)}%</div>}
                   </div>
                 </button>
               );
             }
 
             if (section.key === "news") {
-              const n = result;
+              const item = result;
               return (
-                <a key={n.url || n.title} data-idx={myIdx} href={n.url} target="_blank" rel="noopener noreferrer"
+                <a
+                  key={item.url || item.title}
+                  data-idx={myIdx}
+                  href={item.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   onClick={() => { onClose(); }}
                   style={{
-                    padding: "10px 16px", cursor: "pointer", display: "flex",
-                    justifyContent: "space-between", alignItems: "flex-start", gap: 10,
+                    padding: "10px 16px",
+                    cursor: "pointer",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                    gap: 10,
                     background: isActive ? "rgba(212,165,74,0.08)" : "transparent",
-                    transition: "background 0.1s", textDecoration: "none", color: "inherit",
+                    transition: "background 0.1s",
+                    textDecoration: "none",
+                    color: "inherit",
                   }}
                   onMouseEnter={() => setCursor(myIdx)}
                 >
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{
-                      fontWeight: 500, fontSize: 13, color: "var(--np-text)", lineHeight: 1.35,
-                      overflow: "hidden", display: "-webkit-box",
-                      WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
-                    }}>{highlight(n.title, query)}</div>
-                    <div style={{ fontSize: 11, color: "var(--np-text-muted)", marginTop: 3 }}>{n.source} · {n.date}</div>
+                    <div
+                      style={{
+                        fontWeight: 500,
+                        fontSize: 13,
+                        color: "var(--np-text)",
+                        lineHeight: 1.35,
+                        overflow: "hidden",
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                      }}
+                    >
+                      {highlight(item.title, query)}
+                    </div>
+                    <div style={{ fontSize: 11, color: "var(--np-text-muted)", marginTop: 3 }}>{item.source} | {item.date}</div>
                   </div>
-                  <span style={{
-                    flexShrink: 0, fontSize: 9, fontWeight: 700, textTransform: "uppercase",
-                    letterSpacing: "0.08em", color: "#d4a54a", background: "rgba(212,165,74,0.1)",
-                    borderRadius: 6, padding: "3px 7px", marginTop: 2,
-                  }}>{n.tag}</span>
+                  <span
+                    style={{
+                      flexShrink: 0,
+                      fontSize: 9,
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.08em",
+                      color: "#d4a54a",
+                      background: "rgba(212,165,74,0.1)",
+                      borderRadius: 6,
+                      padding: "3px 7px",
+                      marginTop: 2,
+                    }}
+                  >
+                    {item.tag}
+                  </span>
                 </a>
               );
             }
 
             if (section.key === "country") {
-              const c = result;
+              const country = result;
               return (
                 <button
                   type="button"
-                  key={c.country}
+                  key={country.country}
                   data-idx={myIdx}
-                  onClick={() => handleSelect({ type: "country", data: c })}
+                  onClick={() => handleSelect({ type: "country", data: country })}
                   style={{
-                    padding: "10px 16px", cursor: "pointer", display: "flex",
-                    justifyContent: "space-between", alignItems: "center",
+                    padding: "10px 16px",
+                    cursor: "pointer",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
                     background: isActive ? "rgba(212,165,74,0.08)" : "transparent",
                     transition: "background 0.1s",
-                    width: "100%", border: "none", textAlign: "left", fontFamily: "'DM Sans',sans-serif",
+                    width: "100%",
+                    border: "none",
+                    textAlign: "left",
+                    fontFamily: "'DM Sans',sans-serif",
                   }}
                   onMouseEnter={() => setCursor(myIdx)}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <span style={{ fontSize: 20 }}>{c.flag}</span>
+                    <span style={{ fontSize: 20 }}>{country.flag}</span>
                     <div>
-                      <div style={{ fontWeight: 600, fontSize: 13.5 }}>{highlight(c.country, query)}</div>
-                      <div style={{ fontSize: 11, color: "var(--np-text-muted)", marginTop: 1 }}>{c.reactors} reactors · {c.capacity}</div>
+                      <div style={{ fontWeight: 600, fontSize: 13.5 }}>{highlight(country.country, query)}</div>
+                      <div style={{ fontSize: 11, color: "var(--np-text-muted)", marginTop: 1 }}>{country.reactors} reactors | {country.capacity}</div>
                     </div>
                   </div>
                   <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 15, fontWeight: 700, color: "#d4a54a" }}>
-                    {c.nuclear}%
+                    {country.nuclear}%
                   </div>
                 </button>
               );
@@ -264,14 +343,19 @@ export default function SearchOverlay({ query, plants, news, stocks, onSelectPla
         </div>
       ))}
 
-      {/* Footer */}
-      <div style={{
-        padding: "8px 16px", borderTop: "1px solid var(--np-border)",
-        fontSize: 10, color: "var(--np-text-faint)", display: "flex",
-        justifyContent: "space-between", alignItems: "center",
-      }}>
+      <div
+        style={{
+          padding: "8px 16px",
+          borderTop: "1px solid var(--np-border)",
+          fontSize: 10,
+          color: "var(--np-text-faint)",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
         <span>{totalCount} result{totalCount !== 1 ? "s" : ""} across all sections</span>
-        <span style={{ opacity: 0.5 }}>↑↓ navigate · ↵ select · esc close</span>
+        <span style={{ opacity: 0.5 }}>Up/down navigate | Enter select | Esc close</span>
       </div>
     </motion.div>
   );

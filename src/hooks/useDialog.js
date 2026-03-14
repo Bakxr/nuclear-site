@@ -60,7 +60,9 @@ export default function useDialog(isOpen, onClose) {
     return () => {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", handleKeyDown);
-      previousActiveRef.current?.focus?.();
+      if (previousActiveRef.current instanceof HTMLElement && previousActiveRef.current.isConnected) {
+        previousActiveRef.current.focus();
+      }
     };
   }, [isOpen, onClose]);
 
