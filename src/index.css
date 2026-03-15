@@ -397,6 +397,13 @@ video {
   .np-globe-panel-mobile.is-expanded {
     overflow-y: auto !important;
   }
+  .np-globe-panel-mobile > div:first-child {
+    background: var(--np-surface) !important;
+    overflow: hidden;
+    border-bottom: 1px solid var(--np-border);
+    margin-bottom: 10px;
+    padding-bottom: 12px !important;
+  }
   .np-globe-toggle-row {
     flex-wrap: wrap !important;
   }
@@ -513,6 +520,11 @@ video {
   }
   .np-globe-panel {
     padding: 14px 12px 18px !important;
+  }
+  .np-globe-panel-mobile > div:first-child {
+    border-radius: 12px 12px 0 0 !important;
+    margin-inline: -12px !important;
+    padding-inline: 12px !important;
   }
   .np-globe-show-more {
     font-size: 11px !important;

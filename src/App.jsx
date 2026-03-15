@@ -348,6 +348,7 @@ export default function NuclearPulse() {
   // Section refs for navigation — each ref is a named variable (not inside an object literal)
   // to satisfy the Rules of Hooks (hooks must be called unconditionally at the top level)
   const globeRef = useRef(null);
+  const globePanelRef = useRef(null);
   const stocksRef = useRef(null);
   const newsRef = useRef(null);
   const dataRef = useRef(null);
@@ -1567,6 +1568,7 @@ export default function NuclearPulse() {
             </div>
 
             <div
+              ref={globePanelRef}
               className={`np-globe-panel${shouldUseCompactGlobePanel ? " np-globe-panel-mobile" : ""}${mobileGlobePanelExpanded ? " is-expanded" : " is-collapsed"}`}
               style={{
                 background: "var(--np-surface-dim)",
@@ -1684,6 +1686,7 @@ export default function NuclearPulse() {
                   onClick={() => {
                     if (mobileGlobePanelExpanded) {
                       setMobileGlobePanelExpanded(false);
+                      globePanelRef.current?.scrollTo?.({ top: 0, behavior: "smooth" });
                     } else {
                       setMobileGlobePanelExpanded(true);
                     }
