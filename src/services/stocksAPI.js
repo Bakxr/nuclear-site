@@ -1,8 +1,4 @@
-// Finnhub Stock API Integration
-const FINNHUB_API_KEY = import.meta.env.VITE_FINNHUB_API_KEY;
-const BASE_URL = 'https://finnhub.io/api/v1';
-
-// Cache to avoid hitting rate limits (60 calls/min on free tier)
+// Cache recent market responses client-side to reduce panel churn.
 const cache = new Map();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
@@ -18,25 +14,21 @@ export async function fetchStockQuote(ticker) {
   }
 
   try {
-    const response = await fetch(
-      `${BASE_URL}/quote?symbol=${ticker}&token=${FINNHUB_API_KEY}`
-    );
+    const response = await fetch(`/api/market/quotes?symbols=${encodeURIComponent(ticker)}`);
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const data = await response.json();
-
-    // Finnhub returns: { c: current, d: change, dp: percent change, h: high, l: low, o: open, pc: previous close }
-    const result = {
-      price: data.c || 0,
-      change: data.d || 0,
-      pct: data.dp || 0,
-      high: data.h || 0,
-      low: data.l || 0,
-      open: data.o || 0,
-      previousClose: data.pc || 0,
+    const result = data?.quotes?.[ticker] || {
+      price: 0,
+      change: 0,
+      pct: 0,
+      high: 0,
+      low: 0,
+      open: 0,
+      previousClose: 0,
     };
 
     cache.set(cacheKey, { data: result, timestamp: Date.now() });
@@ -147,13 +139,31 @@ export async function fetchMultipleQuotes(tickers) {
   if (_inflightQuotes) return _inflightQuotes;
 
   _inflightQuotes = (async () => {
-    const results = {};
-    for (const ticker of tickers) {
-      const quote = await fetchStockQuote(ticker);
-      if (quote) results[ticker] = quote;
-      // ~300ms between calls = safe rate for free tier (≤5 req/s)
-      await new Promise(r => setTimeout(r, 300));
-    }
+    const cacheableResults = {};
+    const missing = [];
+
+    tickers.forEach((ticker) => {
+      const cacheKey = `quote_${ticker}`;
+      const cached = cache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+        cacheableResults[ticker] = cached.data;
+      } else {
+        missing.push(ticker);
+      }
+    });
+
+    if (missing.length === 0) return cacheableResults;
+
+    const response = await fetch(`/api/market/quotes?symbols=${encodeURIComponent(missing.join(","))}`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+    const data = await response.json();
+    const results = { ...cacheableResults, ...(data?.quotes || {}) };
+
+    Object.entries(data?.quotes || {}).forEach(([ticker, quote]) => {
+      cache.set(`quote_${ticker}`, { data: quote, timestamp: Date.now() });
+    });
+
     return results;
   })();
 

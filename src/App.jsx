@@ -17,6 +17,10 @@ import { normalizeReactorType } from "./services/plantAPI.js";
 import { groupPlantsByCountry, normalizeCountryName } from "./utils/countries.js";
 import { NAV_ITEMS } from "./data/editorial.js";
 import { inferNewsLocation } from "./utils/news.js";
+import { buildTerminalSnapshot } from "./features/terminal/data.js";
+import { getEditorialSignals } from "./features/terminal/selectors.js";
+import { buildAppPath, getAppViewFromLocation } from "./features/terminal/route.js";
+import TerminalEditorialStrip from "./components/TerminalEditorialStrip.jsx";
 
 const Globe = lazy(() => import("./components/Globe.jsx"));
 const StockModal = lazy(() => import("./components/StockModal.jsx"));
@@ -339,7 +343,7 @@ export default function NuclearPulse() {
   });
   const [appView, setAppView] = useState(() => {
     if (typeof window === "undefined") return "home";
-    return new URLSearchParams(window.location.search).get("view") === "terminal" ? "terminal" : "home";
+    return getAppViewFromLocation(window.location);
   });
 
   // Parallax hero
@@ -662,21 +666,28 @@ export default function NuclearPulse() {
   const switchAppView = useCallback((view) => {
     setAppView(view);
     if (typeof window !== "undefined") {
-      const url = new URL(window.location.href);
-      if (view === "terminal") url.searchParams.set("view", "terminal");
-      else url.searchParams.delete("view");
-      window.history.pushState({}, "", url);
+      const nextUrl = buildAppPath(view);
+      if (`${window.location.pathname}${window.location.search}` !== nextUrl) {
+        window.history.pushState({}, "", nextUrl);
+      }
     }
     setMobileMenuOpen(false);
   }, []);
 
   useEffect(() => {
     const onPopState = () => {
-      const url = new URL(window.location.href);
-      setAppView(url.searchParams.get("view") === "terminal" ? "terminal" : "home");
+      setAppView(getAppViewFromLocation(window.location));
     };
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("view") === "terminal" && window.location.pathname !== "/terminal") {
+      window.history.replaceState({}, "", buildAppPath("terminal"));
+    }
   }, []);
 
   const filteredNews = useMemo(() => {
@@ -696,6 +707,14 @@ export default function NuclearPulse() {
     }
     return filtered;
   }, [news, newsFilter, newsSort]);
+
+  const terminalSnapshot = useMemo(() => buildTerminalSnapshot({
+    stocks,
+    news,
+    newsLastUpdated,
+  }), [stocks, news, newsLastUpdated]);
+
+  const editorialSignals = useMemo(() => getEditorialSignals(terminalSnapshot), [terminalSnapshot]);
 
   const uniqueNewsSources = useMemo(() => new Set(news.map((item) => item.source)).size, [news]);
 
@@ -719,6 +738,13 @@ export default function NuclearPulse() {
     } finally {
       setNewsLoading(false);
     }
+  }
+
+  function handleTerminalRefresh() {
+    setStocksError(false);
+    setStocksRetry((retry) => retry + 1);
+    refreshNews();
+    fetch("/api/terminal/revalidate").catch(() => {});
   }
 
   function getNewsMapLayer(article) {
@@ -900,32 +926,11 @@ export default function NuclearPulse() {
             <NuclearTerminal
               GlobeComponent={Globe}
               isMobileViewport={isMobileViewport}
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              globeLayer={globeLayer}
-              setGlobeLayer={setGlobeLayer}
-              filteredPlants={filteredPlants}
-              filteredSupplySites={filteredSupplySites}
-              activeGlobeItems={activeGlobeItems}
-              globeCountryFilter={globeCountryFilter}
-              setGlobeCountryFilter={setGlobeCountryFilter}
-              globeReactorTypeFilter={globeReactorTypeFilter}
-              setGlobeReactorTypeFilter={setGlobeReactorTypeFilter}
-              globeCountryOptions={globeCountryOptions}
-              globeReactorTypeOptions={globeReactorTypeOptions}
-              stocks={stocks}
-              stocksLoading={stocksLoading}
-              stocksError={stocksError}
-              onRetryStocks={() => { setStocksError(false); setStocksRetry((r) => r + 1); }}
-              filteredNews={filteredNews}
-              newsLoading={newsLoading}
-              newsError={newsError}
-              newsLastUpdated={newsLastUpdated}
-              onRefreshNews={refreshNews}
-              setSelectedPlant={setSelectedPlant}
-              setSelectedStock={setSelectedStock}
-              setSelectedCountry={setSelectedCountry}
+              snapshot={terminalSnapshot}
+              onOpenPlant={setSelectedPlant}
+              onOpenStock={setSelectedStock}
               onExitTerminal={() => switchAppView("home")}
+              onRefreshData={handleTerminalRefresh}
             />
           </Suspense>
 
@@ -1200,6 +1205,8 @@ export default function NuclearPulse() {
           </a>
         ))}
       </section>
+
+      <TerminalEditorialStrip signals={editorialSignals} onOpenTerminal={() => switchAppView("terminal")} />
       </div>
 
       {/* ROTATING QUOTES */}

@@ -1,0 +1,10 @@
+{
+  "rewrites": [
+    { "source": "/terminal", "destination": "/" },
+    { "source": "/api/terminal/entity/:id", "destination": "/api/terminal/entity?id=:id" },
+    { "source": "/api/terminal/panel/:key", "destination": "/api/terminal/panel?key=:key" }
+  ],
+  "crons": [
+    { "path": "/api/terminal/revalidate", "schedule": "*/15 * * * *" }
+  ]
+}
