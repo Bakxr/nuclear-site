@@ -2523,7 +2523,7 @@ export default function NuclearPulse() {
                             {reactorViewMode === "3d"
                               ? (
                                 <Suspense fallback={<LazySectionFallback height={320} />}>
-                                  <Reactor3D type={r.type} />
+                                  <Reactor3D key={r.type} type={r.type} />
                                 </Suspense>
                               )
                               : <div style={{ padding: isMobileViewport ? "14px 12px" : "16px 20px" }}><ReactorDiagram type={r.type} width={isMobileViewport ? 520 : 900} /></div>

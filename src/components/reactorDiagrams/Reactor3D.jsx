@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { getReactorHotspots } from "./reactorHotspots.js";
 import { getReactorViewerConfig } from "./viewerConfig.js";
 
 const MOBILE_BREAKPOINT = 640;
@@ -20,6 +21,7 @@ function createMaterials() {
     ground: new THREE.MeshStandardMaterial({ color: 0x3f3b37, metalness: 0.0, roughness: 1.0 }),
     water: new THREE.MeshStandardMaterial({ color: 0x4f7ea2, metalness: 0.12, roughness: 0.28, transparent: true, opacity: 0.52 }),
     accent: new THREE.MeshStandardMaterial({ color: 0xd4a54a, metalness: 0.3, roughness: 0.35 }),
+    rodGuide: new THREE.MeshStandardMaterial({ color: 0x42464c, metalness: 0.74, roughness: 0.25 }),
   };
 }
 
@@ -106,6 +108,7 @@ function buildPWR(group, materials) {
   coreBasket.position.y = -0.15;
   group.add(coreBasket);
   rod(group, new THREE.CylinderGeometry(0.024, 0.024, 2.0, 6), materials.fuel, 100, gridPositions(10, 10, 0.062, 0.062, -0.12));
+  rod(group, new THREE.CylinderGeometry(0.018, 0.018, 1.25, 6), materials.rodGuide, 16, gridPositions(4, 4, 0.18, 0.18, 0.78));
 
   for (const side of [-1, 1]) {
     const sg = new THREE.Mesh(new THREE.CylinderGeometry(0.43, 0.47, 2.7, 24), materials.vessel);
@@ -162,6 +165,7 @@ function buildBWR(group, materials) {
   separatorRing.position.y = 0.92;
   group.add(shroud, steamDryer, separatorRing);
   rod(group, new THREE.CylinderGeometry(0.024, 0.024, 2.0, 6), materials.fuel, 81, gridPositions(9, 9, 0.078, 0.078, -0.48));
+  rod(group, new THREE.CylinderGeometry(0.018, 0.018, 0.85, 6), materials.rodGuide, 9, gridPositions(3, 3, 0.22, 0.22, -1.18));
 
   for (const side of [-1, 1]) {
     tube(group, [[side * 0.34, 1.7, 0.1], [side * 0.72, 2.45, 0.28], [side * 1.45, 2.7, 0.1]], 0.11, materials.pipe, 18);
@@ -258,6 +262,7 @@ function buildVVER(group, materials) {
     }
   }
   rod(group, hexRodGeo, materials.fuel, hexPositions.length, hexPositions);
+  rod(group, new THREE.CylinderGeometry(0.018, 0.018, 1.2, 6), materials.rodGuide, 12, gridPositions(3, 4, 0.2, 0.18, 0.86));
 
   for (let index = 0; index < 4; index += 1) {
     const angle = (index * Math.PI) / 2 + Math.PI / 4;
@@ -306,6 +311,7 @@ function buildSMR(group, materials) {
   annularSteamGen.position.y = 0.62;
   group.add(annularSteamGen);
   rod(group, new THREE.CylinderGeometry(0.024, 0.024, 1.6, 6), materials.fuel, 49, gridPositions(7, 7, 0.078, 0.078, -0.42));
+  rod(group, new THREE.CylinderGeometry(0.018, 0.018, 0.95, 6), materials.rodGuide, 9, gridPositions(3, 3, 0.18, 0.18, 0.48));
 
   const deck = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 1.9, 0.12, 28), materials.concrete);
   deck.position.y = -1.42;
@@ -333,6 +339,7 @@ function buildOther(group, materials) {
   const reflector = new THREE.Mesh(new THREE.TorusGeometry(0.82, 0.1, 10, 6), materials.vesselDark);
   reflector.position.y = -0.25;
   group.add(vessel, core, reflector);
+  rod(group, new THREE.CylinderGeometry(0.02, 0.02, 1.15, 6), materials.rodGuide, 7, gridPositions(1, 7, 0.18, 0.16, 0.55));
 
   for (let index = 0; index < 6; index += 1) {
     const angle = (index * Math.PI) / 3;
@@ -401,6 +408,8 @@ function applyTransform(target, transform) {
 
 export default function Reactor3D({ type = "PWR" }) {
   const mountRef = useRef(null);
+  const markerRefs = useRef({});
+  const selectedHotspotRef = useRef(null);
   const dragStateRef = useRef({
     active: false,
     moved: false,
@@ -418,7 +427,18 @@ export default function Reactor3D({ type = "PWR" }) {
     () => getReactorViewerConfig(type, viewerMeta.isMobileViewport),
     [type, viewerMeta.isMobileViewport],
   );
+  const hotspots = useMemo(() => getReactorHotspots(type), [type]);
+  const [selectedHotspotId, setSelectedHotspotId] = useState(null);
+  const [hoveredHotspotId, setHoveredHotspotId] = useState(null);
+  const selectedHotspot = useMemo(
+    () => hotspots.find((hotspot) => hotspot.id === selectedHotspotId) || null,
+    [hotspots, selectedHotspotId],
+  );
   const hintKey = `${type}-${viewerMeta.isMobileViewport ? "mobile" : "desktop"}`;
+
+  useEffect(() => {
+    selectedHotspotRef.current = selectedHotspot;
+  }, [selectedHotspot]);
 
   useEffect(() => {
     const container = mountRef.current;
@@ -492,6 +512,14 @@ export default function Reactor3D({ type = "PWR" }) {
     scene.add(group);
 
     const renderFrame = () => renderer.render(scene, camera);
+    const hotspotVectors = hotspots.map((hotspot) => ({
+      ...hotspot,
+      anchorVector: new THREE.Vector3(...hotspot.anchor),
+    }));
+    const currentCameraPosition = new THREE.Vector3(...config.camera.position);
+    const currentLookAt = new THREE.Vector3(...config.camera.lookAt);
+    const defaultLookAt = new THREE.Vector3(...config.camera.lookAt);
+    const defaultCameraPosition = new THREE.Vector3(...config.camera.position);
 
     const populateScene = async () => {
       try {
@@ -510,6 +538,24 @@ export default function Reactor3D({ type = "PWR" }) {
     };
 
     populateScene();
+
+    const syncMarkerPositions = () => {
+      hotspotVectors.forEach((hotspot) => {
+        const marker = markerRefs.current[hotspot.id];
+        if (!marker) return;
+
+        const projected = hotspot.anchorVector.clone();
+        group.localToWorld(projected);
+        projected.project(camera);
+
+        const isVisible = projected.z > -1 && projected.z < 1;
+        const x = (projected.x * 0.5 + 0.5) * width;
+        const y = (-projected.y * 0.5 + 0.5) * height;
+        marker.style.opacity = isVisible ? "1" : "0";
+        marker.style.pointerEvents = isVisible ? "auto" : "none";
+        marker.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`;
+      });
+    };
 
     const dragState = dragStateRef.current;
     const onPointerDown = (event) => {
@@ -569,7 +615,19 @@ export default function Reactor3D({ type = "PWR" }) {
         group.rotation.y += viewerMeta.isMobileViewport ? 0.0026 : 0.0038;
         dragState.vx *= 0.9;
       }
+      const activeHotspot = selectedHotspotRef.current;
+      const targetLookAt = activeHotspot?.camera?.lookAt
+        ? new THREE.Vector3(...activeHotspot.camera.lookAt)
+        : defaultLookAt;
+      const targetCameraPosition = activeHotspot?.camera?.offset
+        ? targetLookAt.clone().add(new THREE.Vector3(...activeHotspot.camera.offset))
+        : defaultCameraPosition;
+      currentLookAt.lerp(targetLookAt, 0.08);
+      currentCameraPosition.lerp(targetCameraPosition, 0.08);
+      camera.position.copy(currentCameraPosition);
+      camera.lookAt(currentLookAt);
       coreLight.intensity = (viewerMeta.isMobileViewport ? 2.6 : 3.0) + Math.sin(performance.now() * 0.0018) * 0.75;
+      syncMarkerPositions();
       renderer.render(scene, camera);
     };
     animate();
@@ -590,7 +648,7 @@ export default function Reactor3D({ type = "PWR" }) {
       renderer.dispose();
       container.replaceChildren();
     };
-  }, [config, type, viewerMeta.isMobileViewport, viewerMeta.width]);
+  }, [config, hotspots, type, viewerMeta.isMobileViewport, viewerMeta.width]);
 
   return (
     <div style={{ position: "relative" }}>
@@ -605,6 +663,71 @@ export default function Reactor3D({ type = "PWR" }) {
           background: "linear-gradient(180deg, rgba(18,28,39,0.96) 0%, rgba(9,13,20,1) 100%)",
         }}
       />
+      <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
+        {hotspots.map((hotspot) => {
+          const active = selectedHotspotId === hotspot.id;
+          const hovered = hoveredHotspotId === hotspot.id;
+          return (
+            <button
+              key={hotspot.id}
+              ref={(node) => {
+                if (node) markerRefs.current[hotspot.id] = node;
+                else delete markerRefs.current[hotspot.id];
+              }}
+              type="button"
+              aria-label={hotspot.label}
+              onClick={(event) => {
+                event.stopPropagation();
+                setSelectedHotspotId((current) => (current === hotspot.id ? null : hotspot.id));
+              }}
+              onMouseEnter={() => {
+                if (!viewerMeta.isMobileViewport) setHoveredHotspotId(hotspot.id);
+              }}
+              onMouseLeave={() => setHoveredHotspotId((current) => (current === hotspot.id ? null : current))}
+              style={{
+                position: "absolute",
+                left: 0,
+                top: 0,
+                pointerEvents: "auto",
+                width: active ? 18 : 16,
+                height: active ? 18 : 16,
+                borderRadius: "50%",
+                border: `2px solid ${active ? "#f5d082" : "rgba(255,255,255,0.78)"}`,
+                background: active ? "rgba(212,165,74,0.96)" : "rgba(18,28,39,0.88)",
+                boxShadow: active
+                  ? "0 0 0 6px rgba(212,165,74,0.16), 0 0 24px rgba(212,165,74,0.45)"
+                  : "0 0 0 4px rgba(255,255,255,0.08)",
+                opacity: 0,
+                cursor: "pointer",
+                transition: "width 0.2s ease, height 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, border-color 0.2s ease",
+              }}
+            >
+              <span style={{ position: "absolute", inset: 3, borderRadius: "50%", background: active ? "#10273a" : "rgba(212,165,74,0.9)" }} />
+              {!viewerMeta.isMobileViewport && (hovered || active) && (
+                <span
+                  style={{
+                    position: "absolute",
+                    top: -34,
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    whiteSpace: "nowrap",
+                    padding: "5px 9px",
+                    borderRadius: 999,
+                    background: "rgba(7,11,17,0.86)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    color: "rgba(255,255,255,0.9)",
+                    fontSize: 11,
+                    lineHeight: 1,
+                    fontFamily: "'DM Sans',sans-serif",
+                  }}
+                >
+                  {hotspot.label}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
       {config.attribution && (
         <div
           style={{
@@ -625,11 +748,69 @@ export default function Reactor3D({ type = "PWR" }) {
           Model source: {config.attribution.label}
         </div>
       )}
+      {!viewerMeta.isMobileViewport && selectedHotspot && (
+        <div
+          style={{
+            position: "absolute",
+            right: 12,
+            top: 12,
+            width: 232,
+            padding: "12px 13px",
+            borderRadius: 14,
+            background: "rgba(7,11,17,0.74)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            backdropFilter: "blur(12px)",
+            boxShadow: "0 20px 40px rgba(0,0,0,0.24)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
+            <div style={{ fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(212,165,74,0.9)", fontWeight: 700 }}>Inside the reactor</div>
+            <button
+              type="button"
+              onClick={() => setSelectedHotspotId(null)}
+              style={{ background: "transparent", border: 0, color: "rgba(255,255,255,0.56)", cursor: "pointer", fontSize: 14, lineHeight: 1 }}
+            >
+              ×
+            </button>
+          </div>
+          <div style={{ fontSize: 15, color: "rgba(255,255,255,0.95)", fontWeight: 700, marginBottom: 6 }}>{selectedHotspot.label}</div>
+          <div style={{ fontSize: 12.5, lineHeight: 1.55, color: "rgba(255,255,255,0.72)" }}>{selectedHotspot.description}</div>
+        </div>
+      )}
+      {viewerMeta.isMobileViewport && selectedHotspot && (
+        <div
+          style={{
+            position: "absolute",
+            left: 10,
+            right: 10,
+            bottom: 10,
+            padding: "12px 12px 13px",
+            borderRadius: 16,
+            background: "rgba(7,11,17,0.88)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            backdropFilter: "blur(12px)",
+            boxShadow: "0 18px 34px rgba(0,0,0,0.28)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 6 }}>
+            <div style={{ fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(212,165,74,0.9)", fontWeight: 700 }}>Inside the reactor</div>
+            <button
+              type="button"
+              onClick={() => setSelectedHotspotId(null)}
+              style={{ background: "transparent", border: 0, color: "rgba(255,255,255,0.56)", cursor: "pointer", fontSize: 15, lineHeight: 1 }}
+            >
+              ×
+            </button>
+          </div>
+          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.95)", fontWeight: 700, marginBottom: 5 }}>{selectedHotspot.label}</div>
+          <div style={{ fontSize: 12, lineHeight: 1.5, color: "rgba(255,255,255,0.72)" }}>{selectedHotspot.description}</div>
+        </div>
+      )}
       <div
         key={hintKey}
         style={{
           position: "absolute",
-          bottom: viewerMeta.isMobileViewport ? 8 : 12,
+          bottom: viewerMeta.isMobileViewport && selectedHotspot ? 104 : viewerMeta.isMobileViewport ? 8 : 12,
           left: "50%",
           transform: "translateX(-50%)",
           maxWidth: viewerMeta.isMobileViewport ? "90%" : "unset",
