@@ -1,79 +1,136 @@
+function TerminalMetric({ card }) {
+  return (
+    <div style={{
+      borderRadius: 14,
+      border: "1px solid rgba(212,165,74,0.14)",
+      background: "rgba(20,18,14,0.58)",
+      padding: "14px 16px",
+      minWidth: 0,
+    }}>
+      <div style={{ fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.12em", color: "rgba(212,165,74,0.76)", fontWeight: 700, marginBottom: 6 }}>
+        {card.label}
+      </div>
+      <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 22, color: "#f5f0e8", marginBottom: 6 }}>
+        {card.value}
+      </div>
+      <div style={{ fontSize: 12, lineHeight: 1.55, color: "rgba(245,240,232,0.6)" }}>
+        {card.detail}
+      </div>
+    </div>
+  );
+}
+
+function TerminalMiniList({ title, accent = "#d4a54a", items, renderMeta }) {
+  return (
+    <div style={{
+      borderRadius: 16,
+      border: "1px solid rgba(212,165,74,0.12)",
+      background: "rgba(255,255,255,0.02)",
+      padding: 16,
+    }}>
+      <div style={{ fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.12em", color: accent, fontWeight: 700, marginBottom: 12 }}>
+        {title}
+      </div>
+      <div style={{ display: "grid", gap: 10 }}>
+        {items.map((item) => (
+          <a
+            key={item.id}
+            href={item.url || "#"}
+            target={item.url ? "_blank" : undefined}
+            rel={item.url ? "noopener noreferrer" : undefined}
+            style={{
+              textDecoration: "none",
+              color: "inherit",
+              borderRadius: 12,
+              border: "1px solid rgba(255,255,255,0.06)",
+              background: "rgba(255,255,255,0.03)",
+              padding: "12px 13px",
+              display: "grid",
+              gap: 5,
+              pointerEvents: item.url ? "auto" : "none",
+            }}
+          >
+            <div style={{ fontSize: 12.5, fontWeight: 700, lineHeight: 1.45, color: "#f5f0e8" }}>
+              {item.title || item.name || item.form}
+            </div>
+            <div style={{ fontSize: 11.5, lineHeight: 1.5, color: "rgba(245,240,232,0.56)" }}>
+              {renderMeta(item)}
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function TerminalEditorialStrip({ signals, onOpenTerminal }) {
   if (!signals) return null;
 
+  const summaryCards = signals.cards.slice(0, 4);
+  const catalysts = signals.topCatalysts.slice(0, 2);
+  const buildout = signals.buildoutLeaders.slice(0, 2);
+  const filings = signals.filingRadar.slice(0, 2);
+
   return (
-    <section style={{ padding: "12px var(--np-section-x) 28px", background: "linear-gradient(180deg, rgba(212,165,74,0.08) 0%, rgba(212,165,74,0.03) 38%, transparent 100%)" }}>
-      <div style={{ maxWidth: 1280, margin: "0 auto", display: "grid", gap: 18 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 16, flexWrap: "wrap" }}>
-          <div>
-            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.14em", color: "#d4a54a", fontWeight: 700, marginBottom: 8 }}>Terminal snapshot</div>
-            <h3 style={{ margin: 0, fontFamily: "'Playfair Display',serif", fontSize: "clamp(28px,4vw,38px)", lineHeight: 1.05 }}>
-              Live signals from the <em style={{ color: "#d4a54a" }}>Nuclear Terminal</em>
+    <section style={{ padding: "6px var(--np-section-x) 22px" }}>
+      <div style={{
+        maxWidth: 1280,
+        margin: "0 auto",
+        borderRadius: 24,
+        border: "1px solid rgba(212,165,74,0.14)",
+        background: "linear-gradient(180deg, rgba(22,18,13,0.96) 0%, rgba(16,14,10,0.92) 100%)",
+        color: "#f5f0e8",
+        padding: "20px clamp(18px, 2vw, 28px)",
+        display: "grid",
+        gap: 18,
+        boxShadow: "0 26px 70px rgba(0,0,0,0.14)",
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 18, flexWrap: "wrap" }}>
+          <div style={{ maxWidth: 720 }}>
+            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.14em", color: "#d4a54a", fontWeight: 700, marginBottom: 8 }}>
+              From The Terminal
+            </div>
+            <h3 style={{ margin: 0, fontFamily: "'Playfair Display',serif", fontSize: "clamp(24px,3.4vw,34px)", lineHeight: 1.06 }}>
+              A tighter read on the <em style={{ color: "#d4a54a" }}>nuclear tape.</em>
             </h3>
+            <p style={{ margin: "10px 0 0", fontSize: 13.5, lineHeight: 1.7, color: "rgba(245,240,232,0.64)" }}>
+              Live catalysts, project movement, filings, and fleet signals. The full terminal is where the dense view lives.
+            </p>
           </div>
-          <button type="button" onClick={onOpenTerminal} className="np-data-chip" style={{ background: "#14120e", color: "#f5f0e8", border: "1px solid rgba(212,165,74,0.35)" }}>
+
+          <button
+            type="button"
+            onClick={onOpenTerminal}
+            className="np-data-chip"
+            style={{ background: "#f5f0e8", color: "#14120e", border: "1px solid rgba(212,165,74,0.35)", whiteSpace: "nowrap" }}
+          >
             Open terminal
           </button>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 14 }}>
-          {signals.cards.map((card) => (
-            <div key={card.id} style={{ borderRadius: 16, border: "1px solid rgba(212,165,74,0.16)", background: "rgba(20,18,14,0.88)", color: "#f5f0e8", padding: "16px 18px" }}>
-              <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: "rgba(212,165,74,0.78)", fontWeight: 700, marginBottom: 8 }}>{card.label}</div>
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 26, marginBottom: 8 }}>{card.value}</div>
-              <div style={{ fontSize: 12.5, lineHeight: 1.55, color: "rgba(245,240,232,0.62)" }}>{card.detail}</div>
-            </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 12 }}>
+          {summaryCards.map((card) => (
+            <TerminalMetric key={card.id} card={card} />
           ))}
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: 14 }}>
-          <div style={{ borderRadius: 18, border: "1px solid var(--np-border)", background: "var(--np-surface)", padding: 18 }}>
-            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: "#d4a54a", fontWeight: 700, marginBottom: 8 }}>Top catalysts</div>
-            <div style={{ display: "grid", gap: 12 }}>
-              {signals.topCatalysts.map((item) => (
-                <a key={item.id} href={item.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", color: "inherit", borderRadius: 14, border: "1px solid var(--np-border)", padding: "12px 14px", display: "grid", gap: 6 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-                    <span style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", color: "#d4a54a", fontWeight: 700 }}>{item.tag}</span>
-                    <span style={{ fontSize: 10.5, color: "var(--np-text-faint)" }}>{item.dateLabel}</span>
-                  </div>
-                  <div style={{ fontWeight: 700, lineHeight: 1.45 }}>{item.title}</div>
-                  <div style={{ fontSize: 12.5, lineHeight: 1.6, color: "var(--np-text-muted)" }}>{item.whyItMatters || item.curiosityHook}</div>
-                </a>
-              ))}
-            </div>
-          </div>
-
-          <div style={{ borderRadius: 18, border: "1px solid var(--np-border)", background: "var(--np-surface)", padding: 18 }}>
-            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: "#d4a54a", fontWeight: 700, marginBottom: 8 }}>Buildout leaders</div>
-            <div style={{ display: "grid", gap: 12 }}>
-              {signals.buildoutLeaders.map((project) => (
-                <div key={project.id} style={{ borderRadius: 14, border: "1px solid var(--np-border)", padding: "12px 14px", display: "grid", gap: 6 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-                    <div style={{ fontWeight: 700 }}>{project.name}</div>
-                    <span style={{ fontSize: 10.5, color: "#d4a54a", textTransform: "uppercase", letterSpacing: "0.08em" }}>{project.status}</span>
-                  </div>
-                  <div style={{ fontSize: 12.5, color: "var(--np-text-muted)" }}>{project.country} | {project.type} | {project.capacityMw} MW{project.targetYear ? ` | ${project.targetYear}` : ""}</div>
-                  <div style={{ fontSize: 12.5, lineHeight: 1.6, color: "var(--np-text-muted)" }}>{project.summary}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div style={{ borderRadius: 18, border: "1px solid var(--np-border)", background: "var(--np-surface)", padding: 18 }}>
-            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: "#d4a54a", fontWeight: 700, marginBottom: 8 }}>Filing radar</div>
-            <div style={{ display: "grid", gap: 12 }}>
-              {signals.filingRadar.map((filing) => (
-                <a key={filing.id} href={filing.url || "#"} target={filing.url ? "_blank" : undefined} rel={filing.url ? "noopener noreferrer" : undefined} style={{ textDecoration: "none", color: "inherit", borderRadius: 14, border: "1px solid var(--np-border)", padding: "12px 14px", display: "grid", gap: 6, pointerEvents: filing.url ? "auto" : "none" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-                    <span style={{ fontSize: 10.5, color: "#7dd3fc", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>{filing.ticker}</span>
-                    <span style={{ fontSize: 10.5, color: "var(--np-text-faint)" }}>{filing.filedLabel}</span>
-                  </div>
-                  <div style={{ fontWeight: 700, lineHeight: 1.45 }}>{filing.form}</div>
-                  <div style={{ fontSize: 12.5, lineHeight: 1.6, color: "var(--np-text-muted)" }}>{filing.companyName} | {filing.summary}</div>
-                </a>
-              ))}
-            </div>
-          </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))", gap: 12 }}>
+          <TerminalMiniList
+            title="Catalyst wire"
+            items={catalysts}
+            renderMeta={(item) => `${item.tag} | ${item.dateLabel}`}
+          />
+          <TerminalMiniList
+            title="Buildout watch"
+            items={buildout}
+            renderMeta={(item) => `${item.country} | ${item.status}${item.targetYear ? ` | ${item.targetYear}` : ""}`}
+          />
+          <TerminalMiniList
+            title="Filing radar"
+            accent="#7dd3fc"
+            items={filings}
+            renderMeta={(item) => `${item.ticker} | ${item.filedLabel}`}
+          />
         </div>
       </div>
     </section>
