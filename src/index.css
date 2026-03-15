@@ -175,6 +175,10 @@ video {
   margin: 14px 0 12px;
 }
 
+.np-globe-panel > .np-globe-filter-bar {
+  display: none;
+}
+
 .np-globe-filter-field {
   display: grid;
   gap: 6px;

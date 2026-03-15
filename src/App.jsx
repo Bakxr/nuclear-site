@@ -1652,6 +1652,52 @@ export default function NuclearPulse() {
                 <div className="np-globe-panel-meta" style={{ fontWeight: 600, fontSize: 13, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--np-text-muted)" }}>
                   {activeGlobeItems.length} {globeLayer === "reactors" ? "Plants" : "Mines"} {searchQuery && `· "${searchQuery}"`}
                 </div>
+                <div className="np-globe-filter-bar">
+                  <label className="np-globe-filter-field">
+                    <span>Country</span>
+                    <select
+                      className="np-globe-filter-select"
+                      value={globeCountryFilter}
+                      onChange={(e) => setGlobeCountryFilter(e.target.value)}
+                    >
+                      <option value="">All countries</option>
+                      {globeCountryOptions.map((country) => (
+                        <option key={country} value={country}>
+                          {country}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  {globeLayer === "reactors" && (
+                    <label className="np-globe-filter-field">
+                      <span>Reactor type</span>
+                      <select
+                        className="np-globe-filter-select"
+                        value={globeReactorTypeFilter}
+                        onChange={(e) => setGlobeReactorTypeFilter(e.target.value)}
+                      >
+                        <option value="">All types</option>
+                        {globeReactorTypeOptions.map((reactorType) => (
+                          <option key={reactorType} value={reactorType}>
+                            {reactorType}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
+                  {hasActiveGlobeFilters && (
+                    <button
+                      type="button"
+                      className="np-globe-filter-clear"
+                      onClick={() => {
+                        setGlobeCountryFilter("");
+                        setGlobeReactorTypeFilter("");
+                      }}
+                    >
+                      Clear filters
+                    </button>
+                  )}
+                </div>
               </div>
               <div style={{ display: "none", fontWeight: 600, fontSize: 13, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--np-text-muted)", marginBottom: 12 }}>
                 {filteredPlants.length} Plants {searchQuery && `· "${searchQuery}"`}
