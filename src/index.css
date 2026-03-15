@@ -518,11 +518,11 @@ video {
     max-height: none !important;
   }
   .np-globe-panel-mobile.is-expanded {
-    overflow: hidden !important;
+    overflow: visible !important;
   }
   .np-globe-panel-header {
     background: var(--np-surface) !important;
-    overflow: hidden;
+    overflow: visible !important;
     border-bottom: 1px solid var(--np-border);
     margin-bottom: 0;
     padding-bottom: 12px !important;
@@ -681,10 +681,17 @@ video {
     align-items: stretch;
   }
   .np-globe-filters-menu {
-    width: 100%;
+    width: auto;
+    margin-left: auto;
   }
   .np-globe-filters-trigger {
-    width: 100%;
+    width: auto;
+    min-width: 0;
+  }
+  .np-globe-filters-dropdown {
+    right: 0;
+    left: auto;
+    max-width: min(280px, calc(100vw - 40px));
   }
   .np-globe-list-item {
     align-items: flex-start !important;
