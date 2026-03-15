@@ -1645,7 +1645,8 @@ export default function NuclearPulse() {
               }}
             >
               <div className="np-globe-panel-header" style={{ position: shouldUseCompactGlobePanel ? "relative" : "sticky", top: 0, background: "linear-gradient(180deg, rgba(30,25,18,0.96) 0%, rgba(30,25,18,0.9) 72%, rgba(30,25,18,0) 100%)", padding: "6px 0 14px", backdropFilter: "blur(8px)", zIndex: 2, borderRadius: 14 }}>
-                <div className="np-globe-toggle-row" style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                <div className="np-globe-panel-top-row" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
+                  <div className="np-globe-toggle-row" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   {[{ key: "reactors", label: "Plants" }, { key: "uranium", label: "Mines" }].map((view) => {
                     const active = globeLayer === view.key;
                     return (
@@ -1674,8 +1675,7 @@ export default function NuclearPulse() {
                     );
                   })}
                 </div>
-                <div className="np-globe-panel-meta-row" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
-                  <div ref={globeFiltersRef} className="np-globe-filters-menu" style={{ position: "relative", marginLeft: "auto", order: 2 }}>
+                  <div ref={globeFiltersRef} className="np-globe-filters-menu" style={{ position: "relative", marginLeft: "auto" }}>
                     <button
                       type="button"
                       className={`np-globe-filters-trigger${hasActiveGlobeFilters ? " is-active" : ""}`}
@@ -1764,9 +1764,9 @@ export default function NuclearPulse() {
                       </div>
                     )}
                   </div>
+                </div>
                 <div className="np-globe-panel-meta" style={{ fontWeight: 600, fontSize: 13, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--np-text-muted)" }}>
                   {activeGlobeItems.length} {globeLayer === "reactors" ? "Plants" : "Mines"} {searchQuery && `· "${searchQuery}"`}
-                </div>
                 </div>
                 <div className="np-globe-filter-bar">
                   <label className="np-globe-filter-field">
