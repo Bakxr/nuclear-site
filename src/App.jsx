@@ -791,7 +791,7 @@ export default function NuclearPulse() {
 
   return (
     <MotionConfig reducedMotion="user">
-    <div style={{ minHeight: "100vh", background: "var(--np-bg)", fontFamily: "'DM Sans',sans-serif", color: "var(--np-text)" }}>
+    <div className="np-app-shell" style={{ minHeight: "100vh", background: "var(--np-bg)", fontFamily: "'DM Sans',sans-serif", color: "var(--np-text)" }}>
       <StockTicker stocks={stocks} onClickStock={setSelectedStock} />
 
       {/* Nav */}
@@ -801,7 +801,7 @@ export default function NuclearPulse() {
         position: "sticky", top: 0, zIndex: 100, background: "var(--np-nav-bg)",
         backdropFilter: "blur(24px)",
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}
+        <div className="np-brand" style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}
              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
           <span style={{ fontSize: 24 }}>⚛</span>
           <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -831,7 +831,7 @@ export default function NuclearPulse() {
             );
           })}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div className="np-nav-actions" style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <button onClick={toggleDarkMode} style={{
             background: "none", border: "1px solid var(--np-border)", borderRadius: "50%",
             width: 34, height: 34, cursor: "pointer", display: "flex", alignItems: "center",
@@ -841,7 +841,7 @@ export default function NuclearPulse() {
             onMouseEnter={e => e.currentTarget.style.borderColor = "var(--np-accent)"}
             onMouseLeave={e => e.currentTarget.style.borderColor = "var(--np-border)"}
           >{isDark ? "☀" : "☾"}</button>
-          <div style={{ position: "relative" }}>
+          <div className="np-search-shell" style={{ position: "relative" }}>
             <div className="np-nav-search" style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--np-surface-dim)", borderRadius: 20, padding: "7px 16px", border: "1px solid var(--np-border)", transition: "border-color 0.2s" }}>
               <span style={{ opacity: 0.3, fontSize: 13 }}>🔍</span>
               <input
@@ -1132,7 +1132,7 @@ export default function NuclearPulse() {
                     </div>
                   </div>
 
-                  <div style={{ display: "grid", gap: 6, minWidth: 230 }}>
+                  <div className="np-data-summary" style={{ display: "grid", gap: 6, minWidth: 230 }}>
                     <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: "#d4a54a" }}>
                       {dataView === "countries" ? "Country lens" : "Proof lens"}
                     </div>
@@ -1555,9 +1555,9 @@ export default function NuclearPulse() {
               </Suspense>
             </div>
 
-            <div style={{ background: "var(--np-surface-dim)", borderRadius: 16, border: "1px solid var(--np-border)", padding: "16px 18px 28px", overflowY: "auto", maxHeight: 520 }}>
+            <div className="np-globe-panel" style={{ background: "var(--np-surface-dim)", borderRadius: 16, border: "1px solid var(--np-border)", padding: "16px 18px 28px", overflowY: "auto", maxHeight: 520 }}>
               <div style={{ position: "sticky", top: 0, background: "linear-gradient(180deg, rgba(30,25,18,0.96) 0%, rgba(30,25,18,0.9) 72%, rgba(30,25,18,0) 100%)", padding: "6px 0 14px", backdropFilter: "blur(8px)", zIndex: 2, borderRadius: 14 }}>
-                <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                <div className="np-globe-toggle-row" style={{ display: "flex", gap: 8, marginBottom: 12 }}>
                   {[{ key: "reactors", label: "Plants" }, { key: "uranium", label: "Mines" }].map((view) => {
                     const active = globeLayer === view.key;
                     return (
@@ -1586,7 +1586,7 @@ export default function NuclearPulse() {
                     );
                   })}
                 </div>
-                <div style={{ fontWeight: 600, fontSize: 13, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--np-text-muted)" }}>
+                <div className="np-globe-panel-meta" style={{ fontWeight: 600, fontSize: 13, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--np-text-muted)" }}>
                   {activeGlobeItems.length} {globeLayer === "reactors" ? "Plants" : "Mines"} {searchQuery && `· "${searchQuery}"`}
                 </div>
               </div>
@@ -1596,6 +1596,7 @@ export default function NuclearPulse() {
               <div style={{ paddingBottom: 10 }}>
               {globeLayer === "reactors" ? filteredPlants.map((plant) => (
                 <div
+                  className="np-globe-list-item"
                   key={plant.name}
                   onClick={() => setSelectedPlant(plant)}
                   style={{
@@ -1611,11 +1612,11 @@ export default function NuclearPulse() {
                   onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(212,165,74,0.08)"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
                 >
-                  <div>
+                  <div style={{ minWidth: 0 }}>
                     <div style={{ fontWeight: 600, fontSize: 13.5, color: "var(--np-text)" }}>{plant.name}</div>
                     <div style={{ fontSize: 11, color: "var(--np-text-muted)" }}>{plant.country} · {plant.type}</div>
                   </div>
-                  <div style={{ textAlign: "right" }}>
+                  <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 12 }}>
                     <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 12.5, fontWeight: 600, color: "var(--np-text)" }}>
                       {plant.capacity.toLocaleString("en-US")} MW
                     </div>
@@ -1626,6 +1627,7 @@ export default function NuclearPulse() {
                 </div>
               )) : filteredSupplySites.map((site) => (
                 <div
+                  className="np-globe-list-item"
                   key={site.id}
                   style={{
                     padding: "12px 12px",
@@ -1636,11 +1638,11 @@ export default function NuclearPulse() {
                   }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
-                    <div>
+                    <div style={{ minWidth: 0 }}>
                       <div style={{ fontWeight: 600, fontSize: 13.5, color: "var(--np-text)" }}>{site.name}</div>
                       <div style={{ fontSize: 11, color: "var(--np-text-muted)" }}>{site.country} · {site.region}</div>
                     </div>
-                    <div style={{ textAlign: "right" }}>
+                    <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 12 }}>
                       <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 11.5, fontWeight: 700, color: SUPPLY_STAGE_COLORS[site.stage] || "var(--np-accent)" }}>
                         {site.stage}
                       </div>
@@ -1694,7 +1696,7 @@ export default function NuclearPulse() {
               )}
             </motion.div>
           </motion.div>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, marginBottom: 32, flexWrap: "wrap" }}>
+          <div className="np-news-toolbar" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, marginBottom: 32, flexWrap: "wrap" }}>
             {/* Tag filters */}
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {["All", "Policy", "Industry", "Expansion", "Research", "Markets", "Innovation", "Safety"].map(tag => (

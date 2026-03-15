@@ -5,10 +5,12 @@ export default function StockTicker({ stocks, onClickStock }) {
     <div aria-label="Nuclear stock ticker" style={{
       overflow: "hidden", background: "rgba(20,18,14,0.97)", padding: "10px 0",
       borderBottom: "1px solid rgba(212,165,74,0.1)",
+      width: "100%",
+      maxWidth: "100%",
     }}>
       <div className="np-ticker-scroll" style={{
         display: "flex", gap: 44, animation: "tickerScroll 40s linear infinite",
-        whiteSpace: "nowrap", width: "max-content",
+        whiteSpace: "nowrap", width: "max-content", maxWidth: "none",
       }}>
         {[...stocks, ...stocks].map((s, i) => (
           <button key={i} type="button" onClick={() => onClickStock(s)} aria-label={`Open ${s.name} stock details`} style={{

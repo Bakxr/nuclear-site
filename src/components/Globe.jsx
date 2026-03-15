@@ -662,10 +662,12 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors" }) {
       </div>
       {hoveredPlant && tooltip.visible && (
         <div style={{
-          position: "absolute", left: Math.min(tooltip.x + 14, 300), top: tooltip.y - 10,
+          position: "absolute",
+          left: `clamp(12px, ${tooltip.x + 14}px, calc(100% - 252px))`,
+          top: Math.max(12, tooltip.y - 10),
           background: "rgba(20,18,14,0.94)", color: "#f5f0e8", padding: "12px 16px", borderRadius: 8,
           fontSize: 13, fontFamily: "'DM Sans',sans-serif", pointerEvents: "none", zIndex: 10,
-          border: "1px solid rgba(212,165,74,0.3)", maxWidth: 240, lineHeight: 1.4,
+          border: "1px solid rgba(212,165,74,0.3)", maxWidth: "min(240px, calc(100% - 24px))", lineHeight: 1.4,
           backdropFilter: "blur(10px)", boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
         }}>
           <div style={{ fontWeight: 700, fontSize: 15 }}>{hoveredPlant.name}</div>
