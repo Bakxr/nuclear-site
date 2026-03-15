@@ -321,6 +321,7 @@ export default function NuclearPulse() {
   const [flippedCards, setFlippedCards] = useState({});
   const [highlightedFact, setHighlightedFact] = useState(null);
   const [globeLayer, setGlobeLayer] = useState("reactors");
+  const [mobileGlobePanelExpanded, setMobileGlobePanelExpanded] = useState(false);
 
   // Proof comparison state
   const [compareMetric, setCompareMetric] = useState("co2");
@@ -727,6 +728,16 @@ export default function NuclearPulse() {
   }, [searchQuery]);
 
   const activeGlobeItems = globeLayer === "reactors" ? filteredPlants : filteredSupplySites;
+  const globePanelPreviewCount = 3;
+  const shouldUseCompactGlobePanel = isMobileViewport;
+  const visibleGlobeItems = shouldUseCompactGlobePanel && !mobileGlobePanelExpanded
+    ? activeGlobeItems.slice(0, globePanelPreviewCount)
+    : activeGlobeItems;
+
+  useEffect(() => {
+    if (!isMobileViewport) return;
+    setMobileGlobePanelExpanded(false);
+  }, [globeLayer, searchQuery, plantFilter, isMobileViewport]);
 
   // Plants grouped by country for Data section expansion
   const plantsByCountry = useMemo(() => {
@@ -1555,7 +1566,17 @@ export default function NuclearPulse() {
               </Suspense>
             </div>
 
-            <div className="np-globe-panel" style={{ background: "var(--np-surface-dim)", borderRadius: 16, border: "1px solid var(--np-border)", padding: "16px 18px 28px", overflowY: "auto", maxHeight: 520 }}>
+            <div
+              className={`np-globe-panel${shouldUseCompactGlobePanel ? " np-globe-panel-mobile" : ""}${mobileGlobePanelExpanded ? " is-expanded" : " is-collapsed"}`}
+              style={{
+                background: "var(--np-surface-dim)",
+                borderRadius: 16,
+                border: "1px solid var(--np-border)",
+                padding: "16px 18px 28px",
+                overflowY: shouldUseCompactGlobePanel && !mobileGlobePanelExpanded ? "visible" : "auto",
+                maxHeight: shouldUseCompactGlobePanel && !mobileGlobePanelExpanded ? "none" : 520,
+              }}
+            >
               <div style={{ position: "sticky", top: 0, background: "linear-gradient(180deg, rgba(30,25,18,0.96) 0%, rgba(30,25,18,0.9) 72%, rgba(30,25,18,0) 100%)", padding: "6px 0 14px", backdropFilter: "blur(8px)", zIndex: 2, borderRadius: 14 }}>
                 <div className="np-globe-toggle-row" style={{ display: "flex", gap: 8, marginBottom: 12 }}>
                   {[{ key: "reactors", label: "Plants" }, { key: "uranium", label: "Mines" }].map((view) => {
@@ -1594,7 +1615,7 @@ export default function NuclearPulse() {
                 {filteredPlants.length} Plants {searchQuery && `· "${searchQuery}"`}
               </div>
               <div style={{ paddingBottom: 10 }}>
-              {globeLayer === "reactors" ? filteredPlants.map((plant) => (
+              {globeLayer === "reactors" ? visibleGlobeItems.map((plant) => (
                 <div
                   className="np-globe-list-item"
                   key={plant.name}
@@ -1625,7 +1646,7 @@ export default function NuclearPulse() {
                     </div>
                   </div>
                 </div>
-              )) : filteredSupplySites.map((site) => (
+              )) : visibleGlobeItems.map((site) => (
                 <div
                   className="np-globe-list-item"
                   key={site.id}
@@ -1656,6 +1677,38 @@ export default function NuclearPulse() {
                 </div>
               ))}
               </div>
+              {shouldUseCompactGlobePanel && activeGlobeItems.length > globePanelPreviewCount && (
+                <button
+                  type="button"
+                  className="np-globe-show-more"
+                  onClick={() => {
+                    if (mobileGlobePanelExpanded) {
+                      setMobileGlobePanelExpanded(false);
+                    } else {
+                      setMobileGlobePanelExpanded(true);
+                    }
+                  }}
+                  style={{
+                    marginTop: 14,
+                    width: "100%",
+                    borderRadius: 999,
+                    border: "1px solid rgba(212,165,74,0.28)",
+                    background: "transparent",
+                    color: "#d4a54a",
+                    padding: "10px 16px",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    cursor: "pointer",
+                    fontFamily: "'DM Sans',sans-serif",
+                  }}
+                >
+                  {mobileGlobePanelExpanded
+                    ? "Show less"
+                    : `Show ${activeGlobeItems.length - globePanelPreviewCount} more`}
+                </button>
+              )}
             </div>
           </div>
         </div>

@@ -390,6 +390,13 @@ video {
   .np-globe-panel {
     padding-inline: 14px !important;
   }
+  .np-globe-panel-mobile.is-collapsed {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+  .np-globe-panel-mobile.is-expanded {
+    overflow-y: auto !important;
+  }
   .np-globe-toggle-row {
     flex-wrap: wrap !important;
   }
@@ -403,6 +410,9 @@ video {
   }
   .np-globe-list-item > div:first-child div {
     overflow-wrap: anywhere;
+  }
+  .np-globe-show-more {
+    min-height: 40px;
   }
 
   .np-news-toolbar {
@@ -503,6 +513,10 @@ video {
   }
   .np-globe-panel {
     padding: 14px 12px 18px !important;
+  }
+  .np-globe-show-more {
+    font-size: 11px !important;
+    padding: 10px 14px !important;
   }
   .np-globe-panel-meta {
     font-size: 11px !important;
