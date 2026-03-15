@@ -395,14 +395,21 @@ video {
     max-height: none !important;
   }
   .np-globe-panel-mobile.is-expanded {
-    overflow-y: auto !important;
+    overflow: hidden !important;
   }
-  .np-globe-panel-mobile > div:first-child {
+  .np-globe-panel-header {
     background: var(--np-surface) !important;
     overflow: hidden;
     border-bottom: 1px solid var(--np-border);
     margin-bottom: 10px;
     padding-bottom: 12px !important;
+  }
+  .np-globe-panel-list-mobile {
+    overflow: visible;
+  }
+  .np-globe-panel-mobile.is-expanded .np-globe-panel-list-mobile {
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
   }
   .np-globe-toggle-row {
     flex-wrap: wrap !important;
@@ -521,10 +528,13 @@ video {
   .np-globe-panel {
     padding: 14px 12px 18px !important;
   }
-  .np-globe-panel-mobile > div:first-child {
+  .np-globe-panel-header {
     border-radius: 12px 12px 0 0 !important;
     margin-inline: -12px !important;
     padding-inline: 12px !important;
+  }
+  .np-globe-panel-mobile.is-expanded .np-globe-panel-list-mobile {
+    padding-right: 2px;
   }
   .np-globe-show-more {
     font-size: 11px !important;

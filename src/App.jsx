@@ -349,6 +349,7 @@ export default function NuclearPulse() {
   // to satisfy the Rules of Hooks (hooks must be called unconditionally at the top level)
   const globeRef = useRef(null);
   const globePanelRef = useRef(null);
+  const globePanelListRef = useRef(null);
   const stocksRef = useRef(null);
   const newsRef = useRef(null);
   const dataRef = useRef(null);
@@ -1575,11 +1576,11 @@ export default function NuclearPulse() {
                 borderRadius: 16,
                 border: "1px solid var(--np-border)",
                 padding: "16px 18px 28px",
-                overflowY: shouldUseCompactGlobePanel && !mobileGlobePanelExpanded ? "visible" : "auto",
-                maxHeight: shouldUseCompactGlobePanel && !mobileGlobePanelExpanded ? "none" : 520,
+                overflowY: shouldUseCompactGlobePanel ? "visible" : "auto",
+                maxHeight: shouldUseCompactGlobePanel ? "none" : 520,
               }}
             >
-              <div style={{ position: "sticky", top: 0, background: "linear-gradient(180deg, rgba(30,25,18,0.96) 0%, rgba(30,25,18,0.9) 72%, rgba(30,25,18,0) 100%)", padding: "6px 0 14px", backdropFilter: "blur(8px)", zIndex: 2, borderRadius: 14 }}>
+              <div className="np-globe-panel-header" style={{ position: shouldUseCompactGlobePanel ? "relative" : "sticky", top: 0, background: "linear-gradient(180deg, rgba(30,25,18,0.96) 0%, rgba(30,25,18,0.9) 72%, rgba(30,25,18,0) 100%)", padding: "6px 0 14px", backdropFilter: "blur(8px)", zIndex: 2, borderRadius: 14 }}>
                 <div className="np-globe-toggle-row" style={{ display: "flex", gap: 8, marginBottom: 12 }}>
                   {[{ key: "reactors", label: "Plants" }, { key: "uranium", label: "Mines" }].map((view) => {
                     const active = globeLayer === view.key;
@@ -1616,7 +1617,15 @@ export default function NuclearPulse() {
               <div style={{ display: "none", fontWeight: 600, fontSize: 13, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--np-text-muted)", marginBottom: 12 }}>
                 {filteredPlants.length} Plants {searchQuery && `· "${searchQuery}"`}
               </div>
-              <div style={{ paddingBottom: 10 }}>
+              <div
+                ref={globePanelListRef}
+                className={`np-globe-panel-list${shouldUseCompactGlobePanel ? " np-globe-panel-list-mobile" : ""}`}
+                style={{
+                  paddingBottom: 10,
+                  overflowY: shouldUseCompactGlobePanel && mobileGlobePanelExpanded ? "auto" : "visible",
+                  maxHeight: shouldUseCompactGlobePanel && mobileGlobePanelExpanded ? 320 : "none",
+                }}
+              >
               {globeLayer === "reactors" ? visibleGlobeItems.map((plant) => (
                 <div
                   className="np-globe-list-item"
@@ -1686,7 +1695,7 @@ export default function NuclearPulse() {
                   onClick={() => {
                     if (mobileGlobePanelExpanded) {
                       setMobileGlobePanelExpanded(false);
-                      globePanelRef.current?.scrollTo?.({ top: 0, behavior: "smooth" });
+                      globePanelListRef.current?.scrollTo?.({ top: 0, behavior: "smooth" });
                     } else {
                       setMobileGlobePanelExpanded(true);
                     }
