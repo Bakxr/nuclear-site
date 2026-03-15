@@ -2466,7 +2466,14 @@ export default function NuclearPulse() {
                       >
                         <div style={{ marginTop: 20, paddingTop: 20, borderTop: "1px solid var(--np-border-strong)" }}>
                           {/* Info grid */}
-                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 20, marginBottom: 24 }}>
+                          <div
+                            style={{
+                              display: "grid",
+                              gridTemplateColumns: isMobileViewport ? "1fr" : "repeat(3, minmax(0, 1fr))",
+                              gap: isMobileViewport ? 16 : 20,
+                              marginBottom: 24,
+                            }}
+                          >
                             <div>
                               <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: r.color, fontWeight: 700, marginBottom: 10 }}>Advantages</div>
                               {r.advantages?.map((a, ai) => (
@@ -2496,7 +2503,7 @@ export default function NuclearPulse() {
                             onClick={e => e.stopPropagation()}
                           >
                             {/* Tab switcher header */}
-                            <div style={{ padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--np-border)" }}>
+                            <div className="np-reactor-header" style={{ padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--np-border)" }}>
                               <span style={{ fontSize: 13, fontWeight: 600, color: "var(--np-text-muted)" }}>
                                 {r.type} Reactor Viewer
                               </span>
@@ -2519,7 +2526,7 @@ export default function NuclearPulse() {
                                   <Reactor3D type={r.type} />
                                 </Suspense>
                               )
-                              : <div style={{ padding: "16px 20px" }}><ReactorDiagram type={r.type} width={900} /></div>
+                              : <div style={{ padding: isMobileViewport ? "14px 12px" : "16px 20px" }}><ReactorDiagram type={r.type} width={isMobileViewport ? 520 : 900} /></div>
                             }
                           </div>
                         </div>

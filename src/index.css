@@ -821,6 +821,15 @@ video {
   will-change: transform;
 }
 
+@keyframes np-hint-fade {
+  0%, 70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
 /* Framer-motion elements — smooth GPU compositing */
 .motion-div, [data-framer-component-type] {
   will-change: transform, opacity;
