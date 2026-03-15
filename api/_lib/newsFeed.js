@@ -1,6 +1,11 @@
 const FEEDS = [
   { id: "wnn", name: "World Nuclear News", url: "https://www.world-nuclear-news.org/rss", reputation: 10, topicFiltered: true },
   { id: "iaea", name: "IAEA", url: "https://www.iaea.org/feeds/topnews", reputation: 10, topicFiltered: false },
+  { id: "nrc_news", name: "US Nuclear Regulatory Commission", url: "https://www.nrc.gov/public-involve/rss?feed=news", reputation: 10, topicFiltered: true },
+  { id: "doe_ne", name: "US Department of Energy", url: "https://www.energy.gov/ne/rss.xml", reputation: 9, topicFiltered: true },
+  { id: "eia", name: "EIA Today in Energy", url: "https://www.eia.gov/rss/todayinenergy.xml", reputation: 8, topicFiltered: false },
+  { id: "ans", name: "ANS Nuclear Newswire", url: "https://www.ans.org/news/rss/", reputation: 9, topicFiltered: true },
+  { id: "nucnet", name: "NucNet", url: "https://www.nucnet.org/feed", reputation: 9, topicFiltered: true },
   { id: "nei_mag", name: "Nuclear Engineering International", url: "https://www.neimagazine.com/rss/", reputation: 8, topicFiltered: true },
   { id: "power_mag", name: "Power Magazine", url: "https://www.powermag.com/feed/", reputation: 7, topicFiltered: false },
   { id: "atomic_insights", name: "Atomic Insights", url: "https://atomicinsights.com/feed/", reputation: 7, topicFiltered: true },
@@ -11,7 +16,7 @@ const CACHE_TTL = 10 * 60 * 1000;
 const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 const MAX_PER_FEED = 8;
 const MAX_DIVERSITY = 3;
-const MAX_TOTAL = 24;
+const MAX_TOTAL = 30;
 const CACHE_KEY = "news";
 const cache = globalThis.__nuclearNewsCache ?? new Map();
 globalThis.__nuclearNewsCache = cache;
@@ -159,6 +164,8 @@ function parseFeed(xml, feed) {
       title,
       url: link,
       source: feed.name,
+      sourceTier: /IAEA|Nuclear Regulatory Commission|Department of Energy|EIA/.test(feed.name) ? "Official" : "Industry",
+      isOfficial: /IAEA|Nuclear Regulatory Commission|Department of Energy|EIA/.test(feed.name),
       date: relativeDate(pubDate),
       pubDate,
       tag,

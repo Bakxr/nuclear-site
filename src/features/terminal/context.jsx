@@ -1,6 +1,19 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer } from "react";
-import { buildEntityIndex, filterMapItems, getEntityById, searchTerminalSnapshot, selectCountryRanking, selectMarketRows, selectNewsRows, selectPipelineRows } from "./selectors.js";
+import {
+  buildEntityIndex,
+  filterMapItems,
+  getEntityById,
+  searchTerminalSnapshot,
+  selectCountryRanking,
+  selectFilingRows,
+  selectMarketRows,
+  selectNewsRows,
+  selectOfficialWireRows,
+  selectOperationsRows,
+  selectPipelineRows,
+  selectSourceRows,
+} from "./selectors.js";
 
 const WATCHLIST_KEY = "np-terminal-watchlist";
 const COMPARE_KEY = "np-terminal-compare";
@@ -97,9 +110,12 @@ function inferPatchFromEntity(entity) {
   if (entity.entityType === "country") return { countryFilter: entity.country, layer: "reactors", query: entity.country };
   if (entity.entityType === "plant") return { countryFilter: entity.country, layer: "reactors", reactorTypeFilter: entity.normalizedType, query: entity.name };
   if (entity.entityType === "supplySite") return { countryFilter: entity.country, layer: "uranium", query: entity.name };
-  if (entity.entityType === "company") return { countryFilter: entity.countries?.[0] || "", layer: inferLayerFromEntity(entity), query: entity.name };
-  if (entity.entityType === "story") return { countryFilter: entity.country || "", layer: inferLayerFromEntity(entity), query: entity.country || entity.tag };
+  if (entity.entityType === "company") return { countryFilter: entity.countries?.[0] || "", layer: inferLayerFromEntity(entity), query: "" };
+  if (entity.entityType === "story") return { countryFilter: entity.country || "", layer: inferLayerFromEntity(entity), query: "" };
   if (entity.entityType === "project") return { countryFilter: entity.country, layer: "reactors", query: entity.name };
+  if (entity.entityType === "filing") return { countryFilter: entity.country || "", layer: inferLayerFromEntity(entity), query: "" };
+  if (entity.entityType === "operationsSignal") return { countryFilter: entity.country || "USA", layer: "reactors", query: entity.plantName || entity.name };
+  if (entity.entityType === "sourceBrief") return { query: "" };
   return {};
 }
 
@@ -111,7 +127,11 @@ export function TerminalProvider({ snapshot, isMobileViewport, children }) {
   const rankingRows = useMemo(() => selectCountryRanking(snapshot, state.rankingMetric), [snapshot, state.rankingMetric]);
   const marketRows = useMemo(() => selectMarketRows(snapshot, { selectedEntity, marketSort: state.marketSort }), [snapshot, selectedEntity, state.marketSort]);
   const newsRows = useMemo(() => selectNewsRows(snapshot, { selectedEntity, newsTag: state.newsTag }), [snapshot, selectedEntity, state.newsTag]);
+  const officialRows = useMemo(() => selectOfficialWireRows(snapshot, { selectedEntity }), [snapshot, selectedEntity]);
   const pipelineRows = useMemo(() => selectPipelineRows(snapshot, { selectedEntity }), [snapshot, selectedEntity]);
+  const filingRows = useMemo(() => selectFilingRows(snapshot, { selectedEntity }), [snapshot, selectedEntity]);
+  const operationsRows = useMemo(() => selectOperationsRows(snapshot, { selectedEntity }), [snapshot, selectedEntity]);
+  const sourceRows = useMemo(() => selectSourceRows(snapshot), [snapshot]);
   const searchResults = useMemo(() => searchTerminalSnapshot(snapshot, state.query), [snapshot, state.query]);
   const compareEntities = useMemo(() => state.compareIds.map((id) => entityIndex.get(id)).filter(Boolean), [entityIndex, state.compareIds]);
   const watchedSet = useMemo(() => new Set(state.watchedIds), [state.watchedIds]);
@@ -172,7 +192,11 @@ export function TerminalProvider({ snapshot, isMobileViewport, children }) {
     rankingRows,
     marketRows,
     newsRows,
+    officialRows,
     pipelineRows,
+    filingRows,
+    operationsRows,
+    sourceRows,
     searchResults,
     compareEntities,
     availableCountries,
@@ -201,7 +225,11 @@ export function TerminalProvider({ snapshot, isMobileViewport, children }) {
     rankingRows,
     marketRows,
     newsRows,
+    officialRows,
     pipelineRows,
+    filingRows,
+    operationsRows,
+    sourceRows,
     searchResults,
     compareEntities,
     availableCountries,

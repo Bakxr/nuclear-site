@@ -36,3 +36,31 @@ export function terminalPillStyle(color = "rgba(212,165,74,0.72)") {
     color,
   };
 }
+
+export function terminalMetricTileStyle() {
+  return {
+    borderRadius: 14,
+    border: "1px solid rgba(255,255,255,0.06)",
+    background: "linear-gradient(180deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.02) 100%)",
+    padding: "14px 15px",
+  };
+}
+
+export function terminalDataRowStyle() {
+  return {
+    borderRadius: 12,
+    border: "1px solid rgba(255,255,255,0.06)",
+    background: "rgba(255,255,255,0.03)",
+    padding: "10px 12px",
+  };
+}
+
+export function terminalScrollAreaStyle(maxHeight = 420) {
+  return {
+    display: "grid",
+    gap: 8,
+    maxHeight,
+    overflowY: "auto",
+    paddingRight: 2,
+  };
+}

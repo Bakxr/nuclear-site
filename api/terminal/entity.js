@@ -1,6 +1,6 @@
 import { ensureAllowedOrigin } from "../_lib/http.js";
 import { getTerminalSnapshot } from "../_lib/terminalSnapshot.js";
-import { getEntityById, selectMarketRows, selectNewsRows, selectPipelineRows } from "../../src/features/terminal/selectors.js";
+import { getEntityById, selectFilingRows, selectMarketRows, selectNewsRows, selectOperationsRows, selectPipelineRows } from "../../src/features/terminal/selectors.js";
 
 export default async function handler(req, res) {
   if (!ensureAllowedOrigin(req, res, ["GET", "OPTIONS"])) return;
@@ -21,6 +21,8 @@ export default async function handler(req, res) {
         markets: selectMarketRows(snapshot, { selectedEntity: entity }).slice(0, 6),
         catalysts: selectNewsRows(snapshot, { selectedEntity: entity }).slice(0, 6),
         pipeline: selectPipelineRows(snapshot, { selectedEntity: entity }).slice(0, 6),
+        filings: selectFilingRows(snapshot, { selectedEntity: entity }).slice(0, 6),
+        operations: selectOperationsRows(snapshot, { selectedEntity: entity }).slice(0, 6),
       },
       generatedAt: snapshot.generatedAt,
     });

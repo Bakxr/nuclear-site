@@ -3,7 +3,7 @@ import { STATUS_COLORS } from "../../../data/constants.js";
 import { SUPPLY_STAGE_COLORS } from "../../../data/supplySites.js";
 import { useTerminal } from "../context.jsx";
 import TerminalPanel from "./TerminalPanel.jsx";
-import { terminalButtonStyle } from "./styles.js";
+import { terminalButtonStyle, terminalDataRowStyle } from "./styles.js";
 
 export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpenPlant }) {
   const {
@@ -35,7 +35,7 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
   );
 
   return (
-    <TerminalPanel title="Map Nexus" subtitle={`${mapItems.length} linked ${state.layer === "reactors" ? "reactor" : "fuel-cycle"} assets in view`} actions={actions}>
+    <TerminalPanel title="Map nexus" subtitle={`${mapItems.length} linked ${state.layer === "reactors" ? "reactor" : "fuel-cycle"} assets in view`} actions={actions}>
       <div style={{ display: "grid", gridTemplateColumns: isMobileViewport ? "1fr" : "repeat(4, minmax(0,1fr))", gap: 10, marginBottom: 14 }}>
         <label style={{ display: "grid", gap: 6 }}>
           <span style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(245,240,232,0.44)" }}>Country</span>
@@ -90,13 +90,13 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
               selectEntity(item);
               if (item.entityType === "plant") onOpenPlant?.(item);
             }}
-            style={{ textAlign: "left", borderRadius: 12, border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.03)", padding: "12px 13px", cursor: "pointer", color: "#f5f0e8" }}
+            style={{ ...terminalDataRowStyle(), textAlign: "left", cursor: "pointer", color: "#f5f0e8" }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontWeight: 700, fontSize: 13 }}>{item.name}</div>
                 <div style={{ fontSize: 11, color: "rgba(245,240,232,0.5)" }}>
-                  {item.country} · {state.layer === "reactors" ? item.type : item.stage}
+                  {item.country} | {state.layer === "reactors" ? item.type : item.stage}
                 </div>
               </div>
               <div style={{ fontSize: 10, color: state.layer === "reactors" ? (STATUS_COLORS[item.status] || "#d4a54a") : (SUPPLY_STAGE_COLORS[item.stage] || "#d4a54a"), textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700 }}>

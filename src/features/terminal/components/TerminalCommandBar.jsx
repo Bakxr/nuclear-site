@@ -1,8 +1,33 @@
 import { useTerminal } from "../context.jsx";
 import { terminalButtonStyle, terminalPillStyle } from "./styles.js";
 
+function formatFreshness(value) {
+  if (!value) return "waiting";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "waiting";
+  return date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).toLowerCase();
+}
+
 export default function TerminalCommandBar({ isMobileViewport, onExitTerminal, onRefreshData }) {
-  const { snapshot, searchResults, state, setQuery, selectEntity, resetWorkspace } = useTerminal();
+  const {
+    snapshot,
+    searchResults,
+    state,
+    compareEntities,
+    watchedSet,
+    setQuery,
+    selectEntity,
+    resetWorkspace,
+  } = useTerminal();
+
+  const activeChips = [
+    state.layer === "uranium" ? "Fuel-cycle layer" : "Fleet layer",
+    state.countryFilter ? `Country ${state.countryFilter}` : null,
+    state.reactorTypeFilter ? `Type ${state.reactorTypeFilter}` : null,
+    state.statusFilter ? `Status ${state.statusFilter}` : null,
+    compareEntities.length ? `Compare ${compareEntities.length}` : null,
+    watchedSet.size ? `Watch ${watchedSet.size}` : null,
+  ].filter(Boolean);
 
   return (
     <div style={{ borderBottom: "1px solid rgba(212,165,74,0.12)", position: "sticky", top: 0, zIndex: 110, backdropFilter: "blur(20px)", background: "rgba(8,11,17,0.88)" }}>
@@ -14,14 +39,14 @@ export default function TerminalCommandBar({ isMobileViewport, onExitTerminal, o
           <div style={{ minWidth: 0, flex: "1 1 320px" }}>
             <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.14em", color: "rgba(212,165,74,0.78)", fontWeight: 700, marginBottom: 4 }}>Nuclear Terminal</div>
             <div style={{ fontFamily: "'Playfair Display',serif", fontSize: isMobileViewport ? 24 : 30, lineHeight: 1.05 }}>
-              The advanced nuclear intelligence workspace.
+              Bloomberg density for the nuclear economy.
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginLeft: "auto" }}>
             {Object.values(snapshot.freshness).map((item) => (
               <span key={item.label} style={terminalPillStyle(item.stale ? "#fbbf24" : "rgba(245,240,232,0.7)")}>
                 <span style={{ width: 7, height: 7, borderRadius: "50%", background: item.stale ? "#fbbf24" : "#4ade80", display: "inline-block" }} />
-                {item.label}
+                {item.label} {formatFreshness(item.updatedAt)}
               </span>
             ))}
           </div>
@@ -35,7 +60,7 @@ export default function TerminalCommandBar({ isMobileViewport, onExitTerminal, o
                 type="text"
                 value={state.query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search plants, countries, companies, stories, projects"
+                placeholder="Search plants, countries, companies, filings, stories, projects"
                 style={{ width: "100%", background: "none", border: "none", outline: "none", color: "#f5f0e8", fontSize: 13, fontFamily: "'DM Sans',sans-serif" }}
               />
             </div>
@@ -51,10 +76,12 @@ export default function TerminalCommandBar({ isMobileViewport, onExitTerminal, o
                     <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
                       <div style={{ minWidth: 0 }}>
                         <div style={{ fontWeight: 700, fontSize: 13 }}>{result.name || result.title}</div>
-                        <div style={{ fontSize: 11, color: "rgba(245,240,232,0.44)" }}>{result.entityType} {result.country ? `· ${result.country}` : ""}</div>
+                        <div style={{ fontSize: 11, color: "rgba(245,240,232,0.44)" }}>
+                          {result.entityType}{result.country ? ` | ${result.country}` : ""}
+                        </div>
                       </div>
                       <span style={{ fontSize: 10, textTransform: "uppercase", color: "#d4a54a", letterSpacing: "0.08em" }}>
-                        {result.tag || result.theme || result.status || result.stage || result.entityType}
+                        {result.form || result.tag || result.theme || result.status || result.stage || result.entityType}
                       </span>
                     </div>
                   </button>
@@ -72,6 +99,16 @@ export default function TerminalCommandBar({ isMobileViewport, onExitTerminal, o
             </button>
           </div>
         </div>
+
+        {activeChips.length ? (
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {activeChips.map((chip) => (
+              <span key={chip} style={terminalPillStyle("rgba(245,240,232,0.72)")}>
+                {chip}
+              </span>
+            ))}
+          </div>
+        ) : null}
       </div>
     </div>
   );

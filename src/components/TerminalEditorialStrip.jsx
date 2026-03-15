@@ -52,9 +52,25 @@ export default function TerminalEditorialStrip({ signals, onOpenTerminal }) {
                     <div style={{ fontWeight: 700 }}>{project.name}</div>
                     <span style={{ fontSize: 10.5, color: "#d4a54a", textTransform: "uppercase", letterSpacing: "0.08em" }}>{project.status}</span>
                   </div>
-                  <div style={{ fontSize: 12.5, color: "var(--np-text-muted)" }}>{project.country} · {project.type} · {project.capacityMw} MW{project.targetYear ? ` · ${project.targetYear}` : ""}</div>
+                  <div style={{ fontSize: 12.5, color: "var(--np-text-muted)" }}>{project.country} | {project.type} | {project.capacityMw} MW{project.targetYear ? ` | ${project.targetYear}` : ""}</div>
                   <div style={{ fontSize: 12.5, lineHeight: 1.6, color: "var(--np-text-muted)" }}>{project.summary}</div>
                 </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ borderRadius: 18, border: "1px solid var(--np-border)", background: "var(--np-surface)", padding: 18 }}>
+            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: "#d4a54a", fontWeight: 700, marginBottom: 8 }}>Filing radar</div>
+            <div style={{ display: "grid", gap: 12 }}>
+              {signals.filingRadar.map((filing) => (
+                <a key={filing.id} href={filing.url || "#"} target={filing.url ? "_blank" : undefined} rel={filing.url ? "noopener noreferrer" : undefined} style={{ textDecoration: "none", color: "inherit", borderRadius: 14, border: "1px solid var(--np-border)", padding: "12px 14px", display: "grid", gap: 6, pointerEvents: filing.url ? "auto" : "none" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+                    <span style={{ fontSize: 10.5, color: "#7dd3fc", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>{filing.ticker}</span>
+                    <span style={{ fontSize: 10.5, color: "var(--np-text-faint)" }}>{filing.filedLabel}</span>
+                  </div>
+                  <div style={{ fontWeight: 700, lineHeight: 1.45 }}>{filing.form}</div>
+                  <div style={{ fontSize: 12.5, lineHeight: 1.6, color: "var(--np-text-muted)" }}>{filing.companyName} | {filing.summary}</div>
+                </a>
               ))}
             </div>
           </div>

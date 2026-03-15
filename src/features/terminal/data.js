@@ -3,6 +3,7 @@ import { STOCKS_BASE, NUCLEAR_SHARE } from "../../data/constants.js";
 import { SMR_PROJECTS } from "../../data/smrProjects.js";
 import { URANIUM_SUPPLY_SITES } from "../../data/supplySites.js";
 import { TERMINAL_COMPANY_INTELLIGENCE } from "../../data/companyIntelligence.js";
+import { TERMINAL_SOURCE_CATALOG } from "../../data/sourceCatalog.js";
 import { normalizeCountryName } from "../../utils/countries.js";
 import { inferNewsLocation } from "../../utils/news.js";
 import { normalizeReactorType } from "../../services/plantAPI.js";
@@ -36,6 +37,8 @@ function getDefaultConfidence(category) {
   if (category === "markets") return 0.78;
   if (category === "news") return 0.76;
   if (category === "pipeline") return 0.8;
+  if (category === "filings") return 0.9;
+  if (category === "operations") return 0.92;
   return 0.86;
 }
 
@@ -60,6 +63,17 @@ function inferStockTheme(stock = {}) {
 
 function buildCompanyId(name) {
   return `company:${slugify(name)}`;
+}
+
+function classifyNewsSource(sourceName = "") {
+  const source = String(sourceName || "").toLowerCase();
+  if (/nrc|iaea|department of energy|doe|eia|cnsc/.test(source)) {
+    return { isOfficial: true, tier: "Official" };
+  }
+  if (/world nuclear news|nucnet|ans|nuclear engineering international/.test(source)) {
+    return { isOfficial: false, tier: "Industry" };
+  }
+  return { isOfficial: false, tier: "Media" };
 }
 
 function buildCountryIndex() {
@@ -133,6 +147,7 @@ function buildCompanies(stocks, updatedAt) {
   return stocks.map((stock) => {
     const intelligence = TERMINAL_COMPANY_INTELLIGENCE[stock.ticker] || {};
     const companyId = intelligence.companyId || buildCompanyId(stock.name);
+    const countries = (intelligence.countries || []).map((country) => normalizeCountryName(country));
     return {
       id: companyId,
       entityType: "company",
@@ -141,7 +156,7 @@ function buildCompanies(stocks, updatedAt) {
       sector: stock.sector,
       desc: stock.desc,
       theme: intelligence.focus || inferStockTheme(stock),
-      countries: intelligence.countries || [],
+      countries,
       siteIds: intelligence.siteIds || [],
       relatedPlantNames: intelligence.relatedPlantNames || [],
       relatedProjectNames: intelligence.relatedProjectNames || [],
@@ -153,6 +168,7 @@ function buildCompanies(stocks, updatedAt) {
 function buildMarketInstruments(stocks, updatedAt) {
   return stocks.map((stock) => {
     const intelligence = TERMINAL_COMPANY_INTELLIGENCE[stock.ticker] || {};
+    const countries = (intelligence.countries || []).map((country) => normalizeCountryName(country));
     return {
       id: `market:${stock.ticker.toLowerCase()}`,
       entityType: "marketInstrument",
@@ -165,15 +181,17 @@ function buildMarketInstruments(stocks, updatedAt) {
       pct: stock.pct || 0,
       history: Array.isArray(stock.history) ? stock.history : [],
       companyId: intelligence.companyId || buildCompanyId(stock.name),
-      countries: intelligence.countries || [],
+      countries,
       ...buildSourceMeta("Finnhub via Nuclear Pulse market service", updatedAt, "public", true, getDefaultConfidence("markets")),
     };
   });
 }
 
 function buildNewsArticles(news, updatedAt) {
+  if (news.some((item) => item?.entityType === "story")) return news;
   return news.map((item, index) => {
     const country = inferNewsLocation(item);
+    const sourceClass = classifyNewsSource(item.source);
     return {
       id: `story:${slugify(item.title || item.url || String(index))}-${index}`,
       entityType: "story",
@@ -185,10 +203,104 @@ function buildNewsArticles(news, updatedAt) {
       curiosityHook: item.curiosityHook || "",
       whyItMatters: item.whyItMatters || "",
       engagementScore: item.engagementScore || 0,
+      isOfficial: item.isOfficial ?? sourceClass.isOfficial,
+      sourceTier: item.sourceTier || sourceClass.tier,
       pubDate: toIso(item.pubDate) || updatedAt,
       country,
       countryId: country ? `country:${slugify(normalizeCountryName(country))}` : null,
       ...buildSourceMeta(item.source || "Nuclear news feeds", updatedAt, "public", true, getDefaultConfidence("news")),
+    };
+  });
+}
+
+function buildCompanyFilings(filings, companies, updatedAt) {
+  if (filings.some((item) => item?.entityType === "filing")) return filings;
+
+  const companyIndex = new Map(companies.map((company) => [company.ticker, company]));
+
+  return filings.map((filing, index) => {
+    const company = companyIndex.get(filing.ticker);
+    const country = company?.countries?.[0] || null;
+    const filedAt = toIso(filing.filingDate) || updatedAt;
+    return {
+      id: `filing:${slugify(`${filing.ticker}-${filing.form}-${filing.filingDate || index}`)}`,
+      entityType: "filing",
+      ticker: filing.ticker,
+      companyId: company?.id || null,
+      companyName: company?.name || filing.companyName || filing.ticker,
+      companyCountries: company?.countries || [],
+      country,
+      countryId: country ? `country:${slugify(normalizeCountryName(country))}` : null,
+      form: filing.form,
+      filingDate: filedAt,
+      filedLabel: new Date(filedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      accessionNumber: filing.accessionNumber || "",
+      url: filing.url,
+      summary: filing.summary || "SEC filing",
+      priority: filing.priority || 1,
+      theme: company?.theme || "Markets",
+      ...buildSourceMeta("SEC EDGAR", toIso(filing.filingDate) || updatedAt, "terminal", true, getDefaultConfidence("filings")),
+    };
+  });
+}
+
+function buildOperationsSignals(signals, plants, updatedAt) {
+  if (signals.some((item) => item?.entityType === "operationsSignal")) return signals;
+
+  const plantIndex = plants
+    .filter((plant) => plant.country === "United States" || plant.country === "USA")
+    .map((plant) => ({
+      plant,
+      alias: plant.name
+        .toLowerCase()
+        .replace(/\b(one|two|three|four|five|1|2|3|4|5)\b/g, " ")
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim(),
+    }));
+
+  return signals.map((signal, index) => {
+    const matched = plantIndex.find((entry) => entry.alias.includes(signal.plantAlias) || signal.plantAlias.includes(entry.alias));
+    const plant = matched?.plant || null;
+    const country = plant?.country || "USA";
+    return {
+      id: `ops:${slugify(`${signal.plantLabel}-${index}`)}`,
+      entityType: "operationsSignal",
+      title: signal.title,
+      name: signal.plantLabel,
+      plantName: plant?.name || signal.plantLabel,
+      plantId: plant?.id || null,
+      unitLabel: signal.unitLabel,
+      powerPct: signal.powerPct,
+      status: signal.status,
+      url: signal.url,
+      country,
+      countryId: `country:${slugify(normalizeCountryName(country))}`,
+      summary: `${signal.plantLabel} is reporting ${signal.powerPct}% power on the NRC status feed.`,
+      ...buildSourceMeta("US NRC Plant Status Feed", updatedAt, "terminal", true, getDefaultConfidence("operations")),
+    };
+  });
+}
+
+function buildSourceCatalog(sourceCatalog, snapshotMeta, updatedAt) {
+  if (sourceCatalog.some((item) => item?.entityType === "sourceBrief")) return sourceCatalog;
+
+  return sourceCatalog.map((source) => {
+    const liveCount = snapshotMeta[source.id]?.count ?? null;
+    const updatedSourceAt = snapshotMeta[source.id]?.updatedAt || updatedAt;
+    const status = snapshotMeta[source.id]?.status || source.defaultStatus;
+    return {
+      id: `source:${source.id}`,
+      entityType: "sourceBrief",
+      name: source.name,
+      shortLabel: source.shortLabel,
+      category: source.category,
+      coverage: source.coverage,
+      url: source.url,
+      status,
+      count: liveCount,
+      access: source.access,
+      publicSafe: source.publicSafe,
+      ...buildSourceMeta(source.name, updatedSourceAt, source.access, source.publicSafe, 0.88),
     };
   });
 }
@@ -353,7 +465,16 @@ function buildRegulatoryEvents(newsArticles, projectPipeline, updatedAt) {
   return [...fromNews, ...fallbacks].slice(0, 12);
 }
 
-function getFreshnessMap({ generatedAt, newsLastUpdated, hasMarkets, hasNews }) {
+function getFreshnessMap({
+  generatedAt,
+  newsLastUpdated,
+  filingsLastUpdated,
+  operationsLastUpdated,
+  hasMarkets,
+  hasNews,
+  hasFilings,
+  hasOperations,
+}) {
   return {
     markets: {
       label: "Markets",
@@ -379,6 +500,18 @@ function getFreshnessMap({ generatedAt, newsLastUpdated, hasMarkets, hasNews }) 
       stale: false,
       ...buildSourceMeta("Curated terminal pipeline", generatedAt, "terminal", true, getDefaultConfidence("pipeline")),
     },
+    filings: {
+      label: "Filings",
+      updatedAt: filingsLastUpdated || generatedAt,
+      stale: !hasFilings,
+      ...buildSourceMeta("SEC EDGAR", filingsLastUpdated || generatedAt, "terminal", true, getDefaultConfidence("filings")),
+    },
+    operations: {
+      label: "Ops",
+      updatedAt: operationsLastUpdated || generatedAt,
+      stale: !hasOperations,
+      ...buildSourceMeta("US NRC Plant Status Feed", operationsLastUpdated || generatedAt, "terminal", true, getDefaultConfidence("operations")),
+    },
   };
 }
 
@@ -387,7 +520,12 @@ export function buildTerminalSnapshot({
   supplySites = URANIUM_SUPPLY_SITES,
   stocks = STOCKS_BASE,
   news = [],
+  companyFilings = [],
+  operationsSignals = [],
+  sourceCatalog = TERMINAL_SOURCE_CATALOG,
   newsLastUpdated = null,
+  filingsLastUpdated = null,
+  operationsLastUpdated = null,
   generatedAt = new Date().toISOString(),
 } = {}) {
   const updatedAt = toIso(generatedAt) || new Date().toISOString();
@@ -398,15 +536,37 @@ export function buildTerminalSnapshot({
   const companies = buildCompanies(normalizedStocks, updatedAt);
   const marketInstruments = buildMarketInstruments(normalizedStocks, updatedAt);
   const newsArticles = buildNewsArticles(news, newsLastUpdated || updatedAt);
+  const filingEntities = buildCompanyFilings(companyFilings, companies, filingsLastUpdated || updatedAt);
+  const operationEntities = buildOperationsSignals(operationsSignals, plantEntities, operationsLastUpdated || updatedAt);
   const projectPipeline = buildProjectPipeline(plantEntities, SMR_PROJECTS, updatedAt);
   const countries = buildCountries(plantEntities, supplyEntities, projectPipeline, updatedAt);
   const countryMetrics = buildCountryMetrics(countries, updatedAt);
   const regulatoryEvents = buildRegulatoryEvents(newsArticles, projectPipeline, updatedAt);
+  const sourceEntities = buildSourceCatalog(sourceCatalog, {
+    pris: { count: plantEntities.length, status: "Snapshot", updatedAt },
+    cnpp: { status: "Ready", updatedAt },
+    aris: { status: "Ready", updatedAt },
+    "nrc-ops": { count: operationEntities.length, status: operationEntities.length ? "Live" : "Ready", updatedAt: operationsLastUpdated || updatedAt },
+    "nrc-news": { count: newsArticles.filter((item) => item.sourceName === "US Nuclear Regulatory Commission").length, status: "Live", updatedAt: newsLastUpdated || updatedAt },
+    sec: { count: filingEntities.length, status: filingEntities.length ? "Live" : "Ready", updatedAt: filingsLastUpdated || updatedAt },
+    doe: { count: newsArticles.filter((item) => /department of energy/i.test(item.sourceName || "")).length, status: "Live", updatedAt: newsLastUpdated || updatedAt },
+    eia: {
+      count: newsArticles.filter((item) => /eia/i.test(item.sourceName || "")).length,
+      status: newsArticles.some((item) => /eia/i.test(item.sourceName || "")) ? "Live" : "Ready",
+      updatedAt: newsLastUpdated || updatedAt,
+    },
+    cnsc: { status: "Ready", updatedAt },
+    entsoe: { status: "Ready", updatedAt },
+  }, updatedAt);
   const freshness = getFreshnessMap({
     generatedAt: updatedAt,
     newsLastUpdated: toIso(newsLastUpdated),
+    filingsLastUpdated: toIso(filingsLastUpdated),
+    operationsLastUpdated: toIso(operationsLastUpdated),
     hasMarkets: marketInstruments.some((item) => item.price > 0),
     hasNews: newsArticles.length > 0,
+    hasFilings: filingEntities.length > 0,
+    hasOperations: operationEntities.length > 0,
   });
 
   return {
@@ -420,9 +580,12 @@ export function buildTerminalSnapshot({
       companies,
       marketInstruments,
       newsArticles,
+      companyFilings: filingEntities,
+      operationsSignals: operationEntities,
       regulatoryEvents,
       projectPipeline,
       countryMetrics,
+      sourceCatalog: sourceEntities,
     },
   };
 }

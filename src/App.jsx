@@ -6,6 +6,7 @@ import { NUCLEAR_PLANTS } from "./data/plants.js";
 import { SUPPLY_STAGE_COLORS, URANIUM_SUPPLY_SITES } from "./data/supplySites.js";
 import { fetchStockHistory, fetchMultipleQuotes } from "./services/stocksAPI.js";
 import { clearNewsCache, fetchNuclearNews, getInstantNews } from "./services/newsAPI.js";
+import { fetchTerminalSnapshot } from "./services/terminalAPI.js";
 import useDarkMode from "./hooks/useDarkMode.js";
 import Timeline from "./components/Timeline.jsx";
 import StockTicker from "./components/StockTicker.jsx";
@@ -283,6 +284,26 @@ function LazySectionFallback({ height = 320 }) {
   );
 }
 
+function mergeTerminalSnapshots(localSnapshot, remoteSnapshot) {
+  if (!remoteSnapshot?.entities) return localSnapshot;
+
+  const localMarketIndex = new Map((localSnapshot?.entities?.marketInstruments || []).map((item) => [item.ticker, item]));
+  const mergedMarketInstruments = remoteSnapshot.entities.marketInstruments.map((item) => {
+    const localItem = localMarketIndex.get(item.ticker);
+    return localItem && Array.isArray(localItem.history) && localItem.history.length
+      ? { ...item, history: localItem.history }
+      : item;
+  });
+
+  return {
+    ...remoteSnapshot,
+    entities: {
+      ...remoteSnapshot.entities,
+      marketInstruments: mergedMarketInstruments,
+    },
+  };
+}
+
 
 // ─── MAIN APP ───────────────────────────────────────────────────────────
 
@@ -345,6 +366,7 @@ export default function NuclearPulse() {
     if (typeof window === "undefined") return "home";
     return getAppViewFromLocation(window.location);
   });
+  const [remoteTerminalSnapshot, setRemoteTerminalSnapshot] = useState(null);
 
   // Parallax hero
   const { scrollY } = useScroll();
@@ -690,6 +712,22 @@ export default function NuclearPulse() {
     }
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadRemoteTerminal() {
+      try {
+        const snapshot = await fetchTerminalSnapshot();
+        if (!cancelled) setRemoteTerminalSnapshot(snapshot);
+      } catch {
+        if (!cancelled) setRemoteTerminalSnapshot(null);
+      }
+    }
+
+    loadRemoteTerminal();
+    return () => { cancelled = true; };
+  }, []);
+
   const filteredNews = useMemo(() => {
     const filtered = newsFilter === "All" ? [...news] : news.filter(n => n.tag === newsFilter);
     if (newsSort === "latest") {
@@ -708,11 +746,16 @@ export default function NuclearPulse() {
     return filtered;
   }, [news, newsFilter, newsSort]);
 
-  const terminalSnapshot = useMemo(() => buildTerminalSnapshot({
+  const localTerminalSnapshot = useMemo(() => buildTerminalSnapshot({
     stocks,
     news,
     newsLastUpdated,
   }), [stocks, news, newsLastUpdated]);
+
+  const terminalSnapshot = useMemo(
+    () => mergeTerminalSnapshots(localTerminalSnapshot, remoteTerminalSnapshot),
+    [localTerminalSnapshot, remoteTerminalSnapshot],
+  );
 
   const editorialSignals = useMemo(() => getEditorialSignals(terminalSnapshot), [terminalSnapshot]);
 
@@ -740,11 +783,17 @@ export default function NuclearPulse() {
     }
   }
 
-  function handleTerminalRefresh() {
+  async function handleTerminalRefresh() {
     setStocksError(false);
     setStocksRetry((retry) => retry + 1);
     refreshNews();
-    fetch("/api/terminal/revalidate").catch(() => {});
+    try {
+      await fetch("/api/terminal/revalidate");
+      const snapshot = await fetchTerminalSnapshot();
+      setRemoteTerminalSnapshot(snapshot);
+    } catch {
+      // Keep the existing snapshot if the server refresh misses.
+    }
   }
 
   function getNewsMapLayer(article) {

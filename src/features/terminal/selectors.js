@@ -67,6 +67,9 @@ export function selectMarketRows(snapshot, { selectedEntity, marketSort = "pct" 
     company: companyByTicker.get(instrument.ticker),
   }));
 
+  if (selectedEntity?.entityType === "company") {
+    rows = rows.filter((row) => row.companyId === selectedEntity.id || row.company?.id === selectedEntity.id);
+  }
   if (selectedEntity?.entityType === "country") {
     rows = rows.filter((row) => row.countries.includes(selectedEntity.country));
   }
@@ -75,6 +78,12 @@ export function selectMarketRows(snapshot, { selectedEntity, marketSort = "pct" 
   }
   if (selectedEntity?.entityType === "project") {
     rows = rows.filter((row) => row.company?.relatedProjectNames?.includes(selectedEntity.name) || row.countries.includes(selectedEntity.country));
+  }
+  if (selectedEntity?.entityType === "filing") {
+    rows = rows.filter((row) => row.ticker === selectedEntity.ticker || row.companyId === selectedEntity.companyId);
+  }
+  if (selectedEntity?.entityType === "operationsSignal") {
+    rows = rows.filter((row) => row.countries.includes(selectedEntity.country));
   }
   if (selectedEntity?.entityType === "story") {
     const storyText = normalize(`${selectedEntity.title} ${selectedEntity.curiosityHook} ${selectedEntity.whyItMatters}`);
@@ -107,6 +116,15 @@ export function selectNewsRows(snapshot, { selectedEntity, newsTag = "All" } = {
   if (selectedEntity?.entityType === "company") {
     rows = rows.filter((row) => normalize(`${row.title} ${row.curiosityHook}`).includes(normalize(selectedEntity.name)) || selectedEntity.countries.includes(row.country));
   }
+  if (selectedEntity?.entityType === "filing") {
+    rows = rows.filter((row) => normalize(`${row.title} ${row.curiosityHook}`).includes(normalize(selectedEntity.ticker)) || row.country === selectedEntity.country);
+  }
+  if (selectedEntity?.entityType === "operationsSignal") {
+    rows = rows.filter((row) => row.country === selectedEntity.country || normalize(`${row.title} ${row.curiosityHook}`).includes(normalize(selectedEntity.plantName)));
+  }
+  if (selectedEntity?.entityType === "sourceBrief") {
+    rows = rows.filter((row) => normalize(row.sourceName).includes(normalize(selectedEntity.shortLabel)) || normalize(row.sourceName).includes(normalize(selectedEntity.name)));
+  }
 
   return rows.sort((a, b) => (b.engagementScore || 0) - (a.engagementScore || 0));
 }
@@ -117,8 +135,53 @@ export function selectPipelineRows(snapshot, { selectedEntity } = {}) {
   if (selectedEntity?.entityType === "country") rows = rows.filter((row) => row.country === selectedEntity.country);
   if (selectedEntity?.entityType === "company") rows = rows.filter((row) => row.company === selectedEntity.name || row.country && selectedEntity.countries.includes(row.country));
   if (selectedEntity?.entityType === "story") rows = rows.filter((row) => row.country === selectedEntity.country);
+  if (selectedEntity?.entityType === "filing") rows = rows.filter((row) => row.country === selectedEntity.country || row.company === selectedEntity.companyName);
+  if (selectedEntity?.entityType === "operationsSignal") rows = rows.filter((row) => row.country === selectedEntity.country);
 
   return rows;
+}
+
+export function selectOperationsRows(snapshot, { selectedEntity } = {}) {
+  let rows = [...snapshot.entities.operationsSignals];
+
+  if (selectedEntity?.entityType === "country") rows = rows.filter((row) => row.country === selectedEntity.country);
+  if (selectedEntity?.entityType === "plant") rows = rows.filter((row) => row.plantId === selectedEntity.id || normalize(row.plantName).includes(normalize(selectedEntity.name)));
+  if (selectedEntity?.entityType === "company") rows = rows.filter((row) => selectedEntity.countries.includes(row.country));
+  if (selectedEntity?.entityType === "story") rows = rows.filter((row) => row.country === selectedEntity.country || normalize(selectedEntity.title).includes(normalize(row.plantName)));
+  if (selectedEntity?.entityType === "project") rows = rows.filter((row) => row.country === selectedEntity.country);
+  if (selectedEntity?.entityType === "filing") rows = rows.filter((row) => row.country === selectedEntity.country);
+  if (selectedEntity?.entityType === "sourceBrief" && !/nrc/i.test(selectedEntity.name)) rows = [];
+
+  return rows.sort((a, b) => (b.powerPct || 0) - (a.powerPct || 0));
+}
+
+export function selectFilingRows(snapshot, { selectedEntity } = {}) {
+  let rows = [...snapshot.entities.companyFilings];
+
+  if (selectedEntity?.entityType === "country") rows = rows.filter((row) => row.country === selectedEntity.country);
+  if (selectedEntity?.entityType === "plant") rows = rows.filter((row) => row.country === selectedEntity.country);
+  if (selectedEntity?.entityType === "company") rows = rows.filter((row) => row.companyId === selectedEntity.id || row.ticker === selectedEntity.ticker);
+  if (selectedEntity?.entityType === "story") rows = rows.filter((row) => normalize(selectedEntity.title).includes(normalize(row.ticker)) || row.country === selectedEntity.country);
+  if (selectedEntity?.entityType === "project") rows = rows.filter((row) => row.country === selectedEntity.country || normalize(row.companyName).includes(normalize(selectedEntity.company)));
+  if (selectedEntity?.entityType === "operationsSignal") rows = rows.filter((row) => row.country === selectedEntity.country);
+  if (selectedEntity?.entityType === "sourceBrief" && !/sec/i.test(selectedEntity.name)) rows = [];
+
+  return rows.sort((a, b) => new Date(b.filingDate || 0).getTime() - new Date(a.filingDate || 0).getTime());
+}
+
+export function selectSourceRows(snapshot) {
+  return [...snapshot.entities.sourceCatalog].sort((left, right) => {
+    if (left.status !== right.status) {
+      const statusScore = { Live: 0, Snapshot: 1, Ready: 2 };
+      return (statusScore[left.status] ?? 3) - (statusScore[right.status] ?? 3);
+    }
+    return (left.name || "").localeCompare(right.name || "");
+  });
+}
+
+export function selectOfficialWireRows(snapshot, { selectedEntity } = {}) {
+  const rows = selectNewsRows(snapshot, { selectedEntity, newsTag: "All" });
+  return rows.filter((item) => item.isOfficial || item.sourceTier === "Official");
 }
 
 export function searchTerminalSnapshot(snapshot, query = "") {
@@ -132,6 +195,9 @@ export function searchTerminalSnapshot(snapshot, query = "") {
     ...snapshot.entities.newsArticles,
     ...snapshot.entities.projectPipeline,
     ...snapshot.entities.supplySites,
+    ...snapshot.entities.companyFilings,
+    ...snapshot.entities.operationsSignals,
+    ...snapshot.entities.sourceCatalog,
   ];
 
   return combined
@@ -145,6 +211,11 @@ export function searchTerminalSnapshot(snapshot, query = "") {
       item.stage,
       item.summary,
       item.desc,
+      item.companyName,
+      item.sourceName,
+      item.form,
+      item.coverage,
+      item.shortLabel,
     ].filter(Boolean).join(" ")).includes(q))
     .slice(0, 12);
 }
@@ -154,8 +225,10 @@ export function getEditorialSignals(snapshot) {
   const markets = selectMarketRows(snapshot);
   const catalysts = selectNewsRows(snapshot);
   const pipeline = selectPipelineRows(snapshot, {});
+  const filings = selectFilingRows(snapshot, {});
   const topMover = markets[0] || null;
   const leadingCountry = ranking[0] || null;
+  const liveSources = snapshot.entities.sourceCatalog.filter((item) => item.status === "Live").length;
 
   return {
     cards: [
@@ -183,8 +256,21 @@ export function getEditorialSignals(snapshot) {
         value: leadingCountry ? leadingCountry.country : "N/A",
         detail: leadingCountry ? `${leadingCountry.capacityGw.toFixed(1)} GW tracked` : "No country data",
       },
+      {
+        id: "sources",
+        label: "Verified sources",
+        value: `${liveSources}`,
+        detail: `${snapshot.entities.sourceCatalog.length} total data rails in the terminal model`,
+      },
+      {
+        id: "filings",
+        label: "Filing radar",
+        value: `${filings.length}`,
+        detail: filings[0] ? `${filings[0].ticker} ${filings[0].form} is the latest tracked SEC signal` : "No recent SEC signals",
+      },
     ],
     topCatalysts: catalysts.slice(0, 3),
     buildoutLeaders: pipeline.slice(0, 6),
+    filingRadar: filings.slice(0, 4),
   };
 }

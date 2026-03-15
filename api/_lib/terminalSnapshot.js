@@ -2,6 +2,8 @@ import { STOCKS_BASE } from "../../src/data/constants.js";
 import { buildTerminalSnapshot } from "../../src/features/terminal/data.js";
 import { fetchBatchQuotes } from "./market.js";
 import { getLiveNewsPayload } from "./newsFeed.js";
+import { fetchNrcPlantStatus } from "./nrc.js";
+import { fetchLatestCompanyFilings } from "./sec.js";
 import { readTerminalCache, writeTerminalCache } from "./terminalStore.js";
 
 const SNAPSHOT_KEY = "terminal_snapshot_v1";
@@ -13,25 +15,37 @@ export async function getTerminalSnapshot({ force = false } = {}) {
     return cached.payload;
   }
 
-  const quotes = await fetchBatchQuotes(STOCKS_BASE.map((stock) => stock.ticker));
-  let newsPayload;
+  const [quotesResult, newsResult, filingsResult, operationsResult] = await Promise.allSettled([
+    fetchBatchQuotes(STOCKS_BASE.map((stock) => stock.ticker)),
+    getLiveNewsPayload({ force }),
+    fetchLatestCompanyFilings(STOCKS_BASE),
+    fetchNrcPlantStatus(),
+  ]);
 
-  try {
-    newsPayload = await getLiveNewsPayload({ force });
-  } catch (error) {
-    if (cached?.payload) {
-      return {
-        ...cached.payload,
-        freshness: {
-          ...cached.payload.freshness,
-          news: {
-            ...cached.payload.freshness.news,
-            stale: true,
-          },
-        },
+  const quotes = quotesResult.status === "fulfilled" ? quotesResult.value : {};
+  const now = new Date().toISOString();
+  const newsPayload = newsResult.status === "fulfilled"
+    ? newsResult.value
+    : {
+        articles: cached?.payload?.entities?.newsArticles || [],
+        fetchedAt: cached?.payload?.freshness?.news?.updatedAt || new Date().toISOString(),
+        stale: true,
       };
-    }
-    throw error;
+  const companyFilings = filingsResult.status === "fulfilled"
+    ? filingsResult.value
+    : (cached?.payload?.entities?.companyFilings || []);
+  const operationsSignals = operationsResult.status === "fulfilled"
+    ? operationsResult.value
+    : (cached?.payload?.entities?.operationsSignals || []);
+  const filingsUpdatedAt = filingsResult.status === "fulfilled"
+    ? now
+    : (cached?.payload?.freshness?.filings?.updatedAt || now);
+  const operationsUpdatedAt = operationsResult.status === "fulfilled"
+    ? now
+    : (cached?.payload?.freshness?.operations?.updatedAt || now);
+
+  if (newsResult.status === "rejected" && !cached?.payload && !newsPayload.articles.length) {
+    throw newsResult.reason;
   }
 
   const stocks = STOCKS_BASE.map((stock) => ({
@@ -43,11 +57,17 @@ export async function getTerminalSnapshot({ force = false } = {}) {
   const snapshot = buildTerminalSnapshot({
     stocks,
     news: newsPayload.articles,
+    companyFilings,
+    operationsSignals,
     newsLastUpdated: newsPayload.fetchedAt,
-    generatedAt: new Date().toISOString(),
+    filingsLastUpdated: filingsUpdatedAt,
+    operationsLastUpdated: operationsUpdatedAt,
+    generatedAt: now,
   });
 
   snapshot.freshness.news.stale = Boolean(newsPayload.stale);
+  snapshot.freshness.filings.stale = filingsResult.status !== "fulfilled" && !companyFilings.length;
+  snapshot.freshness.operations.stale = operationsResult.status !== "fulfilled" && !operationsSignals.length;
   await writeTerminalCache(SNAPSHOT_KEY, snapshot);
   return snapshot;
 }
