@@ -167,6 +167,70 @@ video {
   min-height: calc(100svh - 108px);
 }
 
+.np-globe-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  margin: 14px 0 12px;
+}
+
+.np-globe-filter-field {
+  display: grid;
+  gap: 6px;
+  min-width: 144px;
+  flex: 1 1 160px;
+}
+
+.np-globe-filter-field > span {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--np-text-faint);
+}
+
+.np-globe-filter-select {
+  appearance: none;
+  border-radius: 12px;
+  border: 1px solid var(--np-border);
+  background: var(--np-surface);
+  color: var(--np-text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  padding: 11px 36px 11px 12px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.np-globe-filter-select:focus {
+  border-color: rgba(212, 165, 74, 0.45);
+  box-shadow: 0 0 0 3px rgba(212, 165, 74, 0.12);
+}
+
+.np-globe-filter-clear {
+  appearance: none;
+  border: 1px solid rgba(212, 165, 74, 0.24);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--np-accent);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 11px 14px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.np-globe-filter-clear:hover {
+  background: rgba(212, 165, 74, 0.08);
+  border-color: rgba(212, 165, 74, 0.36);
+}
+
 /* ====================================================================
    TABLET  (max-width: 768px)
    ==================================================================== */
@@ -419,6 +483,22 @@ video {
   .np-globe-list-item > div:first-child {
     min-width: 0 !important;
   }
+  .np-globe-filter-bar {
+    gap: 10px !important;
+    margin-bottom: 12px !important;
+  }
+  .np-globe-filter-field {
+    min-width: 0 !important;
+    flex: 1 1 140px !important;
+  }
+  .np-globe-filter-select {
+    min-height: 40px;
+    width: 100%;
+  }
+  .np-globe-filter-clear {
+    min-height: 40px;
+    width: 100%;
+  }
   .np-globe-list-item {
     gap: 10px !important;
   }
@@ -544,6 +624,16 @@ video {
     font-size: 11px !important;
     line-height: 1.5 !important;
     overflow-wrap: anywhere;
+  }
+  .np-globe-filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .np-globe-filter-field {
+    flex-basis: auto !important;
+  }
+  .np-globe-filter-field > span {
+    font-size: 10px !important;
   }
   .np-globe-list-item {
     align-items: flex-start !important;

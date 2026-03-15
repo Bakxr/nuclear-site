@@ -13,6 +13,7 @@ import SearchOverlay from "./components/SearchOverlay.jsx";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import ReactorDiagram from "./components/reactorDiagrams/index.jsx";
 import useDialog from "./hooks/useDialog.js";
+import { normalizeReactorType } from "./services/plantAPI.js";
 import { groupPlantsByCountry, normalizeCountryName } from "./utils/countries.js";
 import { NAV_ITEMS } from "./data/editorial.js";
 import { inferNewsLocation } from "./utils/news.js";
@@ -322,6 +323,8 @@ export default function NuclearPulse() {
   const [highlightedFact, setHighlightedFact] = useState(null);
   const [globeLayer, setGlobeLayer] = useState("reactors");
   const [mobileGlobePanelExpanded, setMobileGlobePanelExpanded] = useState(false);
+  const [globeCountryFilter, setGlobeCountryFilter] = useState("");
+  const [globeReactorTypeFilter, setGlobeReactorTypeFilter] = useState("");
 
   // Proof comparison state
   const [compareMetric, setCompareMetric] = useState("co2");
@@ -698,6 +701,26 @@ export default function NuclearPulse() {
       : "reactors";
   }
 
+  const globeCountryOptions = useMemo(() => {
+    return [
+      ...new Set(
+        [...NUCLEAR_PLANTS, ...URANIUM_SUPPLY_SITES]
+          .map((item) => item.country)
+          .filter(Boolean),
+      ),
+    ].sort((a, b) => a.localeCompare(b));
+  }, []);
+
+  const globeReactorTypeOptions = useMemo(() => {
+    return [
+      ...new Set(
+        NUCLEAR_PLANTS
+          .map((plant) => normalizeReactorType(plant.type))
+          .filter(Boolean),
+      ),
+    ].sort((a, b) => a.localeCompare(b));
+  }, []);
+
   const filteredPlants = useMemo(() => {
     let result = NUCLEAR_PLANTS;
     if (searchQuery) {
@@ -711,8 +734,14 @@ export default function NuclearPulse() {
     if (plantFilter !== "All") {
       result = result.filter((plant) => plant.status === plantFilter);
     }
+    if (globeCountryFilter) {
+      result = result.filter((plant) => plant.country === globeCountryFilter);
+    }
+    if (globeReactorTypeFilter) {
+      result = result.filter((plant) => normalizeReactorType(plant.type) === globeReactorTypeFilter);
+    }
     return result;
-  }, [searchQuery, plantFilter]);
+  }, [searchQuery, plantFilter, globeCountryFilter, globeReactorTypeFilter]);
 
   const filteredSupplySites = useMemo(() => {
     let result = URANIUM_SUPPLY_SITES;
@@ -726,20 +755,30 @@ export default function NuclearPulse() {
         || site.operator.toLowerCase().includes(q)
       );
     }
+    if (globeCountryFilter) {
+      result = result.filter((site) => site.country === globeCountryFilter);
+    }
     return result;
-  }, [searchQuery]);
+  }, [searchQuery, globeCountryFilter]);
 
   const activeGlobeItems = globeLayer === "reactors" ? filteredPlants : filteredSupplySites;
   const globePanelPreviewCount = 3;
   const shouldUseCompactGlobePanel = isMobileViewport;
+  const hasActiveGlobeFilters = Boolean(globeCountryFilter || globeReactorTypeFilter);
   const visibleGlobeItems = shouldUseCompactGlobePanel && !mobileGlobePanelExpanded
     ? activeGlobeItems.slice(0, globePanelPreviewCount)
     : activeGlobeItems;
 
   useEffect(() => {
+    if (globeLayer !== "reactors") {
+      setGlobeReactorTypeFilter("");
+    }
+  }, [globeLayer]);
+
+  useEffect(() => {
     if (!isMobileViewport) return;
     setMobileGlobePanelExpanded(false);
-  }, [globeLayer, searchQuery, plantFilter, isMobileViewport]);
+  }, [globeLayer, searchQuery, plantFilter, globeCountryFilter, globeReactorTypeFilter, isMobileViewport]);
 
   // Plants grouped by country for Data section expansion
   const plantsByCountry = useMemo(() => {
@@ -1616,6 +1655,52 @@ export default function NuclearPulse() {
               </div>
               <div style={{ display: "none", fontWeight: 600, fontSize: 13, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--np-text-muted)", marginBottom: 12 }}>
                 {filteredPlants.length} Plants {searchQuery && `· "${searchQuery}"`}
+              </div>
+              <div className="np-globe-filter-bar">
+                <label className="np-globe-filter-field">
+                  <span>Country</span>
+                  <select
+                    className="np-globe-filter-select"
+                    value={globeCountryFilter}
+                    onChange={(e) => setGlobeCountryFilter(e.target.value)}
+                  >
+                    <option value="">All countries</option>
+                    {globeCountryOptions.map((country) => (
+                      <option key={country} value={country}>
+                        {country}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {globeLayer === "reactors" && (
+                  <label className="np-globe-filter-field">
+                    <span>Reactor type</span>
+                    <select
+                      className="np-globe-filter-select"
+                      value={globeReactorTypeFilter}
+                      onChange={(e) => setGlobeReactorTypeFilter(e.target.value)}
+                    >
+                      <option value="">All types</option>
+                      {globeReactorTypeOptions.map((reactorType) => (
+                        <option key={reactorType} value={reactorType}>
+                          {reactorType}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+                {hasActiveGlobeFilters && (
+                  <button
+                    type="button"
+                    className="np-globe-filter-clear"
+                    onClick={() => {
+                      setGlobeCountryFilter("");
+                      setGlobeReactorTypeFilter("");
+                    }}
+                  >
+                    Clear filters
+                  </button>
+                )}
               </div>
               <div
                 ref={globePanelListRef}
