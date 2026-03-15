@@ -325,6 +325,7 @@ export default function NuclearPulse() {
   const [mobileGlobePanelExpanded, setMobileGlobePanelExpanded] = useState(false);
   const [globeCountryFilter, setGlobeCountryFilter] = useState("");
   const [globeReactorTypeFilter, setGlobeReactorTypeFilter] = useState("");
+  const [globeFiltersOpen, setGlobeFiltersOpen] = useState(false);
 
   // Proof comparison state
   const [compareMetric, setCompareMetric] = useState("co2");
@@ -353,6 +354,7 @@ export default function NuclearPulse() {
   const globeRef = useRef(null);
   const globePanelRef = useRef(null);
   const globePanelListRef = useRef(null);
+  const globeFiltersRef = useRef(null);
   const stocksRef = useRef(null);
   const newsRef = useRef(null);
   const dataRef = useRef(null);
@@ -773,12 +775,35 @@ export default function NuclearPulse() {
     if (globeLayer !== "reactors") {
       setGlobeReactorTypeFilter("");
     }
+    setGlobeFiltersOpen(false);
   }, [globeLayer]);
 
   useEffect(() => {
     if (!isMobileViewport) return;
     setMobileGlobePanelExpanded(false);
+    setGlobeFiltersOpen(false);
   }, [globeLayer, searchQuery, plantFilter, globeCountryFilter, globeReactorTypeFilter, isMobileViewport]);
+
+  useEffect(() => {
+    const handlePointerDown = (event) => {
+      if (!globeFiltersRef.current?.contains(event.target)) {
+        setGlobeFiltersOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, []);
+
+  useEffect(() => {
+    setGlobeFiltersOpen(false);
+  }, [globeCountryFilter, globeReactorTypeFilter]);
+
+  useEffect(() => {
+    if (!mobileGlobePanelExpanded) {
+      setGlobeFiltersOpen(false);
+    }
+  }, [mobileGlobePanelExpanded]);
 
   // Plants grouped by country for Data section expansion
   const plantsByCountry = useMemo(() => {
@@ -1649,8 +1674,99 @@ export default function NuclearPulse() {
                     );
                   })}
                 </div>
+                <div className="np-globe-panel-meta-row" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
+                  <div ref={globeFiltersRef} className="np-globe-filters-menu" style={{ position: "relative", marginLeft: "auto", order: 2 }}>
+                    <button
+                      type="button"
+                      className={`np-globe-filters-trigger${hasActiveGlobeFilters ? " is-active" : ""}`}
+                      onClick={() => setGlobeFiltersOpen((open) => !open)}
+                      aria-expanded={globeFiltersOpen}
+                      aria-haspopup="true"
+                      style={{
+                        borderRadius: 999,
+                        border: `1px solid ${hasActiveGlobeFilters ? "rgba(212,165,74,0.42)" : "var(--np-border)"}`,
+                        background: hasActiveGlobeFilters ? "rgba(212,165,74,0.12)" : "rgba(255,255,255,0.02)",
+                        color: hasActiveGlobeFilters ? "var(--np-accent)" : "var(--np-text-muted)",
+                        padding: "8px 14px",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        letterSpacing: "0.06em",
+                        textTransform: "uppercase",
+                        cursor: "pointer",
+                        fontFamily: "'DM Sans',sans-serif",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      Filters{hasActiveGlobeFilters ? ` (${Number(Boolean(globeCountryFilter)) + Number(Boolean(globeReactorTypeFilter))})` : ""}
+                    </button>
+                    {globeFiltersOpen && (
+                      <div
+                        className="np-globe-filters-dropdown"
+                        style={{
+                          position: "absolute",
+                          top: "calc(100% + 10px)",
+                          right: 0,
+                          width: shouldUseCompactGlobePanel ? "min(100vw - 64px, 280px)" : 280,
+                          padding: 14,
+                          borderRadius: 14,
+                          border: "1px solid var(--np-border-strong)",
+                          background: "var(--np-surface)",
+                          boxShadow: "0 24px 60px rgba(0, 0, 0, 0.16)",
+                          zIndex: 4,
+                        }}
+                      >
+                        <div className="np-globe-dropdown-fields" style={{ display: "grid", gap: 12 }}>
+                          <label className="np-globe-filter-field">
+                            <span>Country</span>
+                            <select
+                              className="np-globe-filter-select"
+                              value={globeCountryFilter}
+                              onChange={(e) => setGlobeCountryFilter(e.target.value)}
+                            >
+                              <option value="">All countries</option>
+                              {globeCountryOptions.map((country) => (
+                                <option key={country} value={country}>
+                                  {country}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                          {globeLayer === "reactors" && (
+                            <label className="np-globe-filter-field">
+                              <span>Reactor type</span>
+                              <select
+                                className="np-globe-filter-select"
+                                value={globeReactorTypeFilter}
+                                onChange={(e) => setGlobeReactorTypeFilter(e.target.value)}
+                              >
+                                <option value="">All types</option>
+                                {globeReactorTypeOptions.map((reactorType) => (
+                                  <option key={reactorType} value={reactorType}>
+                                    {reactorType}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                          )}
+                          {hasActiveGlobeFilters && (
+                            <button
+                              type="button"
+                              className="np-globe-filter-clear"
+                              onClick={() => {
+                                setGlobeCountryFilter("");
+                                setGlobeReactorTypeFilter("");
+                              }}
+                            >
+                              Clear filters
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 <div className="np-globe-panel-meta" style={{ fontWeight: 600, fontSize: 13, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--np-text-muted)" }}>
                   {activeGlobeItems.length} {globeLayer === "reactors" ? "Plants" : "Mines"} {searchQuery && `· "${searchQuery}"`}
+                </div>
                 </div>
                 <div className="np-globe-filter-bar">
                   <label className="np-globe-filter-field">
