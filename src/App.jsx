@@ -18,10 +18,11 @@ import { normalizeReactorType } from "./services/plantAPI.js";
 import { groupPlantsByCountry, normalizeCountryName } from "./utils/countries.js";
 import { NAV_ITEMS } from "./data/editorial.js";
 import { inferNewsLocation } from "./utils/news.js";
-import { buildTerminalSnapshot } from "./features/terminal/data.js";
-import { getEditorialSignals } from "./features/terminal/selectors.js";
+import { useTerminalAccess } from "./features/access/context.jsx";
+import { buildPublicTerminalSignals } from "./features/terminal/publicSignals.js";
 import { buildAppPath, getAppViewFromLocation } from "./features/terminal/route.js";
 import TerminalEditorialStrip from "./components/TerminalEditorialStrip.jsx";
+import TerminalAccessPage from "./features/access/TerminalAccessPage.jsx";
 
 const Globe = lazy(() => import("./components/Globe.jsx"));
 const StockModal = lazy(() => import("./components/StockModal.jsx"));
@@ -284,15 +285,22 @@ function LazySectionFallback({ height = 320 }) {
   );
 }
 
-function mergeTerminalSnapshots(localSnapshot, remoteSnapshot) {
-  if (!remoteSnapshot?.entities) return localSnapshot;
+function mergeTerminalSnapshots(localStocks, remoteSnapshot) {
+  if (!remoteSnapshot?.entities) return null;
 
-  const localMarketIndex = new Map((localSnapshot?.entities?.marketInstruments || []).map((item) => [item.ticker, item]));
+  const localMarketIndex = new Map((localStocks || []).map((item) => [item.ticker, item]));
   const mergedMarketInstruments = remoteSnapshot.entities.marketInstruments.map((item) => {
     const localItem = localMarketIndex.get(item.ticker);
-    return localItem && Array.isArray(localItem.history) && localItem.history.length
-      ? { ...item, history: localItem.history }
-      : item;
+    if (!localItem) return item;
+
+    return {
+      ...item,
+      sector: item.sector || localItem.sector,
+      desc: item.desc || localItem.desc,
+      pe: item.pe || localItem.pe,
+      mktCap: item.mktCap || localItem.mktCap,
+      history: Array.isArray(localItem.history) && localItem.history.length ? localItem.history : item.history || [],
+    };
   });
 
   return {
@@ -304,11 +312,72 @@ function mergeTerminalSnapshots(localSnapshot, remoteSnapshot) {
   };
 }
 
+function TerminalGateState({ title, message, actionLabel, onAction, secondaryLabel, onSecondary }) {
+  return (
+    <div style={{ minHeight: "100vh", background: "linear-gradient(180deg, #080b11 0%, #0a1018 100%)", color: "#f5f0e8", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <div style={{ width: "min(92vw, 560px)", borderRadius: 24, border: "1px solid rgba(212,165,74,0.16)", background: "rgba(10,12,17,0.94)", padding: "30px 24px", boxShadow: "0 28px 90px rgba(0,0,0,0.3)" }}>
+        <div style={{ fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", color: "#d4a54a", fontWeight: 700, marginBottom: 10 }}>
+          Nuclear Terminal
+        </div>
+        <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 34, lineHeight: 1.05, marginBottom: 12 }}>
+          {title}
+        </div>
+        <div style={{ fontSize: 14.5, lineHeight: 1.7, color: "rgba(245,240,232,0.66)" }}>
+          {message}
+        </div>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 22 }}>
+          {actionLabel ? (
+            <button
+              type="button"
+              onClick={onAction}
+              style={{
+                borderRadius: 999,
+                border: "1px solid rgba(212,165,74,0.35)",
+                background: "#f5f0e8",
+                color: "#14120e",
+                padding: "12px 18px",
+                cursor: "pointer",
+                fontSize: 12,
+                fontWeight: 700,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+              }}
+            >
+              {actionLabel}
+            </button>
+          ) : null}
+          {secondaryLabel ? (
+            <button
+              type="button"
+              onClick={onSecondary}
+              style={{
+                borderRadius: 999,
+                border: "1px solid rgba(245,240,232,0.12)",
+                background: "rgba(255,255,255,0.04)",
+                color: "#f5f0e8",
+                padding: "12px 18px",
+                cursor: "pointer",
+                fontSize: 12,
+                fontWeight: 700,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+              }}
+            >
+              {secondaryLabel}
+            </button>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 // ─── MAIN APP ───────────────────────────────────────────────────────────
 
 
 export default function NuclearPulse() {
+  const { accessState, getAccessToken } = useTerminalAccess();
   const [selectedPlant, setSelectedPlant] = useState(null);
   const [selectedStock, setSelectedStock] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -367,6 +436,8 @@ export default function NuclearPulse() {
     return getAppViewFromLocation(window.location);
   });
   const [remoteTerminalSnapshot, setRemoteTerminalSnapshot] = useState(null);
+  const [terminalLoading, setTerminalLoading] = useState(false);
+  const [terminalError, setTerminalError] = useState("");
 
   // Parallax hero
   const { scrollY } = useScroll();
@@ -713,20 +784,38 @@ export default function NuclearPulse() {
   }, []);
 
   useEffect(() => {
+    if (accessState === "active") return;
+    setRemoteTerminalSnapshot(null);
+    setTerminalLoading(false);
+    setTerminalError("");
+  }, [accessState]);
+
+  useEffect(() => {
+    if (appView !== "terminal" || accessState !== "active") return undefined;
+
     let cancelled = false;
 
     async function loadRemoteTerminal() {
+      setTerminalLoading(true);
+      setTerminalError("");
+
       try {
-        const snapshot = await fetchTerminalSnapshot();
+        const accessToken = await getAccessToken();
+        const snapshot = await fetchTerminalSnapshot(accessToken);
         if (!cancelled) setRemoteTerminalSnapshot(snapshot);
-      } catch {
-        if (!cancelled) setRemoteTerminalSnapshot(null);
+      } catch (error) {
+        if (!cancelled) {
+          setRemoteTerminalSnapshot(null);
+          setTerminalError(error?.message || "Could not load the terminal snapshot.");
+        }
+      } finally {
+        if (!cancelled) setTerminalLoading(false);
       }
     }
 
     loadRemoteTerminal();
     return () => { cancelled = true; };
-  }, []);
+  }, [accessState, appView, getAccessToken]);
 
   const filteredNews = useMemo(() => {
     const filtered = newsFilter === "All" ? [...news] : news.filter(n => n.tag === newsFilter);
@@ -746,18 +835,12 @@ export default function NuclearPulse() {
     return filtered;
   }, [news, newsFilter, newsSort]);
 
-  const localTerminalSnapshot = useMemo(() => buildTerminalSnapshot({
-    stocks,
-    news,
-    newsLastUpdated,
-  }), [stocks, news, newsLastUpdated]);
-
   const terminalSnapshot = useMemo(
-    () => mergeTerminalSnapshots(localTerminalSnapshot, remoteTerminalSnapshot),
-    [localTerminalSnapshot, remoteTerminalSnapshot],
+    () => mergeTerminalSnapshots(stocks, remoteTerminalSnapshot),
+    [stocks, remoteTerminalSnapshot],
   );
 
-  const editorialSignals = useMemo(() => getEditorialSignals(terminalSnapshot), [terminalSnapshot]);
+  const editorialSignals = useMemo(() => buildPublicTerminalSignals({ stocks, news }), [stocks, news]);
 
   const uniqueNewsSources = useMemo(() => new Set(news.map((item) => item.source)).size, [news]);
 
@@ -784,15 +867,16 @@ export default function NuclearPulse() {
   }
 
   async function handleTerminalRefresh() {
-    setStocksError(false);
-    setStocksRetry((retry) => retry + 1);
-    refreshNews();
+    setTerminalLoading(true);
+    setTerminalError("");
     try {
-      await fetch("/api/terminal/revalidate");
-      const snapshot = await fetchTerminalSnapshot();
+      const accessToken = await getAccessToken();
+      const snapshot = await fetchTerminalSnapshot(accessToken);
       setRemoteTerminalSnapshot(snapshot);
-    } catch {
-      // Keep the existing snapshot if the server refresh misses.
+    } catch (error) {
+      setTerminalError(error?.message || "Could not refresh the terminal snapshot.");
+    } finally {
+      setTerminalLoading(false);
     }
   }
 
@@ -967,21 +1051,53 @@ export default function NuclearPulse() {
   }, [learnFilter]);
 
   if (appView === "terminal") {
+    let terminalContent = null;
+
+    if (accessState === "loading") {
+      terminalContent = (
+        <TerminalGateState
+          title="Checking your access."
+          message="Restoring your account session and terminal permissions."
+          secondaryLabel="Editorial view"
+          onSecondary={() => switchAppView("home")}
+        />
+      );
+    } else if (accessState !== "active") {
+      terminalContent = <TerminalAccessPage isMobileViewport={isMobileViewport} onExitTerminal={() => switchAppView("home")} />;
+    } else if (!terminalSnapshot) {
+      terminalContent = (
+        <TerminalGateState
+          title={terminalLoading ? "Loading the terminal." : "Terminal snapshot unavailable."}
+          message={terminalLoading
+            ? "Secure terminal data is loading for your account."
+            : terminalError || "We could not load the latest secure terminal snapshot for this account."}
+          actionLabel={terminalLoading ? "" : "Retry"}
+          onAction={terminalLoading ? undefined : handleTerminalRefresh}
+          secondaryLabel="Editorial view"
+          onSecondary={() => switchAppView("home")}
+        />
+      );
+    } else {
+      terminalContent = (
+        <Suspense fallback={<LazySectionFallback height={720} />}>
+          <NuclearTerminal
+            GlobeComponent={Globe}
+            isMobileViewport={isMobileViewport}
+            snapshot={terminalSnapshot}
+            onOpenPlant={setSelectedPlant}
+            onOpenStock={setSelectedStock}
+            onExitTerminal={() => switchAppView("home")}
+            onRefreshData={handleTerminalRefresh}
+          />
+        </Suspense>
+      );
+    }
+
     return (
       <MotionConfig reducedMotion="user">
         <div className="np-app-shell" style={{ minHeight: "100vh", background: "var(--np-bg)", fontFamily: "'DM Sans',sans-serif", color: "var(--np-text)" }}>
           <StockTicker stocks={stocks} onClickStock={setSelectedStock} />
-          <Suspense fallback={<LazySectionFallback height={720} />}>
-            <NuclearTerminal
-              GlobeComponent={Globe}
-              isMobileViewport={isMobileViewport}
-              snapshot={terminalSnapshot}
-              onOpenPlant={setSelectedPlant}
-              onOpenStock={setSelectedStock}
-              onExitTerminal={() => switchAppView("home")}
-              onRefreshData={handleTerminalRefresh}
-            />
-          </Suspense>
+          {terminalContent}
 
           {selectedPlant && (
             <Suspense fallback={null}>

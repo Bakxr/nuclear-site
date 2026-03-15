@@ -70,6 +70,7 @@ export default function TerminalEditorialStrip({ signals, onOpenTerminal }) {
   const catalysts = signals.topCatalysts.slice(0, 2);
   const buildout = signals.buildoutLeaders.slice(0, 2);
   const filings = signals.filingRadar.slice(0, 2);
+  const radarTitle = signals.radarTitle || "Filing radar";
 
   return (
     <section style={{ padding: "6px var(--np-section-x) 22px" }}>
@@ -126,10 +127,10 @@ export default function TerminalEditorialStrip({ signals, onOpenTerminal }) {
             renderMeta={(item) => `${item.country} | ${item.status}${item.targetYear ? ` | ${item.targetYear}` : ""}`}
           />
           <TerminalMiniList
-            title="Filing radar"
+            title={radarTitle}
             accent="#7dd3fc"
             items={filings}
-            renderMeta={(item) => `${item.ticker} | ${item.filedLabel}`}
+            renderMeta={(item) => item.metaLine || `${item.ticker || item.sourceName || "Signal"} | ${item.filedLabel || item.dateLabel || ""}`}
           />
         </div>
       </div>

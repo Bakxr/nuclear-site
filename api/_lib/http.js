@@ -31,7 +31,7 @@ export function applyCors(req, res, methods = DEFAULT_ALLOWED_METHODS) {
   }
 
   res.setHeader("Access-Control-Allow-Methods", methods.join(", "));
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 }
 
 export function ensureAllowedOrigin(req, res, methods = DEFAULT_ALLOWED_METHODS) {
@@ -58,4 +58,12 @@ export function getClientAddress(req) {
   }
 
   return req.socket?.remoteAddress || "unknown";
+}
+
+export async function readRawBody(req) {
+  const chunks = [];
+  for await (const chunk of req) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+  return Buffer.concat(chunks);
 }
