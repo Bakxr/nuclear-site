@@ -23,6 +23,7 @@ const StockModal = lazy(() => import("./components/StockModal.jsx"));
 const PlantModal = lazy(() => import("./components/PlantModal.jsx"));
 const CountryModal = lazy(() => import("./components/CountryModal.jsx"));
 const Reactor3D = lazy(() => import("./components/reactorDiagrams/Reactor3D.jsx"));
+const NuclearTerminal = lazy(() => import("./components/NuclearTerminal.jsx"));
 
 // ─── SECTION LABEL — animated gold line + uppercase text ──────────────
 function SectionLabel({ children, dark = false }) {
@@ -335,6 +336,10 @@ export default function NuclearPulse() {
   const [isMobileViewport, setIsMobileViewport] = useState(() => {
     if (typeof window === "undefined") return false;
     return window.innerWidth <= 768;
+  });
+  const [appView, setAppView] = useState(() => {
+    if (typeof window === "undefined") return "home";
+    return new URLSearchParams(window.location.search).get("view") === "terminal" ? "terminal" : "home";
   });
 
   // Parallax hero
@@ -654,6 +659,26 @@ export default function NuclearPulse() {
     sectionRefs[section]?.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  const switchAppView = useCallback((view) => {
+    setAppView(view);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      if (view === "terminal") url.searchParams.set("view", "terminal");
+      else url.searchParams.delete("view");
+      window.history.pushState({}, "", url);
+    }
+    setMobileMenuOpen(false);
+  }, []);
+
+  useEffect(() => {
+    const onPopState = () => {
+      const url = new URL(window.location.href);
+      setAppView(url.searchParams.get("view") === "terminal" ? "terminal" : "home");
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
   const filteredNews = useMemo(() => {
     const filtered = newsFilter === "All" ? [...news] : news.filter(n => n.tag === newsFilter);
     if (newsSort === "latest") {
@@ -866,6 +891,64 @@ export default function NuclearPulse() {
     return LEARN_FACTS.filter(f => f.category === learnFilter);
   }, [learnFilter]);
 
+  if (appView === "terminal") {
+    return (
+      <MotionConfig reducedMotion="user">
+        <div className="np-app-shell" style={{ minHeight: "100vh", background: "var(--np-bg)", fontFamily: "'DM Sans',sans-serif", color: "var(--np-text)" }}>
+          <StockTicker stocks={stocks} onClickStock={setSelectedStock} />
+          <Suspense fallback={<LazySectionFallback height={720} />}>
+            <NuclearTerminal
+              GlobeComponent={Globe}
+              isMobileViewport={isMobileViewport}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              globeLayer={globeLayer}
+              setGlobeLayer={setGlobeLayer}
+              filteredPlants={filteredPlants}
+              filteredSupplySites={filteredSupplySites}
+              activeGlobeItems={activeGlobeItems}
+              globeCountryFilter={globeCountryFilter}
+              setGlobeCountryFilter={setGlobeCountryFilter}
+              globeReactorTypeFilter={globeReactorTypeFilter}
+              setGlobeReactorTypeFilter={setGlobeReactorTypeFilter}
+              globeCountryOptions={globeCountryOptions}
+              globeReactorTypeOptions={globeReactorTypeOptions}
+              stocks={stocks}
+              stocksLoading={stocksLoading}
+              stocksError={stocksError}
+              onRetryStocks={() => { setStocksError(false); setStocksRetry((r) => r + 1); }}
+              filteredNews={filteredNews}
+              newsLoading={newsLoading}
+              newsError={newsError}
+              newsLastUpdated={newsLastUpdated}
+              onRefreshNews={refreshNews}
+              setSelectedPlant={setSelectedPlant}
+              setSelectedStock={setSelectedStock}
+              setSelectedCountry={setSelectedCountry}
+              onExitTerminal={() => switchAppView("home")}
+            />
+          </Suspense>
+
+          {selectedPlant && (
+            <Suspense fallback={null}>
+              <PlantModal key={selectedPlant.name} plant={selectedPlant} onClose={() => setSelectedPlant(null)} />
+            </Suspense>
+          )}
+          {selectedStock && (
+            <Suspense fallback={null}>
+              <StockModal stock={selectedStock} onClose={() => setSelectedStock(null)} />
+            </Suspense>
+          )}
+          {selectedCountry && (
+            <Suspense fallback={null}>
+              <CountryModal country={selectedCountry} onClose={() => setSelectedCountry(null)} onSelectPlant={setSelectedPlant} />
+            </Suspense>
+          )}
+        </div>
+      </MotionConfig>
+    );
+  }
+
   return (
     <MotionConfig reducedMotion="user">
     <div className="np-app-shell" style={{ minHeight: "100vh", background: "var(--np-bg)", fontFamily: "'DM Sans',sans-serif", color: "var(--np-text)" }}>
@@ -891,6 +974,15 @@ export default function NuclearPulse() {
           </div>
         </div>
         <div className="np-nav-links" style={{ display: "flex", gap: 28 }}>
+          <button onClick={() => switchAppView("terminal")} style={{
+            background: "none", border: "none", cursor: "pointer",
+            fontFamily: "'DM Sans',sans-serif", fontSize: 13, fontWeight: 700,
+            color: "#d4a54a", letterSpacing: "0.05em", textTransform: "uppercase",
+            padding: "4px 0", transition: "color 0.2s",
+          }}
+            onMouseEnter={e => e.currentTarget.style.color = "var(--np-text)"}
+            onMouseLeave={e => e.currentTarget.style.color = "#d4a54a"}
+          >Terminal</button>
           {NAV_ITEMS.map(item => {
             const isActive = activeSection === item.key;
             return (
@@ -960,6 +1052,9 @@ export default function NuclearPulse() {
         </div>
         {mobileMenuOpen && (
           <div className="np-mobile-menu">
+            <button onClick={() => switchAppView("terminal")}>
+              Terminal
+            </button>
             {NAV_ITEMS.map(item => (
               <button key={item.key} onClick={() => { scrollTo(item.key); setMobileMenuOpen(false); }}>
                 {item.label}
