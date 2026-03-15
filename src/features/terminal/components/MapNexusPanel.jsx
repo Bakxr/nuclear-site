@@ -3,7 +3,7 @@ import { STATUS_COLORS } from "../../../data/constants.js";
 import { SUPPLY_STAGE_COLORS } from "../../../data/supplySites.js";
 import { useTerminal } from "../context.jsx";
 import TerminalPanel from "./TerminalPanel.jsx";
-import { terminalButtonStyle, terminalDataRowStyle } from "./styles.js";
+import { terminalButtonStyle, terminalDataRowStyle, terminalSelectStyle } from "./styles.js";
 
 export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpenPlant }) {
   const {
@@ -39,21 +39,21 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
       <div style={{ display: "grid", gridTemplateColumns: isMobileViewport ? "1fr" : "repeat(4, minmax(0,1fr))", gap: 10, marginBottom: 14 }}>
         <label style={{ display: "grid", gap: 6 }}>
           <span style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(245,240,232,0.44)" }}>Country</span>
-          <select value={state.countryFilter} onChange={(event) => setCountryFilter(event.target.value)} style={{ borderRadius: 10, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.04)", color: "#f5f0e8", padding: "10px 12px", fontFamily: "'DM Sans',sans-serif" }}>
+          <select value={state.countryFilter} onChange={(event) => setCountryFilter(event.target.value)} style={terminalSelectStyle(false)}>
             <option value="">All countries</option>
             {availableCountries.map((country) => <option key={country} value={country}>{country}</option>)}
           </select>
         </label>
         <label style={{ display: "grid", gap: 6 }}>
           <span style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(245,240,232,0.44)" }}>Reactor type</span>
-          <select value={state.reactorTypeFilter} onChange={(event) => setReactorTypeFilter(event.target.value)} disabled={state.layer !== "reactors"} style={{ borderRadius: 10, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.04)", color: state.layer === "reactors" ? "#f5f0e8" : "rgba(245,240,232,0.35)", padding: "10px 12px", fontFamily: "'DM Sans',sans-serif" }}>
+          <select value={state.reactorTypeFilter} onChange={(event) => setReactorTypeFilter(event.target.value)} disabled={state.layer !== "reactors"} style={terminalSelectStyle(state.layer !== "reactors")}>
             <option value="">All reactor types</option>
             {availableReactorTypes.map((type) => <option key={type} value={type}>{type}</option>)}
           </select>
         </label>
         <label style={{ display: "grid", gap: 6 }}>
           <span style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(245,240,232,0.44)" }}>Status</span>
-          <select value={state.statusFilter} onChange={(event) => setStatusFilter(event.target.value)} disabled={state.layer !== "reactors"} style={{ borderRadius: 10, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.04)", color: state.layer === "reactors" ? "#f5f0e8" : "rgba(245,240,232,0.35)", padding: "10px 12px", fontFamily: "'DM Sans',sans-serif" }}>
+          <select value={state.statusFilter} onChange={(event) => setStatusFilter(event.target.value)} disabled={state.layer !== "reactors"} style={terminalSelectStyle(state.layer !== "reactors")}>
             <option value="">All statuses</option>
             {availableStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
           </select>

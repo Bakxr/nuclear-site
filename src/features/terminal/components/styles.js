@@ -64,3 +64,16 @@ export function terminalScrollAreaStyle(maxHeight = 420) {
     paddingRight: 2,
   };
 }
+
+export function terminalSelectStyle(disabled = false) {
+  return {
+    borderRadius: 10,
+    border: "1px solid rgba(255,255,255,0.08)",
+    background: "#161b24",
+    color: disabled ? "rgba(245,240,232,0.38)" : "#f5f0e8",
+    padding: "10px 12px",
+    fontFamily: "'DM Sans',sans-serif",
+    colorScheme: "dark",
+    outline: "none",
+  };
+}
