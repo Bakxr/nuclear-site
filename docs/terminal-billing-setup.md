@@ -33,6 +33,9 @@ In Supabase:
 2. Enable email sign-in.
 3. Enable OTP / one-time code login.
 4. Make sure the email flow sends a code that the user can paste into the site.
+5. Set the Supabase Auth Site URL and allowed redirect URLs to your real site host in production, not `localhost`.
+
+This app now provisions first-time users server-side before requesting OTP, so the intended first email is the login code email, not a "confirm your signup" message.
 
 Optional:
 
@@ -110,12 +113,13 @@ If you want Stripe webhooks locally, forward them to the Vercel dev server.
 
 1. Visit `/terminal`.
 2. Request an email code.
-3. Sign in with the OTP code.
-4. Start a checkout session.
-5. Complete payment with Stripe test card `4242 4242 4242 4242`.
-6. Confirm a row exists in `billing_memberships`.
-7. Confirm `terminal_access` becomes `true`.
-8. Refresh `/terminal` and verify the full terminal loads.
+3. Confirm the first email is the OTP/code email and not a signup-confirmation email.
+4. Sign in with the OTP code.
+5. Start a checkout session.
+6. Complete payment with Stripe test card `4242 4242 4242 4242`.
+7. Confirm a row exists in `billing_memberships`.
+8. Confirm `terminal_access` becomes `true`.
+9. Refresh `/terminal` and verify the full terminal loads.
 
 ## 10. Production check
 

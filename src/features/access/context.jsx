@@ -3,6 +3,33 @@ import { createContext, startTransition, useCallback, useContext, useEffect, use
 import { getBrowserSupabaseClient } from "../../lib/supabaseClient.js";
 
 const AccessContext = createContext(null);
+const DEFAULT_AUTH_REDIRECT_URL = "https://atomic-energy.vercel.app/";
+
+async function postJson(url, body) {
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body || {}),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || "Request failed.");
+  }
+
+  return data;
+}
+
+function getOtpEmailRedirectUrl() {
+  if (typeof window === "undefined") return DEFAULT_AUTH_REDIRECT_URL;
+
+  const origin = window.location.origin?.replace(/\/+$/, "") || DEFAULT_AUTH_REDIRECT_URL.replace(/\/+$/, "");
+  const pathname = window.location.pathname || "/";
+  const safePath = pathname.startsWith("/") ? pathname : `/${pathname}`;
+  return `${origin}${safePath}`;
+}
 
 export function AccessProvider({ children }) {
   const supabase = useMemo(() => getBrowserSupabaseClient(), []);
@@ -92,10 +119,12 @@ export function AccessProvider({ children }) {
   const sendOtp = useCallback(async (email) => {
     if (!supabase) throw new Error("Supabase browser auth is not configured.");
     const normalisedEmail = email.toLowerCase().trim();
+    await postJson("/api/auth/request-otp", { email: normalisedEmail });
     const { error } = await supabase.auth.signInWithOtp({
       email: normalisedEmail,
       options: {
-        shouldCreateUser: true,
+        shouldCreateUser: false,
+        emailRedirectTo: getOtpEmailRedirectUrl(),
       },
     });
 
