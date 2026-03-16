@@ -1579,13 +1579,14 @@ export default function NuclearPulse() {
   return (
     <MotionConfig reducedMotion="user">
     <div className="np-app-shell" style={{ minHeight: "100vh", background: "var(--np-bg)", fontFamily: "'DM Sans',sans-serif", color: "var(--np-text)" }}>
+      <header style={{ position: "sticky", top: 0, zIndex: 140, background: "var(--np-bg)" }}>
       <StockTicker stocks={stocks} onClickStock={setSelectedStock} />
 
       {/* Nav */}
       <nav className="np-nav" style={{
         display: "flex", justifyContent: "space-between", alignItems: "center",
         padding: "16px var(--np-section-x)", borderBottom: "1px solid var(--np-border)",
-        position: "sticky", top: 0, zIndex: 100, background: "var(--np-nav-bg)",
+        background: "var(--np-nav-bg)",
         backdropFilter: "blur(24px)",
       }}>
         <div className="np-brand" style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}
@@ -1768,6 +1769,7 @@ export default function NuclearPulse() {
           </div>
         )}
       </nav>
+      </header>
 
       <div
         className="np-first-fold"
