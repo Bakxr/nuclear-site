@@ -1247,7 +1247,7 @@ export default function NuclearPulse() {
           minHeight: "calc(100svh - 108px)",
           display: "flex",
           flexDirection: "column",
-          justifyContent: "space-between",
+          justifyContent: "flex-start",
           background: "var(--np-bg)",
         }}
       >
@@ -1349,7 +1349,18 @@ export default function NuclearPulse() {
       </section>
 
       {/* Stats */}
-      <section ref={statsRef} className="np-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(6,1fr)", gap: 1, background: "var(--np-bg)", margin: "0 0 0 0" }}>
+      <section
+        ref={statsRef}
+        className="np-stats-grid"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(6,1fr)",
+          gap: 1,
+          background: "var(--np-bg)",
+          margin: "auto 0 0",
+          flexShrink: 0,
+        }}
+      >
         {GLOBAL_STATS.map((s, i) => (
           <a key={i} href={s.sourceUrl} target="_blank" rel="noopener noreferrer" style={{
             background: "var(--np-bg)", padding: "18px 20px 22px", textAlign: "center",
@@ -1370,8 +1381,6 @@ export default function NuclearPulse() {
           </a>
         ))}
       </section>
-
-      <TerminalEditorialStrip signals={editorialSignals} onOpenTerminal={() => switchAppView("terminal")} />
       </div>
 
       {/* ROTATING QUOTES */}
@@ -2598,6 +2607,8 @@ export default function NuclearPulse() {
         </div>
       </section>
       </ErrorBoundary>
+
+      <TerminalEditorialStrip signals={editorialSignals} onOpenTerminal={() => switchAppView("terminal")} />
 
       {/* SMR TRACKER SECTION */}
       <section ref={sectionRefs.smr} style={{ padding: "var(--np-section-y) var(--np-section-x)", background: "var(--np-dark-bg)", color: "var(--np-dark-text)", scrollMarginTop: 80 }}>
