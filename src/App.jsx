@@ -372,12 +372,461 @@ function TerminalGateState({ title, message, actionLabel, onAction, secondaryLab
   );
 }
 
+function formatAccessDate(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+}
+
+function truncateEmail(email, max = 28) {
+  const value = String(email || "").trim();
+  if (!value || value.length <= max) return value;
+  return `${value.slice(0, Math.max(0, max - 3))}...`;
+}
+
+function getAccountStatusMeta({ accessState, isConfigured, membershipLoading, membership, user }) {
+  if (!isConfigured) {
+    return {
+      title: "Account",
+      detail: "Auth offline",
+      accent: "#f87171",
+    };
+  }
+
+  if (accessState === "loading" || membershipLoading) {
+    return {
+      title: user?.email ? truncateEmail(user.email, 22) : "Account",
+      detail: "Checking access",
+      accent: "#7dd3fc",
+    };
+  }
+
+  if (!user) {
+    return {
+      title: "Account",
+      detail: "Sign in",
+      accent: "rgba(212,165,74,0.72)",
+    };
+  }
+
+  if (membership?.terminal_access) {
+    return {
+      title: truncateEmail(user.email, 22),
+      detail: "Terminal active",
+      accent: "#4ade80",
+    };
+  }
+
+  return {
+    title: truncateEmail(user.email, 22),
+    detail: "Signed in",
+    accent: "#d4a54a",
+  };
+}
+
+function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport }) {
+  const {
+    accessState,
+    isConfigured,
+    membership,
+    membershipError,
+    membershipLoading,
+    refreshMembership,
+    sendOtp,
+    signOut,
+    user,
+    verifyOtp,
+  } = useTerminalAccess();
+  const dialogRef = useDialog(isOpen, onClose);
+  const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [authBusy, setAuthBusy] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const accountMeta = useMemo(
+    () => getAccountStatusMeta({ accessState, isConfigured, membershipLoading, membership, user }),
+    [accessState, isConfigured, membershipLoading, membership, user],
+  );
+
+  useEffect(() => {
+    if (user?.email) {
+      setEmail(user.email);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setErrorMessage("");
+    setSuccessMessage("");
+  }, [isOpen]);
+
+  const accessSummary = useMemo(() => {
+    if (!isConfigured) {
+      return "Supabase browser auth is not configured in this environment yet.";
+    }
+    if (membershipLoading || accessState === "loading") {
+      return "Restoring your session and checking terminal access.";
+    }
+    if (!user) {
+      return "Sign in with your email once, then use the same account for terminal access everywhere on the site.";
+    }
+    if (membership?.terminal_access) {
+      const untilText = membership.current_period_end ? ` Access is live until ${formatAccessDate(membership.current_period_end)}.` : "";
+      return `Signed in as ${user.email}. Terminal access is active.${untilText}`;
+    }
+
+    return `Signed in as ${user.email}. Your editorial account is live, and you can open the terminal page anytime to manage access.`;
+  }, [accessState, isConfigured, membership, membershipLoading, user]);
+
+  async function handleSendCode() {
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    if (!email.trim()) {
+      setErrorMessage("Enter your email to receive a one-time code.");
+      return;
+    }
+
+    setAuthBusy(true);
+    try {
+      const normalizedEmail = await sendOtp(email);
+      setEmail(normalizedEmail);
+      setOtpSent(true);
+      setSuccessMessage(`A login code was sent to ${normalizedEmail}.`);
+    } catch (error) {
+      setErrorMessage(error.message || "Could not send the login code.");
+    } finally {
+      setAuthBusy(false);
+    }
+  }
+
+  async function handleVerifyCode() {
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    if (!code.trim()) {
+      setErrorMessage("Enter the one-time code from your email.");
+      return;
+    }
+
+    setAuthBusy(true);
+    try {
+      await verifyOtp(email, code);
+      await refreshMembership();
+      setCode("");
+      setOtpSent(false);
+      setSuccessMessage("You are signed in. Your account status is now available from the main page.");
+    } catch (error) {
+      setErrorMessage(error.message || "That code could not be verified.");
+    } finally {
+      setAuthBusy(false);
+    }
+  }
+
+  async function handleSignOut() {
+    setErrorMessage("");
+    setSuccessMessage("");
+    await signOut();
+    setOtpSent(false);
+    setCode("");
+    setSuccessMessage("You have been signed out.");
+  }
+
+  function handleOpenTerminal() {
+    onOpenTerminal();
+    onClose();
+  }
+
+  return (
+    <AnimatePresence>
+      {isOpen ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.18 }}
+          onClick={onClose}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(12,10,8,0.68)",
+            backdropFilter: "blur(10px)",
+            zIndex: 1200,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 18,
+          }}
+        >
+          <motion.div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="account-access-title"
+            tabIndex={-1}
+            onClick={(event) => event.stopPropagation()}
+            initial={{ opacity: 0, y: 18, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 18, scale: 0.96 }}
+            transition={{ type: "spring", damping: 28, stiffness: 320 }}
+            style={{
+              width: "min(92vw, 540px)",
+              borderRadius: 24,
+              border: "1px solid rgba(212,165,74,0.2)",
+              background: "linear-gradient(180deg, rgba(22,18,13,0.98) 0%, rgba(12,10,8,0.98) 100%)",
+              boxShadow: "0 30px 90px rgba(0,0,0,0.35)",
+              padding: isMobileViewport ? "24px 18px 20px" : "28px 26px 24px",
+              color: "#f5f0e8",
+              position: "relative",
+              display: "grid",
+              gap: 16,
+            }}
+          >
+            <button
+              type="button"
+              aria-label="Close account dialog"
+              onClick={onClose}
+              style={{
+                position: "absolute",
+                top: 12,
+                right: 12,
+                width: 34,
+                height: 34,
+                borderRadius: "50%",
+                border: "1px solid rgba(245,240,232,0.12)",
+                background: "rgba(255,255,255,0.04)",
+                color: "#f5f0e8",
+                cursor: "pointer",
+                fontSize: 20,
+                lineHeight: 1,
+              }}
+            >
+              ×
+            </button>
+
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#d4a54a" }}>
+                Account access
+              </div>
+              <h3 id="account-access-title" style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(28px,4vw,40px)", lineHeight: 1.08, margin: "10px 0 8px" }}>
+                {user ? "You're signed in." : "Sign in from the main page."}
+              </h3>
+              <p style={{ fontSize: 15, color: "rgba(245,240,232,0.72)", lineHeight: 1.7, margin: 0 }}>
+                {accessSummary}
+              </p>
+            </div>
+
+            <div style={{
+              borderRadius: 18,
+              border: "1px solid rgba(245,240,232,0.08)",
+              background: "rgba(255,255,255,0.04)",
+              padding: "16px 16px 15px",
+              display: "grid",
+              gap: 10,
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.12em", color: "rgba(245,240,232,0.48)", fontWeight: 700, marginBottom: 6 }}>
+                    Current status
+                  </div>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: "#f5f0e8", lineHeight: 1.3, wordBreak: "break-word" }}>
+                    {user ? user.email : "Not signed in"}
+                  </div>
+                </div>
+                <span style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "8px 10px",
+                  borderRadius: 999,
+                  border: "1px solid rgba(245,240,232,0.08)",
+                  background: "rgba(255,255,255,0.03)",
+                  color: accountMeta.accent,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  whiteSpace: "nowrap",
+                }}>
+                  <span style={{ width: 7, height: 7, borderRadius: "50%", background: accountMeta.accent, flexShrink: 0 }} />
+                  {accountMeta.detail}
+                </span>
+              </div>
+              {membership?.subscription_status ? (
+                <div style={{ fontSize: 12.5, lineHeight: 1.6, color: "rgba(245,240,232,0.58)" }}>
+                  Stripe status: {membership.subscription_status}{membership.plan_interval ? ` | ${membership.plan_interval}` : ""}
+                </div>
+              ) : null}
+            </div>
+
+            {!isConfigured ? (
+              <div style={{ borderRadius: 16, border: "1px solid rgba(248,113,113,0.24)", background: "rgba(127,29,29,0.18)", padding: "13px 14px", fontSize: 12.5, lineHeight: 1.6, color: "#f8c3c3" }}>
+                Supabase browser auth is not configured yet, so main-page sign-in is unavailable in this environment.
+              </div>
+            ) : null}
+
+            {membershipError ? (
+              <div style={{ borderRadius: 16, border: "1px solid rgba(251,191,36,0.22)", background: "rgba(251,191,36,0.08)", padding: "13px 14px", fontSize: 12.5, lineHeight: 1.6, color: "#f6d98a" }}>
+                {membershipError}
+              </div>
+            ) : null}
+
+            {!user ? (
+              <div style={{ display: "grid", gap: 10 }}>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="Email address"
+                  disabled={authBusy || !isConfigured}
+                  style={{
+                    width: "100%",
+                    borderRadius: 14,
+                    border: "1px solid rgba(245,240,232,0.12)",
+                    background: "rgba(255,255,255,0.04)",
+                    color: "#f5f0e8",
+                    padding: "14px 15px",
+                    fontSize: 14,
+                    outline: "none",
+                  }}
+                />
+
+                {otpSent ? (
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={code}
+                    onChange={(event) => setCode(event.target.value)}
+                    placeholder="6-digit code"
+                    disabled={authBusy}
+                    style={{
+                      width: "100%",
+                      borderRadius: 14,
+                      border: "1px solid rgba(245,240,232,0.12)",
+                      background: "rgba(255,255,255,0.04)",
+                      color: "#f5f0e8",
+                      padding: "14px 15px",
+                      fontSize: 14,
+                      outline: "none",
+                      letterSpacing: "0.1em",
+                    }}
+                  />
+                ) : null}
+
+                <button
+                  type="button"
+                  onClick={otpSent ? handleVerifyCode : handleSendCode}
+                  disabled={authBusy || !isConfigured}
+                  style={{
+                    width: "100%",
+                    borderRadius: 14,
+                    border: "1px solid rgba(125,211,252,0.24)",
+                    background: "#f5f0e8",
+                    color: "#14120e",
+                    padding: "13px 16px",
+                    cursor: authBusy || !isConfigured ? "not-allowed" : "pointer",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    opacity: authBusy || !isConfigured ? 0.65 : 1,
+                  }}
+                >
+                  {authBusy ? (otpSent ? "Verifying..." : "Sending code...") : (otpSent ? "Verify code" : "Send login code")}
+                </button>
+
+                {otpSent ? (
+                  <button
+                    type="button"
+                    onClick={handleSendCode}
+                    disabled={authBusy}
+                    style={{
+                      width: "100%",
+                      borderRadius: 14,
+                      border: "1px solid rgba(245,240,232,0.12)",
+                      background: "rgba(255,255,255,0.03)",
+                      color: "#f5f0e8",
+                      padding: "12px 16px",
+                      cursor: authBusy ? "not-allowed" : "pointer",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      letterSpacing: "0.08em",
+                      textTransform: "uppercase",
+                      opacity: authBusy ? 0.7 : 1,
+                    }}
+                  >
+                    Resend code
+                  </button>
+                ) : null}
+              </div>
+            ) : (
+              <div style={{ display: "grid", gap: 10 }}>
+                <button
+                  type="button"
+                  onClick={handleOpenTerminal}
+                  style={{
+                    width: "100%",
+                    borderRadius: 14,
+                    border: "1px solid rgba(212,165,74,0.35)",
+                    background: "#f5f0e8",
+                    color: "#14120e",
+                    padding: "13px 16px",
+                    cursor: "pointer",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  {membership?.terminal_access ? "Open terminal" : "Open terminal plans"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  style={{
+                    width: "100%",
+                    borderRadius: 14,
+                    border: "1px solid rgba(245,240,232,0.12)",
+                    background: "rgba(255,255,255,0.03)",
+                    color: "#f5f0e8",
+                    padding: "12px 16px",
+                    cursor: "pointer",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Sign out
+                </button>
+              </div>
+            )}
+
+            {errorMessage ? (
+              <div style={{ borderRadius: 16, border: "1px solid rgba(251,191,36,0.22)", background: "rgba(251,191,36,0.08)", padding: "13px 14px", fontSize: 12.5, lineHeight: 1.6, color: "#f6d98a" }}>
+                {errorMessage}
+              </div>
+            ) : null}
+            {successMessage ? (
+              <div style={{ borderRadius: 16, border: "1px solid rgba(74,222,128,0.22)", background: "rgba(74,222,128,0.08)", padding: "13px 14px", fontSize: 12.5, lineHeight: 1.6, color: "#b5f5cd" }}>
+                {successMessage}
+              </div>
+            ) : null}
+          </motion.div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
+  );
+}
+
 
 // ─── MAIN APP ───────────────────────────────────────────────────────────
 
 
 export default function NuclearPulse() {
-  const { accessState, getAccessToken } = useTerminalAccess();
+  const { accessState, getAccessToken, isConfigured, membership, membershipLoading, user } = useTerminalAccess();
   const [selectedPlant, setSelectedPlant] = useState(null);
   const [selectedStock, setSelectedStock] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -402,6 +851,7 @@ export default function NuclearPulse() {
   });
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [showSubscribePopup, setShowSubscribePopup] = useState(false);
+  const [showAccountDialog, setShowAccountDialog] = useState(false);
 
   // Data section state
   const [dataView, setDataView] = useState("countries");
@@ -446,6 +896,10 @@ export default function NuclearPulse() {
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [activeSection, setActiveSection] = useState(null);
   const [showSearch, setShowSearch] = useState(false);
+  const accountStatusMeta = useMemo(
+    () => getAccountStatusMeta({ accessState, isConfigured, membershipLoading, membership, user }),
+    [accessState, isConfigured, membershipLoading, membership, user],
+  );
 
   // Quote state — random on each page load, no auto-rotation
   const [quoteIndex, setQuoteIndex] = useState(() => Math.floor(Math.random() * QUOTES.length));
@@ -503,6 +957,9 @@ export default function NuclearPulse() {
     if (typeof window !== "undefined") {
       window.sessionStorage.setItem(NEWSLETTER_POPUP_DISMISSED_KEY, "1");
     }
+  }, []);
+  const closeAccountDialog = useCallback(() => {
+    setShowAccountDialog(false);
   }, []);
 
   const maybeOpenSubscribePopup = useCallback(() => {
@@ -1171,6 +1628,35 @@ export default function NuclearPulse() {
           })}
         </div>
         <div className="np-nav-actions" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {!isMobileViewport ? (
+            <button
+              type="button"
+              onClick={() => setShowAccountDialog(true)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                minWidth: 0,
+                maxWidth: 210,
+                borderRadius: 18,
+                border: "1px solid var(--np-border)",
+                background: "var(--np-surface-dim)",
+                color: "var(--np-text)",
+                padding: "7px 12px",
+                cursor: "pointer",
+              }}
+            >
+              <span style={{ width: 8, height: 8, borderRadius: "50%", background: accountStatusMeta.accent, flexShrink: 0 }} />
+              <span style={{ display: "grid", minWidth: 0, textAlign: "left" }}>
+                <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--np-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {accountStatusMeta.title}
+                </span>
+                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: accountStatusMeta.accent }}>
+                  {accountStatusMeta.detail}
+                </span>
+              </span>
+            </button>
+          ) : null}
           <button onClick={toggleDarkMode} style={{
             background: "none", border: "1px solid var(--np-border)", borderRadius: "50%",
             width: 34, height: 34, cursor: "pointer", display: "flex", alignItems: "center",
@@ -1225,6 +1711,48 @@ export default function NuclearPulse() {
             <button onClick={() => switchAppView("terminal")}>
               Terminal
             </button>
+            <div style={{
+              margin: "6px 12px 8px",
+              padding: "12px",
+              borderRadius: 14,
+              border: "1px solid var(--np-border)",
+              background: "var(--np-surface-dim)",
+              display: "grid",
+              gap: 8,
+            }}>
+              <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--np-text-faint)" }}>
+                Account
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                <span style={{ width: 8, height: 8, borderRadius: "50%", background: accountStatusMeta.accent, flexShrink: 0 }} />
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "var(--np-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {user ? user.email : "Not signed in"}
+                  </div>
+                  <div style={{ fontSize: 11, color: accountStatusMeta.accent, letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 700 }}>
+                    {accountStatusMeta.detail}
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setShowAccountDialog(true); setMobileMenuOpen(false); }}
+                style={{
+                  width: "100%",
+                  borderRadius: 10,
+                  border: "1px solid rgba(212,165,74,0.18)",
+                  background: "rgba(255,255,255,0.04)",
+                  color: "var(--np-text)",
+                  padding: "10px 12px",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                }}
+              >
+                {user ? "Manage account" : "Sign in"}
+              </button>
+            </div>
             {NAV_ITEMS.map(item => (
               <button key={item.key} onClick={() => { scrollTo(item.key); setMobileMenuOpen(false); }}>
                 {item.label}
@@ -3020,6 +3548,13 @@ export default function NuclearPulse() {
           )}
         </div>
       </section>
+
+      <AccountAccessDialog
+        isOpen={showAccountDialog}
+        onClose={closeAccountDialog}
+        onOpenTerminal={() => switchAppView("terminal")}
+        isMobileViewport={isMobileViewport}
+      />
 
       <AnimatePresence>
         {showSubscribePopup && !isSubscribed && (
