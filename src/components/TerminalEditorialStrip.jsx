@@ -73,18 +73,23 @@ export default function TerminalEditorialStrip({ signals, onOpenTerminal }) {
   const radarTitle = signals.radarTitle || "Filing radar";
 
   return (
-    <section style={{ padding: "6px var(--np-section-x) 22px" }}>
+    <section style={{
+      background: "var(--np-dark-bg)",
+      padding: "40px var(--np-section-x) 56px",
+      display: "flex",
+      justifyContent: "center",
+    }}>
       <div style={{
-        maxWidth: 1280,
-        margin: "0 auto",
-        borderRadius: 24,
+        width: "min(100%, 1240px)",
+        margin: 0,
+        borderRadius: 28,
         border: "1px solid rgba(212,165,74,0.14)",
-        background: "linear-gradient(180deg, rgba(22,18,13,0.96) 0%, rgba(16,14,10,0.92) 100%)",
+        background: "#14110d",
         color: "#f5f0e8",
-        padding: "20px clamp(18px, 2vw, 28px)",
+        padding: "24px clamp(18px, 2.4vw, 30px)",
         display: "grid",
         gap: 18,
-        boxShadow: "0 26px 70px rgba(0,0,0,0.14)",
+        boxShadow: "0 20px 48px rgba(0,0,0,0.18)",
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 18, flexWrap: "wrap" }}>
           <div style={{ maxWidth: 720 }}>

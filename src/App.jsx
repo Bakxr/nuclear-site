@@ -3056,7 +3056,7 @@ export default function NuclearPulse() {
 
       {/* STOCKS SECTION */}
       <ErrorBoundary section="Stocks" dark={true}>
-      <section ref={sectionRefs.stocks} style={{ padding: "var(--np-section-y) var(--np-section-x)", background: "var(--np-dark-bg)", color: "var(--np-dark-text)", scrollMarginTop: 80 }}>
+      <section ref={sectionRefs.stocks} style={{ padding: "var(--np-section-y) var(--np-section-x) 40px", background: "var(--np-dark-bg)", color: "var(--np-dark-text)", scrollMarginTop: 80 }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }} variants={staggerContainer}>
           <SectionLabel dark>Market Overview</SectionLabel>
