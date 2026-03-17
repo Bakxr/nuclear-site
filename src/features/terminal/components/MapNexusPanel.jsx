@@ -160,7 +160,7 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
               className="np-terminal-map-stage-shell"
               style={{
                 position: "relative",
-                minHeight: isMobileViewport ? 360 : 580,
+                minHeight: isMobileViewport ? 340 : 520,
                 border: "1px solid rgba(66,72,82,0.96)",
                 background: "radial-gradient(circle at 50% 34%, rgba(28,49,67,0.5) 0%, rgba(9,12,18,0.98) 44%, rgba(5,7,10,1) 100%)",
                 overflow: "hidden",

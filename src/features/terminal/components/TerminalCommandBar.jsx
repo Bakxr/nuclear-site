@@ -30,11 +30,11 @@ function formatClock(now, timeZone) {
 function StatusTile({ label, value, detail, tone = "cyan" }) {
   return (
     <div className="np-terminal-command-tile">
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "baseline" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 6, alignItems: "baseline" }}>
         <span style={terminalLabelStyle(tone)}>{label}</span>
         <span style={{ fontSize: 9.5, ...terminalMutedStyle() }}>{detail}</span>
       </div>
-      <div style={{ ...terminalValueStyle({ tone, size: 15 }), marginTop: 7 }}>{value}</div>
+      <div style={{ ...terminalValueStyle({ tone, size: 13 }), marginTop: 5 }}>{value}</div>
     </div>
   );
 }
@@ -96,15 +96,15 @@ export default function TerminalCommandBar({
             display: "grid",
             gridTemplateColumns: isMobileViewport ? "1fr" : "minmax(260px,300px) minmax(0,1fr) minmax(260px,320px)",
             gap: 8,
-            alignItems: "stretch",
+            alignItems: "start",
           }}
         >
           <div className="np-terminal-command-card">
             <div style={{ display: "flex", gap: 10, alignItems: "flex-start", minWidth: 0 }}>
               <div
                 style={{
-                  minWidth: 42,
-                  height: 42,
+                  minWidth: 38,
+                  height: 38,
                   display: "grid",
                   placeItems: "center",
                   border: "1px solid rgba(255,156,26,0.36)",
@@ -120,18 +120,19 @@ export default function TerminalCommandBar({
               </div>
               <div style={{ minWidth: 0, display: "grid", gap: 4 }}>
                 <div style={terminalLabelStyle()}>Nuclear Pulse terminal</div>
-                <div style={{ fontSize: 16, lineHeight: 1.1, color: "var(--np-terminal-text)", fontWeight: 700 }}>
+                <div style={{ fontSize: 15, lineHeight: 1.05, color: "var(--np-terminal-text)", fontWeight: 700 }}>
                   Global nuclear workstation
                 </div>
-                <div style={{ fontSize: 10.5, lineHeight: 1.5, ...terminalMutedStyle() }}>
-                  Desk {activeDeskLabel} | Snapshot {formatFreshness(snapshot.generatedAt)}
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+                  <span style={terminalTagStyle({ tone: "amber", compact: true })}>{activeDeskLabel}</span>
+                  <span style={terminalTagStyle({ tone: "default", compact: true })}>Snapshot {formatFreshness(snapshot.generatedAt)}</span>
                 </div>
               </div>
             </div>
           </div>
 
           <div className="np-terminal-command-card">
-            <div style={{ display: "grid", gap: 7 }}>
+            <div style={{ display: "grid", gap: 6 }}>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
                 <span style={terminalLabelStyle("cyan")}>Feed health</span>
                 <span style={terminalTagStyle({ tone: "cyan", compact: true })}>{freshnessItems.length} rails</span>
@@ -145,8 +146,8 @@ export default function TerminalCommandBar({
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: isMobileViewport ? "repeat(3, minmax(0,1fr))" : "1fr",
-              gap: 8,
+              gridTemplateColumns: "repeat(3, minmax(0,1fr))",
+              gap: 6,
             }}
           >
             {clocks.map((clock) => (
@@ -170,7 +171,7 @@ export default function TerminalCommandBar({
             alignItems: "start",
           }}
         >
-          <div style={{ position: "relative", minWidth: 0 }}>
+          <div style={{ position: "relative", minWidth: 0, display: "grid", gap: 6 }}>
             <div style={terminalInputShellStyle()}>
               <span style={terminalLabelStyle("cyan")}>Cmd</span>
               <span style={{ ...terminalValueStyle({ tone: "amber", size: 13 }) }}>{">"}</span>
@@ -183,6 +184,15 @@ export default function TerminalCommandBar({
                 style={terminalInputStyle()}
               />
               <span style={terminalTagStyle({ tone: "amber", compact: true })}>/ focus</span>
+            </div>
+
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+              <span style={terminalLabelStyle("cyan")}>Desk state</span>
+              {activeChips.map((chip, index) => (
+                <span key={`${chip}-${index}`} style={terminalTagStyle({ tone: index === 0 ? "amber" : "default", compact: true })}>
+                  {chip}
+                </span>
+              ))}
             </div>
 
             {state.query.trim() && searchResults.length > 0 ? (
@@ -247,15 +257,6 @@ export default function TerminalCommandBar({
               Editorial
             </button>
           </div>
-        </div>
-
-        <div className="np-terminal-command-card" style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-          <span style={terminalLabelStyle("cyan")}>Desk state</span>
-          {activeChips.map((chip, index) => (
-            <span key={`${chip}-${index}`} style={terminalTagStyle({ tone: index === 0 ? "amber" : "default", compact: true })}>
-              {chip}
-            </span>
-          ))}
         </div>
       </div>
     </div>

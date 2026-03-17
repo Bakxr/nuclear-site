@@ -82,62 +82,41 @@ function LeftRail({
     .slice()
     .sort((left, right) => (right.capacityGw || 0) - (left.capacityGw || 0))[0];
   const desks = [
-    { id: "overview", key: "1", label: "Overview", hint: "Reset desk and jump to the top frame." },
-    { id: "map", key: "2", label: "Global map", hint: "Return to the globe and reactor fleet view." },
-    { id: "fuel", key: "3", label: "Fuel cycle", hint: "Flip the globe to uranium and supply infrastructure." },
-    { id: "markets", key: "4", label: "Markets", hint: "Jump to equities, movers, and watchlist names." },
-    { id: "pipeline", key: "5", label: "Pipeline", hint: "Surface buildout, licensing, and milestone queues." },
-    { id: "filings", key: "6", label: "Filings", hint: "Route into SEC disclosures and source-backed detail." },
+    { id: "overview", key: "1", label: "Overview" },
+    { id: "map", key: "2", label: "Global map" },
+    { id: "fuel", key: "3", label: "Fuel cycle" },
+    { id: "markets", key: "4", label: "Markets" },
+    { id: "pipeline", key: "5", label: "Pipeline" },
+    { id: "filings", key: "6", label: "Filings" },
   ];
 
   return (
     <div className="np-terminal-rail np-terminal-rail-left">
-      <RailCard>
+      <RailCard style={{ padding: "8px 9px" }}>
         <div style={{ display: "grid", gap: 8 }}>
-          <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-            <div
-              style={{
-                width: 44,
-                height: 44,
-                display: "grid",
-                placeItems: "center",
-                border: "1px solid rgba(255,156,26,0.34)",
-                background: "rgba(31,20,8,0.96)",
-                color: "var(--np-terminal-amber)",
-                fontFamily: "'DM Mono',monospace",
-                fontWeight: 700,
-                fontSize: 11,
-                letterSpacing: "0.14em",
-                flexShrink: 0,
-              }}
-            >
-              NP
-            </div>
-            <div style={{ minWidth: 0 }}>
-              <div style={terminalLabelStyle("amber")}>Nuclear Pulse</div>
-              <div style={{ marginTop: 5, fontSize: 18, fontWeight: 700, color: "var(--np-terminal-text)", lineHeight: 1.05 }}>
-                Terminal
-                <span style={{ fontFamily: "'Playfair Display',serif", fontStyle: "italic", fontWeight: 400, color: "var(--np-terminal-amber)", marginLeft: 7 }}>
-                  Pulse
-                </span>
-              </div>
-              <div style={{ fontSize: 10.5, lineHeight: 1.55, marginTop: 6, ...terminalMutedStyle() }}>
-                A dense global command surface for fleet, fuel-cycle, filings, and geopolitical infrastructure signals.
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
+            <div>
+              <div style={terminalLabelStyle("amber")}>Desk snapshot</div>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--np-terminal-text)", marginTop: 4 }}>
+                {selectedEntity ? (selectedEntity.name || selectedEntity.title || selectedEntity.country) : "Global scope"}
               </div>
             </div>
+            <span style={terminalTagStyle({ tone: selectedEntity ? "warning" : "cyan", compact: true })}>
+              {selectedEntity ? "focus" : "global"}
+            </span>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0,1fr))", gap: 8 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0,1fr))", gap: 6 }}>
             <RailMetric label="Countries" value={snapshot.entities.countries.length} tone="amber" />
-            <RailMetric label="Live rails" value={liveSources} tone="cyan" />
+            <RailMetric label="Live" value={liveSources} tone="cyan" />
             <RailMetric label="Stories" value={snapshot.entities.newsArticles.length} tone="success" />
           </div>
 
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            <span style={terminalTagStyle({ tone: "amber", compact: true })}>world monitor</span>
-            <span style={terminalTagStyle({ tone: "cyan", compact: true })}>data dense shell</span>
-            {selectedEntity ? <span style={terminalTagStyle({ tone: "warning", compact: true })}>focus active</span> : null}
-          </div>
+          {leadCountry ? (
+            <div style={{ fontSize: 10, lineHeight: 1.45, ...terminalMutedStyle() }}>
+              Lead market: <span style={{ color: "var(--np-terminal-text)" }}>{leadCountry.country}</span> {leadCountry.capacityGw.toFixed(1)} GW
+            </div>
+          ) : null}
         </div>
       </RailCard>
 
@@ -159,7 +138,7 @@ function LeftRail({
                   display: "grid",
                   gridTemplateColumns: "28px minmax(0,1fr)",
                   gap: 10,
-                  alignItems: "start",
+                  alignItems: "center",
                   width: "100%",
                   border: `1px solid ${active ? "rgba(255,156,26,0.52)" : "rgba(61,66,76,0.9)"}`,
                   background: active ? "rgba(34,22,8,0.98)" : "rgba(15,18,23,0.98)",
@@ -184,57 +163,35 @@ function LeftRail({
                 >
                   {desk.key}
                 </span>
-                <span style={{ minWidth: 0 }}>
-                  <span style={{ display: "block", fontSize: 11.5, fontWeight: 700 }}>{desk.label}</span>
-                  <span style={{ display: "block", fontSize: 10, lineHeight: 1.45, marginTop: 3, ...terminalMutedStyle() }}>{desk.hint}</span>
-                </span>
+                <span style={{ display: "block", minWidth: 0, fontSize: 11.5, fontWeight: 700 }}>{desk.label}</span>
               </button>
             );
           })}
         </div>
       </RailCard>
 
-      <RailCard>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", marginBottom: 8 }}>
-          <div style={terminalLabelStyle("amber")}>Watched entities</div>
-          <span style={terminalTagStyle({ tone: "amber", compact: true })}>{watchEntities.length} pinned</span>
-        </div>
-        <div style={{ display: "grid", gap: 0 }}>
-          {watchEntities.length ? watchEntities.map((entity, index) => (
-            <div
-              key={entity.id}
-              style={{
-                borderTop: index === 0 ? "none" : "1px solid rgba(55,59,68,0.9)",
-                padding: "8px 0",
-              }}
-            >
-              <div style={{ fontSize: 11.5, fontWeight: 700, color: "var(--np-terminal-text)" }}>{entity.name || entity.title || entity.country}</div>
-              <div style={{ fontSize: 10, marginTop: 4, ...terminalMutedStyle() }}>{entity.entityType}{entity.country ? ` | ${entity.country}` : ""}</div>
-            </div>
-          )) : (
-            <div style={{ fontSize: 10.5, lineHeight: 1.55, ...terminalMutedStyle() }}>
-              Use the focus drawer, market monitor, or globe markers to star the entities you want on the desk.
-            </div>
-          )}
-        </div>
-      </RailCard>
-
-      <RailCard>
-        <div style={terminalLabelStyle("cyan")}>Desk cues</div>
-        <div style={{ display: "grid", gap: 8, marginTop: 8 }}>
-          <div style={{ fontSize: 10.5, lineHeight: 1.55, ...terminalMutedStyle() }}>
-            Press `/` to route straight into command search.
+      {watchEntities.length ? (
+        <RailCard>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", marginBottom: 8 }}>
+            <div style={terminalLabelStyle("amber")}>Watched entities</div>
+            <span style={terminalTagStyle({ tone: "amber", compact: true })}>{watchEntities.length} pinned</span>
           </div>
-          <div style={{ fontSize: 10.5, lineHeight: 1.55, ...terminalMutedStyle() }}>
-            Click globe markers to synchronize the right rail and all linked data panels.
+          <div style={{ display: "grid", gap: 0 }}>
+            {watchEntities.map((entity, index) => (
+              <div
+                key={entity.id}
+                style={{
+                  borderTop: index === 0 ? "none" : "1px solid rgba(55,59,68,0.9)",
+                  padding: "8px 0",
+                }}
+              >
+                <div style={{ fontSize: 11.5, fontWeight: 700, color: "var(--np-terminal-text)" }}>{entity.name || entity.title || entity.country}</div>
+                <div style={{ fontSize: 10, marginTop: 4, ...terminalMutedStyle() }}>{entity.entityType}{entity.country ? ` | ${entity.country}` : ""}</div>
+              </div>
+            ))}
           </div>
-          {leadCountry ? (
-            <div style={{ fontSize: 10.5, lineHeight: 1.55, ...terminalMutedStyle() }}>
-              Capacity leader: <span style={{ color: "var(--np-terminal-text)" }}>{leadCountry.country}</span> at {leadCountry.capacityGw.toFixed(1)} GW tracked.
-            </div>
-          ) : null}
-        </div>
-      </RailCard>
+        </RailCard>
+      ) : null}
     </div>
   );
 }
