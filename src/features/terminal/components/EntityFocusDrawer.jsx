@@ -2,6 +2,7 @@ import CompareTray from "./CompareTray.jsx";
 import TerminalPanel from "./TerminalPanel.jsx";
 import {
   terminalButtonStyle,
+  terminalDataRowStyle,
   terminalLabelStyle,
   terminalMetricTileStyle,
   terminalMutedStyle,
@@ -12,14 +13,14 @@ import { useTerminal } from "../context.jsx";
 
 function renderEntityBody(entity) {
   if (!entity) return "";
-  if (entity.entityType === "country") return `${entity.reactors} reactors | ${entity.capacityGw.toFixed(1)} GW | ${entity.nuclearShare ?? 0}% nuclear share | ${entity.activeProjects} active projects.`;
-  if (entity.entityType === "plant") return `${entity.capacityMw.toLocaleString("en-US")} MW | ${entity.normalizedType} | ${entity.status}.`;
-  if (entity.entityType === "company") return `${entity.theme} exposure across ${entity.countries.length || 1} tracked geographies.`;
+  if (entity.entityType === "country") return `${entity.reactors} reactors | ${entity.capacityGw.toFixed(1)} GW | ${entity.nuclearShare ?? 0}% nuclear share | ${entity.activeProjects} active projects`;
+  if (entity.entityType === "plant") return `${entity.capacityMw.toLocaleString("en-US")} MW | ${entity.normalizedType} | ${entity.status}`;
+  if (entity.entityType === "company") return `${entity.theme} exposure across ${entity.countries.length || 1} tracked geographies`;
   if (entity.entityType === "story") return entity.whyItMatters || entity.curiosityHook;
-  if (entity.entityType === "project") return `${entity.status}${entity.targetYear ? ` | target ${entity.targetYear}` : ""} | ${entity.capacityMw} MW | ${entity.country}.`;
-  if (entity.entityType === "filing") return `${entity.form} filed for ${entity.companyName} on ${entity.filedLabel}.`;
-  if (entity.entityType === "operationsSignal") return `${entity.plantName} is reporting ${entity.powerPct}% power on the NRC operations feed.`;
-  if (entity.entityType === "sourceBrief") return `${entity.category} coverage. ${entity.coverage}`;
+  if (entity.entityType === "project") return `${entity.status}${entity.targetYear ? ` | target ${entity.targetYear}` : ""} | ${entity.capacityMw} MW | ${entity.country}`;
+  if (entity.entityType === "filing") return `${entity.form} filed for ${entity.companyName} on ${entity.filedLabel}`;
+  if (entity.entityType === "operationsSignal") return `${entity.plantName} is reporting ${entity.powerPct}% power on the NRC feed`;
+  if (entity.entityType === "sourceBrief") return `${entity.category} coverage | ${entity.coverage}`;
   return entity.summary || entity.desc || "";
 }
 
@@ -104,6 +105,45 @@ function buildFocusFacts(entity, snapshot) {
   ];
 }
 
+function buildMetaRows(entity) {
+  if (!entity) {
+    return [
+      ["Mode", "Global workspace"],
+      ["Layer", "Linked reactor, uranium, filing, and market surfaces"],
+      ["Scope", "No active focus entity"],
+    ];
+  }
+
+  const metaRows = [
+    ["Entity", entity.entityType],
+    ["Country", entity.country || entity.hqCountry || entity.region || "--"],
+    ["Source", entity.sourceName || entity.source || "--"],
+    ["Access", entity.access || "--"],
+    ["Status", entity.status || entity.stage || entity.form || entity.tag || "--"],
+  ];
+
+  if (entity.dateLabel || entity.filedLabel || entity.filingDate || entity.targetYear) {
+    metaRows.push(["Date", entity.dateLabel || entity.filedLabel || entity.filingDate || entity.targetYear]);
+  }
+
+  return metaRows;
+}
+
+function ContextCell({ label, value, tone }) {
+  const accent = tone === "cyan"
+    ? "var(--np-terminal-cyan)"
+    : tone === "success"
+      ? "var(--np-terminal-green)"
+      : "var(--np-terminal-amber)";
+
+  return (
+    <div style={terminalMetricTileStyle({ accent })}>
+      <div style={terminalLabelStyle(tone)}>{label}</div>
+      <div style={{ ...terminalValueStyle({ tone, size: 18 }), marginTop: 7 }}>{value}</div>
+    </div>
+  );
+}
+
 export default function EntityFocusDrawer({ isMobileViewport }) {
   const {
     snapshot,
@@ -122,49 +162,79 @@ export default function EntityFocusDrawer({ isMobileViewport }) {
   const eyebrow = selectedEntity ? `${selectedEntity.entityType} focus` : "Live context";
   const body = selectedEntity
     ? renderEntityBody(selectedEntity)
-    : `Track ${snapshot.entities.plants.length} plant records, ${snapshot.entities.supplySites.length} fuel-cycle sites, ${snapshot.entities.marketInstruments.length} market instruments, ${snapshot.entities.companyFilings.length} SEC filings, and ${snapshot.entities.newsArticles.length} catalyst stories in one workspace.`;
+    : `Track ${snapshot.entities.plants.length} plants, ${snapshot.entities.supplySites.length} supply sites, ${snapshot.entities.marketInstruments.length} equities, ${snapshot.entities.companyFilings.length} filings, and ${snapshot.entities.newsArticles.length} catalyst stories from one console.`;
   const canCompare = selectedEntity && ["country", "plant", "company", "project"].includes(selectedEntity.entityType);
   const facts = buildFocusFacts(selectedEntity, snapshot);
+  const metaRows = buildMetaRows(selectedEntity);
 
   return (
-    <div style={{ display: "grid", gap: 16 }}>
-      <TerminalPanel>
-        <div style={{ display: "grid", gap: 14 }}>
-          <div style={{ display: "grid", gap: 8 }}>
+    <div style={{ display: "grid", gap: 10 }}>
+      <TerminalPanel title="Focus drawer" subtitle="Active entity context, metadata, compare, and linked surface counts.">
+        <div style={{ display: "grid", gap: 10 }}>
+          <div style={{ display: "grid", gap: 4 }}>
             <div style={terminalLabelStyle("cyan")}>{eyebrow}</div>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: isMobileViewport ? 22 : 26, lineHeight: 1.08, color: "var(--np-terminal-text)" }}>
+            <div style={{ ...terminalValueStyle({ size: isMobileViewport ? 19 : 21 }), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
               {title}
             </div>
-            <div style={{ fontSize: 13, lineHeight: 1.7, maxWidth: 720, ...terminalMutedStyle() }}>{body}</div>
+            <div style={{ fontSize: 11, lineHeight: 1.55, ...terminalMutedStyle() }}>{body}</div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: isMobileViewport ? "repeat(2, minmax(0,1fr))" : `repeat(${Math.min(facts.length, 4)}, minmax(0,1fr))`, gap: 10 }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: isMobileViewport ? "repeat(2, minmax(0,1fr))" : "repeat(4, minmax(0,1fr))",
+              gap: 8,
+            }}
+          >
             {facts.map((fact) => (
-              <div key={`${fact.label}-${fact.value}`} style={terminalMetricTileStyle({ accent: fact.tone === "cyan" ? "var(--np-terminal-cyan)" : fact.tone === "success" ? "var(--np-terminal-green)" : "var(--np-terminal-amber)" })}>
-                <div style={terminalLabelStyle(fact.tone === "cyan" ? "cyan" : fact.tone === "success" ? "success" : "amber")}>{fact.label}</div>
-                <div style={{ ...terminalValueStyle({ tone: fact.tone, size: 18 }), marginTop: 8, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {fact.value}
+              <ContextCell key={`${fact.label}-${fact.value}`} label={fact.label} value={fact.value} tone={fact.tone} />
+            ))}
+          </div>
+
+          <div style={{ display: "grid", gap: 0, padding: "0 10px", border: "1px solid rgba(51,66,86,0.92)", background: "rgba(7,10,15,0.94)" }}>
+            {metaRows.map(([label, value], index) => (
+              <div
+                key={`${label}-${value}`}
+                className="np-terminal-row"
+                style={{
+                  ...terminalDataRowStyle(),
+                  borderTop: index === 0 ? "none" : terminalDataRowStyle().borderTop,
+                  display: "grid",
+                  gridTemplateColumns: "76px minmax(0,1fr)",
+                  gap: 8,
+                  alignItems: "baseline",
+                }}
+              >
+                <div style={terminalLabelStyle("cyan")}>{label}</div>
+                <div style={{ fontSize: 11, color: "var(--np-terminal-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {String(value)}
                 </div>
               </div>
             ))}
           </div>
 
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {selectedEntity?.source ? <span style={terminalTagStyle({ compact: true })}>{selectedEntity.source}</span> : null}
             {selectedEntity?.access ? <span style={terminalTagStyle({ tone: selectedEntity.access === "terminal" ? "cyan" : "amber", compact: true })}>{selectedEntity.access}</span> : null}
             {selectedEntity?.confidence ? <span style={terminalTagStyle({ tone: "success", compact: true })}>{Math.round(selectedEntity.confidence * 100)}% confidence</span> : null}
-            {!selectedEntity ? <span style={terminalTagStyle({ tone: "cyan", compact: true })}>Global scope</span> : null}
+            {!selectedEntity ? <span style={terminalTagStyle({ tone: "cyan", compact: true })}>global scope</span> : null}
           </div>
 
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {canCompare ? <button type="button" onClick={() => toggleCompare(selectedEntity.id)} className="np-terminal-button" style={terminalButtonStyle(false)}>Add to compare</button> : null}
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {canCompare ? <button type="button" onClick={() => toggleCompare(selectedEntity.id)} className="np-terminal-button" style={terminalButtonStyle(false)}>Add compare</button> : null}
             {selectedEntity ? (
               <button type="button" onClick={() => toggleWatch(selectedEntity.id)} className="np-terminal-button" style={terminalButtonStyle(false, { tone: "cyan" })}>
                 {watchedSet.has(selectedEntity.id) ? "Starred" : "Star"}
               </button>
             ) : null}
             {selectedEntity?.url ? (
-              <a href={selectedEntity.url} target="_blank" rel="noopener noreferrer" className="np-terminal-button np-terminal-link" style={{ ...terminalButtonStyle(false, { tone: "amber" }), textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
+              <a
+                href={selectedEntity.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="np-terminal-button np-terminal-link"
+                style={{ ...terminalButtonStyle(false, { tone: "amber" }), textDecoration: "none", display: "inline-flex", alignItems: "center" }}
+              >
                 Source
               </a>
             ) : null}
@@ -174,32 +244,23 @@ export default function EntityFocusDrawer({ isMobileViewport }) {
 
       <CompareTray />
 
-      <TerminalPanel title="Linked context" subtitle="Downstream surfaces currently illuminated by the active focus.">
+      <TerminalPanel title="Linked context" subtitle="Counts for the surfaces currently illuminated by the active selection.">
         <div style={{ display: "grid", gap: 10 }}>
-          <div style={{ display: "grid", gridTemplateColumns: isMobileViewport ? "repeat(2, minmax(0,1fr))" : "repeat(5, minmax(0,1fr))", gap: 10 }}>
-            <div style={terminalMetricTileStyle({ accent: "var(--np-terminal-cyan)" })}>
-              <div style={terminalLabelStyle("cyan")}>Markets</div>
-              <div style={{ ...terminalValueStyle({ tone: "cyan", size: 20 }), marginTop: 8 }}>{marketRows.slice(0, 6).length}</div>
-            </div>
-            <div style={terminalMetricTileStyle({ accent: "var(--np-terminal-green)" })}>
-              <div style={terminalLabelStyle("success")}>Catalysts</div>
-              <div style={{ ...terminalValueStyle({ tone: "success", size: 20 }), marginTop: 8 }}>{newsRows.slice(0, 6).length}</div>
-            </div>
-            <div style={terminalMetricTileStyle({ accent: "var(--np-terminal-amber)" })}>
-              <div style={terminalLabelStyle()}>Pipeline</div>
-              <div style={{ ...terminalValueStyle({ tone: "amber", size: 20 }), marginTop: 8 }}>{pipelineRows.slice(0, 6).length}</div>
-            </div>
-            <div style={terminalMetricTileStyle({ accent: "var(--np-terminal-cyan)" })}>
-              <div style={terminalLabelStyle("cyan")}>Filings</div>
-              <div style={{ ...terminalValueStyle({ tone: "cyan", size: 20 }), marginTop: 8 }}>{filingRows.slice(0, 6).length}</div>
-            </div>
-            <div style={terminalMetricTileStyle({ accent: "var(--np-terminal-green)" })}>
-              <div style={terminalLabelStyle("success")}>Ops</div>
-              <div style={{ ...terminalValueStyle({ tone: "success", size: 20 }), marginTop: 8 }}>{operationsRows.slice(0, 6).length}</div>
-            </div>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: isMobileViewport ? "repeat(2, minmax(0,1fr))" : "repeat(5, minmax(0,1fr))",
+              gap: 8,
+            }}
+          >
+            <ContextCell label="Markets" value={marketRows.slice(0, 6).length} tone="cyan" />
+            <ContextCell label="Catalysts" value={newsRows.slice(0, 6).length} tone="success" />
+            <ContextCell label="Pipeline" value={pipelineRows.slice(0, 6).length} tone="amber" />
+            <ContextCell label="Filings" value={filingRows.slice(0, 6).length} tone="cyan" />
+            <ContextCell label="Ops" value={operationsRows.slice(0, 6).length} tone="success" />
           </div>
-          <div style={{ fontSize: 12, lineHeight: 1.65, ...terminalMutedStyle() }}>
-            Source trust labels and access states stay attached to every entity so public-safe signals can coexist with terminal-only drilldowns.
+          <div style={{ fontSize: 10.5, lineHeight: 1.5, ...terminalMutedStyle() }}>
+            Source labels and access states stay attached to each entity so public-safe signals can coexist with terminal-only drilldowns.
           </div>
         </div>
       </TerminalPanel>

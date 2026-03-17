@@ -1,29 +1,20 @@
 import { useTerminal } from "../context.jsx";
 import {
   terminalLabelStyle,
-  terminalMetricTileStyle,
   terminalMutedStyle,
   terminalTagStyle,
   terminalValueStyle,
 } from "./styles.js";
 
-function BlotterTile({ label, value, detail, accent = "var(--np-terminal-amber)", tag }) {
-  const tone = accent === "var(--np-terminal-cyan)"
-    ? "cyan"
-    : accent === "var(--np-terminal-green)"
-      ? "success"
-      : accent === "var(--np-terminal-red)"
-        ? "danger"
-        : "amber";
-
+function BlotterCell({ label, value, detail, tone = "amber", tag }) {
   return (
-    <div style={terminalMetricTileStyle({ accent })}>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", marginBottom: 10 }}>
-        <div style={terminalLabelStyle(tone)}>{label}</div>
+    <div className="np-terminal-status-cell">
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
+        <span style={terminalLabelStyle(tone)}>{label}</span>
         {tag ? <span style={terminalTagStyle({ tone, compact: true })}>{tag}</span> : null}
       </div>
-      <div style={{ ...terminalValueStyle({ tone, size: 24 }), marginBottom: 8 }}>{value}</div>
-      <div style={{ fontSize: 11.5, lineHeight: 1.6, ...terminalMutedStyle() }}>{detail}</div>
+      <div style={{ ...terminalValueStyle({ tone, size: 20 }), marginTop: 8 }}>{value}</div>
+      <div style={{ fontSize: 10.5, lineHeight: 1.45, marginTop: 6, ...terminalMutedStyle() }}>{detail}</div>
     </div>
   );
 }
@@ -35,47 +26,54 @@ export default function TerminalBlotter({ isMobileViewport }) {
   const officialStories = snapshot.entities.newsArticles.filter((item) => item.isOfficial).length;
 
   return (
-    <section style={{ display: "grid", gridTemplateColumns: isMobileViewport ? "repeat(2, minmax(0,1fr))" : "repeat(6, minmax(0,1fr))", gap: 12 }}>
-      <BlotterTile
+    <section
+      className="np-terminal-status-board"
+      style={{
+        display: "grid",
+        gridTemplateColumns: isMobileViewport ? "repeat(2, minmax(0,1fr))" : "repeat(6, minmax(0,1fr))",
+      }}
+    >
+      <BlotterCell
         label="Fleet"
         value={operatingPlants}
-        detail={`${snapshot.entities.countries.length} countries // ${snapshot.entities.reactorUnits.length} unit records`}
-        tag="Live"
+        detail={`${snapshot.entities.countries.length} countries | ${snapshot.entities.reactorUnits.length} units`}
+        tone="amber"
+        tag="live"
       />
-      <BlotterTile
+      <BlotterCell
         label="Catalysts"
         value={snapshot.entities.newsArticles.length}
-        detail={`${officialStories} official-source stories in the current wire`}
-        accent="var(--np-terminal-cyan)"
-        tag="Wire"
+        detail={`${officialStories} official-source stories in wire`}
+        tone="cyan"
+        tag="wire"
       />
-      <BlotterTile
+      <BlotterCell
         label="Filings"
         value={filingRows.length}
-        detail={filingRows[0] ? `${filingRows[0].ticker} ${filingRows[0].form} is the latest disclosure` : "SEC radar waiting for the next disclosure"}
-        accent="var(--np-terminal-amber)"
-        tag="SEC"
+        detail={filingRows[0] ? `${filingRows[0].ticker} ${filingRows[0].form} latest` : "Waiting for next disclosure"}
+        tone="amber"
+        tag="sec"
       />
-      <BlotterTile
-        label="Ops pulse"
+      <BlotterCell
+        label="Ops"
         value={operationsRows.length}
-        detail={operationsRows[0] ? `${operationsRows[0].plantName} at ${operationsRows[0].powerPct}% power` : "NRC status feed not in focus"}
-        accent="var(--np-terminal-green)"
-        tag="NRC"
+        detail={operationsRows[0] ? `${operationsRows[0].plantName} ${operationsRows[0].powerPct}%` : "No plant in focus"}
+        tone="success"
+        tag="nrc"
       />
-      <BlotterTile
+      <BlotterCell
         label="Sources"
         value={liveSources}
-        detail={`${snapshot.entities.sourceCatalog.length} tracked data rails across public and premium-ready tiers`}
-        accent="var(--np-terminal-cyan)"
-        tag="Live"
+        detail={`${snapshot.entities.sourceCatalog.length} rails tracked`}
+        tone="cyan"
+        tag="data"
       />
-      <BlotterTile
+      <BlotterCell
         label="Workspace"
         value={`${compareEntities.length}/${watchedSet.size}`}
-        detail={`Compare queue / watchlist // ${state.layer === "uranium" ? "Fuel-cycle" : "Fleet"} mode`}
-        accent="var(--np-terminal-red)"
-        tag="State"
+        detail={`Compare / watch | ${state.layer === "uranium" ? "fuel" : "fleet"} mode`}
+        tone="danger"
+        tag="state"
       />
     </section>
   );

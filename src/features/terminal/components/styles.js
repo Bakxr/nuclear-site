@@ -4,35 +4,40 @@ const TERMINAL_MUTED = "var(--np-terminal-muted)";
 function resolveTone(tone = "default") {
   if (tone === "amber") {
     return {
-      border: "rgba(255,159,28,0.38)",
-      background: "rgba(255,159,28,0.12)",
+      border: "rgba(255,159,28,0.42)",
+      borderSoft: "rgba(255,159,28,0.16)",
+      background: "rgba(34,20,6,0.9)",
       color: "var(--np-terminal-amber)",
     };
   }
   if (tone === "cyan") {
     return {
-      border: "rgba(97,230,255,0.3)",
-      background: "rgba(97,230,255,0.1)",
+      border: "rgba(97,230,255,0.34)",
+      borderSoft: "rgba(97,230,255,0.16)",
+      background: "rgba(8,25,30,0.88)",
       color: "var(--np-terminal-cyan)",
     };
   }
   if (tone === "success") {
     return {
-      border: "rgba(125,255,155,0.28)",
-      background: "rgba(125,255,155,0.1)",
+      border: "rgba(125,255,155,0.34)",
+      borderSoft: "rgba(125,255,155,0.14)",
+      background: "rgba(8,24,14,0.88)",
       color: "var(--np-terminal-green)",
     };
   }
   if (tone === "danger") {
     return {
-      border: "rgba(255,107,107,0.28)",
-      background: "rgba(255,107,107,0.1)",
+      border: "rgba(255,107,107,0.34)",
+      borderSoft: "rgba(255,107,107,0.16)",
+      background: "rgba(36,12,16,0.9)",
       color: "var(--np-terminal-red)",
     };
   }
   return {
-    border: "rgba(143,157,177,0.24)",
-    background: "rgba(17,23,35,0.9)",
+    border: "rgba(74,91,114,0.72)",
+    borderSoft: "rgba(74,91,114,0.22)",
+    background: "rgba(12,18,26,0.92)",
     color: TERMINAL_TEXT,
   };
 }
@@ -41,13 +46,11 @@ export function terminalPanelStyle({ alt = false } = {}) {
   return {
     position: "relative",
     minWidth: 0,
-    border: "1px solid var(--np-terminal-border)",
-    borderRadius: 10,
+    border: `1px solid ${alt ? "rgba(97,230,255,0.18)" : "var(--np-terminal-border)"}`,
+    borderRadius: 3,
     overflow: "hidden",
-    background: alt
-      ? "linear-gradient(180deg, rgba(17,23,35,0.98) 0%, rgba(11,15,20,0.95) 100%)"
-      : "linear-gradient(180deg, rgba(11,15,20,0.98) 0%, rgba(8,12,18,0.96) 100%)",
-    boxShadow: "0 18px 40px rgba(0,0,0,0.35)",
+    background: alt ? "rgba(8,13,19,0.98)" : "rgba(6,10,15,0.98)",
+    boxShadow: "0 10px 24px rgba(0,0,0,0.22)",
   };
 }
 
@@ -59,21 +62,23 @@ export function terminalButtonStyle(active = false, { compact = false, tone = "d
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
-    border: `1px solid ${active ? "rgba(255,159,28,0.82)" : palette.border}`,
+    gap: 6,
+    border: `1px solid ${active ? "rgba(255,159,28,0.92)" : palette.borderSoft}`,
     background: active
-      ? "linear-gradient(180deg, rgba(255,191,97,0.98) 0%, rgba(255,159,28,0.94) 100%)"
-      : palette.background,
-    color: active ? "#0a0e13" : palette.color,
-    borderRadius: 6,
-    padding: compact ? "6px 10px" : "8px 12px",
-    fontSize: compact ? 11 : 11.5,
+      ? "linear-gradient(180deg, rgba(255,191,97,0.98) 0%, rgba(255,159,28,0.92) 100%)"
+      : "linear-gradient(180deg, rgba(17,24,35,0.98) 0%, rgba(9,14,20,0.96) 100%)",
+    color: active ? "#090d12" : palette.color,
+    borderRadius: 2,
+    padding: compact ? "5px 8px" : "7px 10px",
+    fontSize: compact ? 10 : 10.5,
     fontWeight: 700,
     letterSpacing: "0.1em",
     textTransform: "uppercase",
     cursor: "pointer",
     fontFamily: "'DM Sans',sans-serif",
-    lineHeight: 1.1,
-    boxShadow: active ? "inset 0 1px 0 rgba(255,255,255,0.28)" : "none",
+    lineHeight: 1.05,
+    whiteSpace: "nowrap",
+    boxShadow: active ? "inset 0 1px 0 rgba(255,255,255,0.3)" : "none",
   };
 }
 
@@ -83,19 +88,19 @@ export function terminalTagStyle({ tone = "default", compact = false } = {}) {
   return {
     display: "inline-flex",
     alignItems: "center",
-    gap: 8,
+    gap: 6,
     minWidth: 0,
-    borderRadius: 6,
-    border: `1px solid ${palette.border}`,
+    borderRadius: 2,
+    border: `1px solid ${palette.borderSoft}`,
     background: palette.background,
-    padding: compact ? "5px 8px" : "7px 10px",
-    fontSize: compact ? 10.5 : 11,
+    padding: compact ? "4px 7px" : "6px 9px",
+    fontSize: compact ? 9.5 : 10,
     fontWeight: 700,
-    letterSpacing: "0.08em",
+    letterSpacing: "0.1em",
     textTransform: "uppercase",
     color: palette.color,
     fontFamily: "'DM Sans',sans-serif",
-    lineHeight: 1.1,
+    lineHeight: 1.05,
   };
 }
 
@@ -116,29 +121,29 @@ export function terminalPillStyle(color = TERMINAL_TEXT) {
 export function terminalMetricTileStyle({ accent = "var(--np-terminal-amber)" } = {}) {
   return {
     minWidth: 0,
-    borderRadius: 8,
-    border: "1px solid rgba(143,157,177,0.15)",
-    background: "linear-gradient(180deg, rgba(17,23,35,0.95) 0%, rgba(10,14,20,0.96) 100%)",
-    padding: "12px 12px 11px",
-    boxShadow: `inset 3px 0 0 ${accent}, inset 0 1px 0 rgba(255,255,255,0.02)`,
+    borderRadius: 2,
+    border: "1px solid rgba(55,68,88,0.78)",
+    background: "linear-gradient(180deg, rgba(13,18,26,0.98) 0%, rgba(8,11,17,0.98) 100%)",
+    padding: "9px 10px 8px",
+    boxShadow: `inset 3px 0 0 ${accent}`,
   };
 }
 
 export function terminalDataRowStyle() {
   return {
     minWidth: 0,
-    borderTop: "1px solid rgba(143,157,177,0.16)",
-    padding: "12px 0",
+    borderTop: "1px solid rgba(51,66,86,0.78)",
+    padding: "8px 0",
   };
 }
 
-export function terminalScrollAreaStyle(maxHeight = 420) {
+export function terminalScrollAreaStyle(maxHeight = 360) {
   return {
     display: "grid",
     gap: 0,
     maxHeight,
     overflowY: "auto",
-    paddingRight: 4,
+    paddingRight: 2,
     minWidth: 0,
   };
 }
@@ -148,17 +153,17 @@ export function terminalSelectStyle(disabled = false) {
     appearance: "none",
     width: "100%",
     minWidth: 0,
-    borderRadius: 8,
-    border: "1px solid var(--np-terminal-border)",
-    background: disabled ? "rgba(17,23,35,0.58)" : "rgba(17,23,35,0.94)",
-    color: disabled ? "rgba(143,157,177,0.56)" : TERMINAL_TEXT,
-    padding: "10px 12px",
+    borderRadius: 2,
+    border: "1px solid rgba(51,66,86,0.9)",
+    background: disabled ? "rgba(12,16,24,0.78)" : "rgba(10,14,21,0.96)",
+    color: disabled ? "rgba(143,157,177,0.52)" : TERMINAL_TEXT,
+    padding: "8px 10px",
     fontFamily: "'DM Sans',sans-serif",
-    fontSize: 12.5,
+    fontSize: 11.5,
     fontWeight: 600,
     colorScheme: "dark",
     outline: "none",
-    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.02)",
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)",
   };
 }
 
@@ -166,12 +171,12 @@ export function terminalInputShellStyle() {
   return {
     display: "flex",
     alignItems: "center",
-    gap: 10,
+    gap: 8,
     minWidth: 0,
-    borderRadius: 8,
-    border: "1px solid var(--np-terminal-border)",
-    background: "linear-gradient(180deg, rgba(17,23,35,0.98) 0%, rgba(9,14,20,0.96) 100%)",
-    padding: "10px 12px",
+    borderRadius: 2,
+    border: "1px solid rgba(55,68,88,0.92)",
+    background: "linear-gradient(180deg, rgba(9,14,20,0.98) 0%, rgba(6,10,15,0.98) 100%)",
+    padding: "8px 10px",
     boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)",
   };
 }
@@ -184,7 +189,7 @@ export function terminalInputStyle() {
     border: "none",
     outline: "none",
     color: TERMINAL_TEXT,
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: "'DM Sans',sans-serif",
   };
 }
@@ -199,12 +204,20 @@ export function terminalLabelStyle(tone = "amber") {
         : "var(--np-terminal-amber)";
 
   return {
-    fontSize: 10.5,
+    fontSize: 9.5,
     textTransform: "uppercase",
-    letterSpacing: "0.14em",
+    letterSpacing: "0.16em",
     color: palette,
     fontWeight: 700,
     fontFamily: "'DM Mono',monospace",
+    lineHeight: 1.1,
+  };
+}
+
+export function terminalTableHeaderStyle(align = "left", tone = "cyan") {
+  return {
+    ...terminalLabelStyle(tone),
+    textAlign: align,
   };
 }
 
@@ -214,7 +227,7 @@ export function terminalMutedStyle() {
   };
 }
 
-export function terminalValueStyle({ tone = "default", size = 20 } = {}) {
+export function terminalValueStyle({ tone = "default", size = 16 } = {}) {
   const color = tone === "cyan"
     ? "var(--np-terminal-cyan)"
     : tone === "success"
@@ -236,9 +249,9 @@ export function terminalValueStyle({ tone = "default", size = 20 } = {}) {
 export function terminalLinkStyle(tone = "amber") {
   return {
     color: tone === "cyan" ? "var(--np-terminal-cyan)" : "var(--np-terminal-amber)",
-    fontSize: 10.5,
+    fontSize: 9.5,
     fontWeight: 700,
-    letterSpacing: "0.08em",
+    letterSpacing: "0.1em",
     textTransform: "uppercase",
     textDecoration: "none",
     fontFamily: "'DM Sans',sans-serif",

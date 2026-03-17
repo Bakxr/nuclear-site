@@ -23,42 +23,58 @@ export default function NuclearTerminal({
   const workspaceStyle = isMobileViewport
     ? {
         display: "grid",
-        gap: 14,
+        gap: 10,
       }
     : {
         display: "grid",
-        gridTemplateColumns: "minmax(0, 1.45fr) minmax(360px, 0.92fr)",
+        gridTemplateColumns: "minmax(0,1.38fr) minmax(0,1.04fr) minmax(320px,0.88fr)",
         gridTemplateAreas: `
-          "map focus"
-          "map wire"
-          "market pipeline"
-          "ops filings"
-          "scoreboard sources"
+          "map map focus"
+          "map map wire"
+          "market ops filings"
+          "scoreboard pipeline sources"
         `,
-        gap: 16,
+        gap: 10,
         alignItems: "start",
       };
 
   return (
     <TerminalProvider snapshot={snapshot} isMobileViewport={isMobileViewport}>
       <div className="np-terminal-shell">
-        <TerminalCommandBar isMobileViewport={isMobileViewport} onExitTerminal={onExitTerminal} onRefreshData={onRefreshData} />
+        <TerminalCommandBar
+          isMobileViewport={isMobileViewport}
+          onExitTerminal={onExitTerminal}
+          onRefreshData={onRefreshData}
+        />
 
-        <div className="np-terminal-content" style={{ maxWidth: 1540, margin: "0 auto", padding: isMobileViewport ? "14px 14px 18px" : "16px 20px 28px", display: "grid", gap: 16 }}>
+        <div
+          className="np-terminal-content"
+          style={{
+            maxWidth: 1800,
+            margin: "0 auto",
+            padding: isMobileViewport ? "10px 10px 18px" : "10px 12px 18px",
+            display: "grid",
+            gap: 10,
+          }}
+        >
           <TerminalBlotter isMobileViewport={isMobileViewport} />
 
           <div style={workspaceStyle}>
             <div style={isMobileViewport ? undefined : { gridArea: "map" }}>
-              <MapNexusPanel GlobeComponent={GlobeComponent} isMobileViewport={isMobileViewport} onOpenPlant={onOpenPlant} />
+              <MapNexusPanel
+                GlobeComponent={GlobeComponent}
+                isMobileViewport={isMobileViewport}
+                onOpenPlant={onOpenPlant}
+              />
             </div>
             <div style={isMobileViewport ? undefined : { gridArea: "focus" }}>
               <EntityFocusDrawer isMobileViewport={isMobileViewport} />
             </div>
             <div style={isMobileViewport ? undefined : { gridArea: "wire" }}>
-              <CatalystWirePanel onRefreshData={onRefreshData} />
+              <CatalystWirePanel onRefreshData={onRefreshData} isMobileViewport={isMobileViewport} />
             </div>
             <div style={isMobileViewport ? undefined : { gridArea: "market" }}>
-              <MarketMonitorPanel onOpenStock={onOpenStock} />
+              <MarketMonitorPanel onOpenStock={onOpenStock} isMobileViewport={isMobileViewport} />
             </div>
             <div style={isMobileViewport ? undefined : { gridArea: "ops" }}>
               <OperationsPulsePanel />
