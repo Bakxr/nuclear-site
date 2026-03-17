@@ -17,9 +17,9 @@ async function postJson(url, body, accessToken) {
 }
 
 export async function createCheckoutSession(interval, accessToken) {
-  return postJson("/api/billing/create-checkout-session", { interval }, accessToken);
+  return postJson("/api/billing/session", { action: "checkout", interval }, accessToken);
 }
 
 export async function createPortalSession(accessToken) {
-  return postJson("/api/billing/create-portal-session", {}, accessToken);
+  return postJson("/api/billing/session", { action: "portal" }, accessToken);
 }
