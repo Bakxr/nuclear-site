@@ -90,26 +90,26 @@ html {
 }
 
 .np-terminal-shell {
-  --np-terminal-bg: #050608;
-  --np-terminal-panel: #0b0d11;
-  --np-terminal-panel-alt: #12161b;
-  --np-terminal-border: rgba(67, 72, 81, 0.92);
-  --np-terminal-border-soft: rgba(255, 156, 26, 0.14);
-  --np-terminal-text: #e9edf4;
-  --np-terminal-muted: #8b92a0;
-  --np-terminal-subtle: #656c79;
-  --np-terminal-amber: #ff9c1a;
-  --np-terminal-cyan: #4eb8d6;
-  --np-terminal-green: #49b87a;
-  --np-terminal-red: #d55c5c;
-  --np-terminal-yellow: #f0c75c;
+  --np-terminal-bg: #0f0c09;
+  --np-terminal-panel: #16120e;
+  --np-terminal-panel-alt: #1b1611;
+  --np-terminal-border: rgba(122, 103, 76, 0.62);
+  --np-terminal-border-soft: rgba(212, 165, 74, 0.16);
+  --np-terminal-text: #f5f0e8;
+  --np-terminal-muted: #b0a18a;
+  --np-terminal-subtle: #7c6f5d;
+  --np-terminal-amber: #d4a54a;
+  --np-terminal-cyan: #7f9aa7;
+  --np-terminal-green: #7ea07d;
+  --np-terminal-red: #b87468;
+  --np-terminal-yellow: #d7bf78;
   position: relative;
   min-height: 100vh;
   overflow: hidden;
   background:
-    radial-gradient(circle at 14% 12%, rgba(255, 156, 26, 0.06), transparent 16%),
-    radial-gradient(circle at 84% 10%, rgba(78, 184, 214, 0.05), transparent 18%),
-    linear-gradient(180deg, #08090c 0%, #050608 42%, #040507 100%);
+    radial-gradient(circle at 14% 12%, rgba(212, 165, 74, 0.08), transparent 16%),
+    radial-gradient(circle at 84% 10%, rgba(127, 154, 167, 0.04), transparent 18%),
+    linear-gradient(180deg, #14110d 0%, #110d0a 42%, #0d0a08 100%);
   color: var(--np-terminal-text);
   font-family: 'DM Sans', sans-serif;
 }
@@ -124,10 +124,10 @@ html {
 
 .np-terminal-shell::before {
   background-image:
-    linear-gradient(rgba(96, 106, 118, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(96, 106, 118, 0.08) 1px, transparent 1px);
+    linear-gradient(rgba(122, 103, 76, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(122, 103, 76, 0.08) 1px, transparent 1px);
   background-size: 28px 28px;
-  opacity: 0.14;
+  opacity: 0.12;
 }
 
 .np-terminal-shell::after {
@@ -186,15 +186,15 @@ html {
   position: sticky;
   top: 0;
   z-index: 110;
-  background: rgba(5, 6, 8, 0.97);
-  border-bottom: 1px solid rgba(67, 72, 81, 0.92);
+  background: rgba(15, 12, 9, 0.97);
+  border-bottom: 1px solid rgba(122, 103, 76, 0.46);
   box-shadow: 0 14px 36px rgba(0, 0, 0, 0.34);
 }
 
 .np-terminal-command-card,
 .np-terminal-command-tile {
   border: 1px solid var(--np-terminal-border);
-  background: rgba(10, 12, 16, 0.985);
+  background: rgba(22, 18, 14, 0.985);
   padding: 8px 10px;
   align-self: start;
 }
@@ -204,8 +204,8 @@ html {
   align-items: center;
   gap: 8px;
   min-width: 0;
-  border: 1px solid rgba(61, 66, 76, 0.92);
-  background: rgba(16, 19, 24, 0.98);
+  border: 1px solid rgba(122, 103, 76, 0.4);
+  background: rgba(28, 23, 18, 0.98);
   padding: 5px 7px;
 }
 
@@ -217,7 +217,7 @@ html {
 .np-terminal-status-cell {
   min-width: 0;
   border: 1px solid var(--np-terminal-border);
-  background: rgba(11, 13, 17, 0.985);
+  background: rgba(19, 15, 12, 0.985);
   padding: 7px 9px;
 }
 
@@ -231,7 +231,7 @@ html {
   inset: 0 0 auto 0;
   height: 1px;
   pointer-events: none;
-  background: linear-gradient(90deg, rgba(255,156,26,0.78), rgba(255,156,26,0.16) 48%, transparent 84%);
+  background: linear-gradient(90deg, rgba(212,165,74,0.82), rgba(212,165,74,0.18) 48%, transparent 84%);
   opacity: 1;
 }
 
@@ -244,8 +244,8 @@ html {
   align-items: flex-start;
   flex-wrap: wrap;
   padding: 7px 9px 6px;
-  border-bottom: 1px solid rgba(55, 59, 68, 0.92);
-  background: rgba(13, 15, 19, 0.985);
+  border-bottom: 1px solid rgba(122, 103, 76, 0.26);
+  background: rgba(26, 21, 17, 0.985);
 }
 
 .np-terminal-panel-body {
@@ -256,7 +256,7 @@ html {
 
 .np-terminal-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 156, 26, 0.42) rgba(17, 20, 25, 0.82);
+  scrollbar-color: rgba(212, 165, 74, 0.38) rgba(27, 22, 18, 0.82);
 }
 
 .np-terminal-scroll::-webkit-scrollbar {
@@ -265,11 +265,11 @@ html {
 }
 
 .np-terminal-scroll::-webkit-scrollbar-track {
-  background: rgba(12, 14, 18, 0.96);
+  background: rgba(24, 20, 16, 0.96);
 }
 
 .np-terminal-scroll::-webkit-scrollbar-thumb {
-  background: rgba(255, 156, 26, 0.38);
+  background: rgba(212, 165, 74, 0.34);
   border-radius: 0;
 }
 
@@ -283,7 +283,7 @@ html {
 }
 
 .np-terminal-row--interactive:hover {
-  background: linear-gradient(90deg, rgba(255, 156, 26, 0.11), rgba(78, 184, 214, 0.05) 56%, transparent 100%);
+  background: linear-gradient(90deg, rgba(212, 165, 74, 0.12), rgba(245, 240, 232, 0.025) 56%, transparent 100%);
 }
 
 .np-terminal-button {
@@ -295,7 +295,7 @@ html {
 }
 
 .np-terminal-link:hover {
-  color: var(--np-terminal-cyan) !important;
+  color: var(--np-terminal-amber) !important;
 }
 
 .np-terminal-footer-strip {
@@ -311,7 +311,7 @@ html {
   gap: 0;
   overflow-x: auto;
   border: 1px solid var(--np-terminal-border);
-  background: rgba(8, 10, 13, 0.985);
+  background: rgba(18, 14, 11, 0.985);
 }
 
 .np-terminal-footer-title,
@@ -328,7 +328,7 @@ html {
   position: sticky;
   left: 0;
   z-index: 2;
-  background: rgba(13, 15, 19, 0.985);
+  background: rgba(24, 19, 15, 0.985);
 }
 
 .np-terminal-footer-item {
@@ -343,7 +343,7 @@ html {
 }
 
 .np-terminal-footer-item:hover {
-  background: rgba(255, 156, 26, 0.06);
+  background: rgba(212, 165, 74, 0.08);
 }
 
 .np-terminal-footer-detail {
@@ -355,17 +355,17 @@ html {
 }
 
 .np-terminal-shell :is(button, a, input, select):focus-visible {
-  outline: 2px solid rgba(78, 184, 214, 0.82);
+  outline: 2px solid rgba(212, 165, 74, 0.56);
   outline-offset: 2px;
 }
 
 .np-terminal-shell input::placeholder {
-  color: rgba(143, 157, 177, 0.58);
+  color: rgba(176, 161, 138, 0.58);
 }
 
 .np-terminal-shell select option {
-  background: #151920;
-  color: #edf3ff;
+  background: #1d1713;
+  color: #f5f0e8;
 }
 
 @media (min-width: 1200px) {

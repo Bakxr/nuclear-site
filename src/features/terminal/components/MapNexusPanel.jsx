@@ -94,16 +94,16 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
     >
       <div className="np-terminal-map-shell">
         <div
-          className="np-terminal-map-toolbar"
-          style={{
-            display: "grid",
-            gridTemplateColumns: isMobileViewport ? "repeat(2, minmax(0,1fr))" : "repeat(4, minmax(0,1fr)) minmax(220px,0.9fr)",
-            gap: 8,
-            padding: "10px",
-            borderBottom: "1px solid rgba(55,59,68,0.92)",
-            background: "rgba(13,16,21,0.98)",
-          }}
-        >
+            className="np-terminal-map-toolbar"
+            style={{
+              display: "grid",
+              gridTemplateColumns: isMobileViewport ? "repeat(2, minmax(0,1fr))" : "repeat(4, minmax(0,1fr)) minmax(220px,0.9fr)",
+              gap: 8,
+              padding: "10px",
+              borderBottom: "1px solid rgba(122,103,76,0.22)",
+              background: "rgba(25,20,16,0.98)",
+            }}
+          >
           <label style={{ display: "grid", gap: 5, minWidth: 0 }}>
             <span style={terminalLabelStyle("cyan")}>Country</span>
             <select value={state.countryFilter} onChange={(event) => setCountryFilter(event.target.value)} style={terminalSelectStyle(false)}>
@@ -127,7 +127,7 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
           </label>
           <div style={{ display: "grid", gap: 5, minWidth: 0 }}>
             <span style={terminalLabelStyle("cyan")}>Layer</span>
-            <div style={{ minWidth: 0, border: "1px solid rgba(62,67,77,0.92)", background: "rgba(18,21,27,0.96)", padding: "8px 10px" }}>
+            <div style={{ minWidth: 0, border: "1px solid rgba(122,103,76,0.34)", background: "rgba(31,25,20,0.96)", padding: "8px 10px" }}>
               <div style={{ ...terminalValueStyle({ tone: assetTone, size: 13 }), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {state.layer === "reactors" ? "reactor fleet overlay" : "fuel-cycle overlay"}
               </div>
@@ -135,7 +135,7 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
           </div>
           <div style={{ display: "grid", gap: 5, minWidth: 0 }}>
             <span style={terminalLabelStyle("cyan")}>Focus</span>
-            <div style={{ minWidth: 0, border: "1px solid rgba(62,67,77,0.92)", background: "rgba(18,21,27,0.96)", padding: "8px 10px" }}>
+            <div style={{ minWidth: 0, border: "1px solid rgba(122,103,76,0.34)", background: "rgba(31,25,20,0.96)", padding: "8px 10px" }}>
               <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 12, color: "var(--np-terminal-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {selectedEntity ? (selectedEntity.name || selectedEntity.title || selectedEntity.country) : "global scope"}
               </div>
@@ -161,8 +161,8 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
               style={{
                 position: "relative",
                 minHeight: isMobileViewport ? 340 : 520,
-                border: "1px solid rgba(66,72,82,0.96)",
-                background: "radial-gradient(circle at 50% 34%, rgba(28,49,67,0.5) 0%, rgba(9,12,18,0.98) 44%, rgba(5,7,10,1) 100%)",
+                border: "1px solid rgba(122,103,76,0.34)",
+                background: "radial-gradient(circle at 50% 34%, rgba(36,45,54,0.36) 0%, rgba(19,16,13,0.98) 44%, rgba(14,11,8,1) 100%)",
                 overflow: "hidden",
               }}
             >
@@ -171,12 +171,12 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
                   position: "absolute",
                   inset: 0,
                   pointerEvents: "none",
-                  backgroundImage: "linear-gradient(rgba(95,104,118,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(95,104,118,0.12) 1px, transparent 1px)",
+                  backgroundImage: "linear-gradient(rgba(122,103,76,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(122,103,76,0.1) 1px, transparent 1px)",
                   backgroundSize: "36px 36px",
-                  opacity: 0.18,
+                  opacity: 0.16,
                 }}
               />
-              <div style={{ position: "absolute", inset: 10, border: "1px solid rgba(255,156,26,0.08)", pointerEvents: "none" }} />
+              <div style={{ position: "absolute", inset: 10, border: "1px solid rgba(212,165,74,0.08)", pointerEvents: "none" }} />
               <div style={{ position: "absolute", top: 12, left: 12, right: 12, zIndex: 4, display: "grid", gridTemplateColumns: isMobileViewport ? "repeat(2, minmax(0,1fr))" : "repeat(4, minmax(0,1fr))", gap: 8, pointerEvents: "none" }}>
                 {summaryTiles.map((tile) => (
                   <div
@@ -191,7 +191,7 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
                               ? "var(--np-terminal-yellow)"
                               : "var(--np-terminal-amber)",
                       }),
-                      background: "rgba(10,13,18,0.82)",
+                      background: "rgba(24,19,15,0.82)",
                       backdropFilter: "blur(6px)",
                     }}
                   >
@@ -240,8 +240,8 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
                         alignItems: "center",
                         gap: 6,
                         padding: "5px 8px",
-                        border: "1px solid rgba(66,72,82,0.8)",
-                        background: "rgba(10,13,18,0.82)",
+                        border: "1px solid rgba(122,103,76,0.34)",
+                        background: "rgba(24,19,15,0.82)",
                         color: "var(--np-terminal-text)",
                         fontSize: 10,
                         fontFamily: "'DM Mono',monospace",
@@ -254,7 +254,7 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
                     </span>
                   ))}
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", flexWrap: "wrap", padding: "7px 9px", border: "1px solid rgba(66,72,82,0.8)", background: "rgba(10,13,18,0.82)", color: "var(--np-terminal-muted)", fontSize: 10.5 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", flexWrap: "wrap", padding: "7px 9px", border: "1px solid rgba(122,103,76,0.34)", background: "rgba(24,19,15,0.82)", color: "var(--np-terminal-muted)", fontSize: 10.5 }}>
                   <span>Rotate globe to interrogate clusters. Click markers to route the rest of the desk.</span>
                   <span style={{ fontFamily: "'DM Mono',monospace", color: "var(--np-terminal-amber)" }}>{state.layer === "reactors" ? "reactor command surface" : "fuel cycle command surface"}</span>
                 </div>
@@ -262,7 +262,7 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
             </div>
 
             <div style={{ display: "grid", gap: 10 }}>
-              <div style={{ border: "1px solid rgba(66,72,82,0.92)", background: "rgba(12,15,19,0.98)", padding: "10px" }}>
+              <div style={{ border: "1px solid rgba(122,103,76,0.34)", background: "rgba(23,18,14,0.98)", padding: "10px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
                   <div>
                     <div style={terminalLabelStyle("amber")}>World monitor</div>
@@ -311,8 +311,8 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
                 </div>
               </div>
 
-              <div style={{ border: "1px solid rgba(66,72,82,0.92)", background: "rgba(12,15,19,0.98)", padding: "0 10px 10px" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "34px minmax(0,1.2fr) minmax(84px,0.7fr) auto", gap: 10, padding: "10px 0 8px", borderBottom: "1px solid rgba(55,59,68,0.92)" }}>
+              <div style={{ border: "1px solid rgba(122,103,76,0.34)", background: "rgba(23,18,14,0.98)", padding: "0 10px 10px" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "34px minmax(0,1.2fr) minmax(84px,0.7fr) auto", gap: 10, padding: "10px 0 8px", borderBottom: "1px solid rgba(122,103,76,0.22)" }}>
                   <div style={terminalTableHeaderStyle("left", "cyan")}>#</div>
                   <div style={terminalTableHeaderStyle("left", "cyan")}>Asset</div>
                   <div style={terminalTableHeaderStyle("left", "cyan")}>Country</div>

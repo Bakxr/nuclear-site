@@ -107,8 +107,8 @@ export default function TerminalCommandBar({
                   height: 38,
                   display: "grid",
                   placeItems: "center",
-                  border: "1px solid rgba(255,156,26,0.36)",
-                  background: "rgba(32,20,8,0.96)",
+                  border: "1px solid rgba(212,165,74,0.28)",
+                  background: "rgba(42,31,18,0.94)",
                   color: "var(--np-terminal-amber)",
                   fontFamily: "'DM Mono',monospace",
                   fontSize: 11,
@@ -200,8 +200,8 @@ export default function TerminalCommandBar({
                 style={{
                   position: "absolute",
                   inset: "calc(100% + 4px) 0 auto 0",
-                  border: "1px solid rgba(66,72,82,0.98)",
-                  background: "rgba(8,10,14,0.995)",
+                  border: "1px solid rgba(122,103,76,0.48)",
+                  background: "rgba(23,18,14,0.995)",
                   boxShadow: "0 18px 38px rgba(0,0,0,0.4)",
                   padding: "0 10px",
                   zIndex: 30,
@@ -216,7 +216,7 @@ export default function TerminalCommandBar({
                     onClick={() => selectEntity(result)}
                     className="np-terminal-row np-terminal-row--interactive np-terminal-button"
                     style={{
-                      borderTop: "1px solid rgba(55,59,68,0.9)",
+                      borderTop: "1px solid rgba(122,103,76,0.22)",
                       textAlign: "left",
                       background: "transparent",
                       color: "var(--np-terminal-text)",

@@ -34,7 +34,7 @@ function RailCard({ children, style }) {
       className="np-terminal-rail-card"
       style={{
         border: "1px solid var(--np-terminal-border)",
-        background: "rgba(10,12,16,0.985)",
+        background: "rgba(22,18,14,0.985)",
         padding: "10px",
         ...style,
       }}
@@ -140,8 +140,8 @@ function LeftRail({
                   gap: 10,
                   alignItems: "center",
                   width: "100%",
-                  border: `1px solid ${active ? "rgba(255,156,26,0.52)" : "rgba(61,66,76,0.9)"}`,
-                  background: active ? "rgba(34,22,8,0.98)" : "rgba(15,18,23,0.98)",
+                  border: `1px solid ${active ? "rgba(212,165,74,0.42)" : "rgba(122,103,76,0.42)"}`,
+                  background: active ? "rgba(42,31,18,0.98)" : "rgba(28,23,18,0.98)",
                   color: "var(--np-terminal-text)",
                   padding: "8px 9px",
                   cursor: "pointer",
@@ -153,8 +153,8 @@ function LeftRail({
                     display: "grid",
                     placeItems: "center",
                     minHeight: 20,
-                    border: `1px solid ${active ? "rgba(255,156,26,0.46)" : "rgba(61,66,76,0.82)"}`,
-                    background: active ? "rgba(255,156,26,0.12)" : "rgba(10,12,16,0.96)",
+                    border: `1px solid ${active ? "rgba(212,165,74,0.38)" : "rgba(122,103,76,0.38)"}`,
+                    background: active ? "rgba(212,165,74,0.1)" : "rgba(22,18,14,0.96)",
                     color: active ? "var(--np-terminal-amber)" : "var(--np-terminal-muted)",
                     fontSize: 10,
                     fontFamily: "'DM Mono',monospace",
