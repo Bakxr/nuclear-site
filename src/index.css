@@ -89,6 +89,172 @@ html {
   overflow-x: clip;
 }
 
+.np-terminal-shell {
+  --np-terminal-bg: #05080c;
+  --np-terminal-panel: #0b0f14;
+  --np-terminal-panel-alt: #111723;
+  --np-terminal-border: #243041;
+  --np-terminal-border-soft: rgba(97, 230, 255, 0.14);
+  --np-terminal-text: #edf3ff;
+  --np-terminal-muted: #8f9db1;
+  --np-terminal-amber: #ff9f1c;
+  --np-terminal-cyan: #61e6ff;
+  --np-terminal-green: #7dff9b;
+  --np-terminal-red: #ff6b6b;
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 14% 12%, rgba(97, 230, 255, 0.08), transparent 24%),
+    radial-gradient(circle at 88% 8%, rgba(255, 159, 28, 0.08), transparent 22%),
+    linear-gradient(180deg, #081019 0%, #05080c 48%, #05070a 100%);
+  color: var(--np-terminal-text);
+  font-family: 'DM Sans', sans-serif;
+}
+
+.np-terminal-shell::before,
+.np-terminal-shell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.np-terminal-shell::before {
+  background-image:
+    linear-gradient(rgba(97, 230, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(97, 230, 255, 0.05) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(circle at center, rgba(0, 0, 0, 0.75), transparent 100%);
+  opacity: 0.32;
+}
+
+.np-terminal-shell::after {
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.028) 0,
+    rgba(255, 255, 255, 0.028) 1px,
+    transparent 1px,
+    transparent 4px
+  );
+  opacity: 0.08;
+}
+
+.np-terminal-content {
+  position: relative;
+  z-index: 1;
+}
+
+.np-terminal-commandbar {
+  position: sticky;
+  top: 0;
+  z-index: 110;
+  backdrop-filter: blur(18px);
+  background: rgba(5, 8, 12, 0.88);
+  border-bottom: 1px solid rgba(97, 230, 255, 0.14);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+}
+
+.np-terminal-panel {
+  position: relative;
+}
+
+.np-terminal-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 30%);
+  opacity: 0.65;
+}
+
+.np-terminal-panel-header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  padding: 13px 16px 11px;
+  border-bottom: 1px solid rgba(97, 230, 255, 0.12);
+  background: linear-gradient(180deg, rgba(17, 23, 35, 0.98) 0%, rgba(10, 14, 20, 0.94) 100%);
+}
+
+.np-terminal-panel-body {
+  position: relative;
+  z-index: 1;
+  padding: 14px 16px 16px;
+}
+
+.np-terminal-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 159, 28, 0.48) rgba(17, 23, 35, 0.62);
+}
+
+.np-terminal-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.np-terminal-scroll::-webkit-scrollbar-track {
+  background: rgba(17, 23, 35, 0.62);
+}
+
+.np-terminal-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 159, 28, 0.48);
+  border-radius: 999px;
+}
+
+.np-terminal-scroll > *:first-child {
+  border-top: none !important;
+}
+
+.np-terminal-row {
+  position: relative;
+  transition: background 0.16s ease, border-color 0.16s ease;
+}
+
+.np-terminal-row--interactive:hover {
+  background: linear-gradient(90deg, rgba(97, 230, 255, 0.05), transparent 78%);
+}
+
+.np-terminal-button {
+  transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease;
+}
+
+.np-terminal-link {
+  transition: color 0.16s ease;
+}
+
+.np-terminal-link:hover {
+  color: var(--np-terminal-cyan) !important;
+}
+
+.np-terminal-shell :is(button, a, input, select):focus-visible {
+  outline: 2px solid rgba(97, 230, 255, 0.82);
+  outline-offset: 2px;
+}
+
+.np-terminal-shell input::placeholder {
+  color: rgba(143, 157, 177, 0.62);
+}
+
+.np-terminal-shell select option {
+  background: #111723;
+  color: #edf3ff;
+}
+
+@media (max-width: 768px) {
+  .np-terminal-panel-header {
+    padding: 12px 14px 10px;
+  }
+
+  .np-terminal-panel-body {
+    padding: 12px 14px 14px;
+  }
+}
+
 img,
 svg,
 canvas,

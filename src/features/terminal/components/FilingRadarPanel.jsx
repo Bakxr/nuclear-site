@@ -1,6 +1,13 @@
 import { useTerminal } from "../context.jsx";
 import TerminalPanel from "./TerminalPanel.jsx";
-import { terminalButtonStyle, terminalDataRowStyle, terminalScrollAreaStyle } from "./styles.js";
+import {
+  terminalDataRowStyle,
+  terminalLinkStyle,
+  terminalMutedStyle,
+  terminalScrollAreaStyle,
+  terminalTagStyle,
+  terminalValueStyle,
+} from "./styles.js";
 
 function formatFiledLabel(value) {
   if (!value) return "Recent";
@@ -17,41 +24,43 @@ export default function FilingRadarPanel() {
       title="Filing radar"
       subtitle="Latest SEC disclosures across the tracked nuclear equity set."
       actions={[
-        <span key="count" style={{ ...terminalButtonStyle(false), cursor: "default" }}>
+        <span key="count" style={terminalTagStyle({ tone: "amber", compact: true })}>
           {filingRows.length} filings
         </span>,
       ]}
     >
-      <div style={terminalScrollAreaStyle(360)}>
+      <div className="np-terminal-scroll" style={terminalScrollAreaStyle(360)}>
         {filingRows.slice(0, 12).map((filing) => (
-          <div key={filing.id} style={{ ...terminalDataRowStyle(), display: "grid", gridTemplateColumns: "70px minmax(0,1fr) auto", gap: 12, alignItems: "center" }}>
+          <div key={filing.id} className="np-terminal-row np-terminal-row--interactive" style={{ ...terminalDataRowStyle(), display: "grid", gridTemplateColumns: "66px minmax(0,1fr) auto", gap: 12, alignItems: "start" }}>
             <button
               type="button"
               onClick={() => selectEntity(filing)}
-              style={{ background: "none", border: "none", color: "#d4a54a", fontFamily: "'DM Mono',monospace", fontWeight: 700, textAlign: "left", cursor: "pointer", padding: 0 }}
+              className="np-terminal-button"
+              style={{ background: "transparent", border: "none", color: "var(--np-terminal-amber)", fontFamily: "'DM Mono',monospace", fontWeight: 700, textAlign: "left", cursor: "pointer", padding: 0 }}
             >
               {filing.ticker}
             </button>
             <button
               type="button"
               onClick={() => selectEntity(filing)}
-              style={{ background: "none", border: "none", color: "#f5f0e8", textAlign: "left", cursor: "pointer", padding: 0, minWidth: 0 }}
+              className="np-terminal-button"
+              style={{ background: "transparent", border: "none", color: "var(--np-terminal-text)", textAlign: "left", cursor: "pointer", padding: 0, minWidth: 0 }}
             >
               <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 4 }}>
-                <div style={{ fontWeight: 700, fontSize: 13 }}>{filing.form}</div>
-                <span style={{ fontSize: 10.5, color: "rgba(245,240,232,0.44)" }}>{formatFiledLabel(filing.filingDate)}</span>
+                <div style={{ ...terminalValueStyle({ tone: "cyan", size: 13 }), fontWeight: 700 }}>{filing.form}</div>
+                <span style={{ fontSize: 10.5, ...terminalMutedStyle() }}>{formatFiledLabel(filing.filingDate)}</span>
               </div>
-              <div style={{ fontSize: 11.5, color: "rgba(245,240,232,0.58)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              <div style={{ fontSize: 11.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", ...terminalMutedStyle() }}>
                 {filing.companyName}
               </div>
-              <div style={{ fontSize: 11, color: "rgba(245,240,232,0.44)" }}>{filing.summary}</div>
+              <div style={{ fontSize: 11, marginTop: 4, ...terminalMutedStyle() }}>{filing.summary}</div>
             </button>
             {filing.url ? (
-              <a href={filing.url} target="_blank" rel="noopener noreferrer" style={{ color: "#7dd3fc", fontSize: 11, textDecoration: "none", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+              <a href={filing.url} target="_blank" rel="noopener noreferrer" className="np-terminal-link" style={terminalLinkStyle("cyan")}>
                 SEC
               </a>
             ) : (
-              <span style={{ color: "rgba(245,240,232,0.34)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+              <span style={{ fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--np-terminal-muted)" }}>
                 SEC
               </span>
             )}

@@ -1,5 +1,12 @@
 import { useTerminal } from "../context.jsx";
-import { terminalButtonStyle, terminalPillStyle } from "./styles.js";
+import {
+  terminalButtonStyle,
+  terminalInputShellStyle,
+  terminalInputStyle,
+  terminalLabelStyle,
+  terminalMutedStyle,
+  terminalTagStyle,
+} from "./styles.js";
 
 function formatFreshness(value) {
   if (!value) return "waiting";
@@ -21,31 +28,32 @@ export default function TerminalCommandBar({ isMobileViewport, onExitTerminal, o
   } = useTerminal();
 
   const activeChips = [
-    state.layer === "uranium" ? "Fuel-cycle layer" : "Fleet layer",
+    state.layer === "uranium" ? "Fuel-cycle layer armed" : "Fleet layer armed",
     state.countryFilter ? `Country ${state.countryFilter}` : null,
     state.reactorTypeFilter ? `Type ${state.reactorTypeFilter}` : null,
     state.statusFilter ? `Status ${state.statusFilter}` : null,
-    compareEntities.length ? `Compare ${compareEntities.length}` : null,
-    watchedSet.size ? `Watch ${watchedSet.size}` : null,
+    compareEntities.length ? `Compare queue ${compareEntities.length}` : null,
+    watchedSet.size ? `Watchlist ${watchedSet.size}` : null,
   ].filter(Boolean);
 
   return (
-    <div style={{ borderBottom: "1px solid rgba(212,165,74,0.12)", position: "sticky", top: 0, zIndex: 110, backdropFilter: "blur(20px)", background: "rgba(8,11,17,0.88)" }}>
-      <div style={{ maxWidth: 1520, margin: "0 auto", padding: isMobileViewport ? "14px 18px" : "16px 24px", display: "grid", gap: 14 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
-          <button type="button" onClick={onExitTerminal} style={{ ...terminalButtonStyle(false), color: "#f5f0e8" }}>
-            Editorial view
-          </button>
-          <div style={{ minWidth: 0, flex: "1 1 320px" }}>
-            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.14em", color: "rgba(212,165,74,0.78)", fontWeight: 700, marginBottom: 4 }}>Nuclear Terminal</div>
-            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: isMobileViewport ? 24 : 30, lineHeight: 1.05 }}>
-              Bloomberg density for the nuclear economy.
+    <div className="np-terminal-commandbar">
+      <div className="np-terminal-content" style={{ maxWidth: 1540, margin: "0 auto", padding: isMobileViewport ? "12px 14px 14px" : "12px 20px 14px", display: "grid", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobileViewport ? "1fr" : "minmax(0,1fr) auto", gap: 12, alignItems: "start" }}>
+          <div style={{ minWidth: 0, display: "grid", gap: 6 }}>
+            <div style={terminalLabelStyle()}>Nuclear Terminal // operations console</div>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: isMobileViewport ? 20 : 24, lineHeight: 1.08, letterSpacing: "0.02em", color: "var(--np-terminal-text)" }}>
+              FLEET / FUEL / FILINGS / MARKET TAPE
+            </div>
+            <div style={{ fontSize: 12.5, lineHeight: 1.6, maxWidth: 780, ...terminalMutedStyle() }}>
+              Dense workspace for reactors, fuel-cycle assets, operations, market instruments, and linked catalyst coverage.
             </div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginLeft: "auto" }}>
+
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: isMobileViewport ? "flex-start" : "flex-end" }}>
             {Object.values(snapshot.freshness).map((item) => (
-              <span key={item.label} style={terminalPillStyle(item.stale ? "#fbbf24" : "rgba(245,240,232,0.7)")}>
-                <span style={{ width: 7, height: 7, borderRadius: "50%", background: item.stale ? "#fbbf24" : "#4ade80", display: "inline-block" }} />
+              <span key={item.label} style={terminalTagStyle({ tone: item.stale ? "amber" : "success", compact: true })}>
+                <span style={{ width: 7, height: 7, borderRadius: "50%", background: item.stale ? "var(--np-terminal-amber)" : "var(--np-terminal-green)", display: "inline-block", flexShrink: 0 }} />
                 {item.label} {formatFreshness(item.updatedAt)}
               </span>
             ))}
@@ -53,34 +61,37 @@ export default function TerminalCommandBar({ isMobileViewport, onExitTerminal, o
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: isMobileViewport ? "1fr" : "minmax(0,1fr) auto", gap: 12, alignItems: "start" }}>
-          <div style={{ position: "relative" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, borderRadius: 999, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.04)", padding: "10px 14px" }}>
-              <span style={{ fontSize: 13, opacity: 0.42 }}>Cmd</span>
+          <div style={{ position: "relative", minWidth: 0 }}>
+            <div style={terminalInputShellStyle()}>
+              <span style={terminalLabelStyle("cyan")}>Cmd</span>
+              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 13, color: "var(--np-terminal-amber)" }}>{">"}</span>
               <input
                 type="text"
                 value={state.query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Search plants, countries, companies, filings, stories, projects"
-                style={{ width: "100%", background: "none", border: "none", outline: "none", color: "#f5f0e8", fontSize: 13, fontFamily: "'DM Sans',sans-serif" }}
+                style={terminalInputStyle()}
               />
             </div>
+
             {state.query.trim() && searchResults.length > 0 ? (
-              <div style={{ position: "absolute", inset: "calc(100% + 8px) 0 auto 0", borderRadius: 16, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(7,10,15,0.98)", boxShadow: "0 24px 60px rgba(0,0,0,0.38)", padding: 10, zIndex: 20, display: "grid", gap: 6 }}>
+              <div style={{ position: "absolute", inset: "calc(100% + 8px) 0 auto 0", borderRadius: 8, border: "1px solid var(--np-terminal-border)", background: "rgba(8,12,18,0.98)", boxShadow: "0 24px 60px rgba(0,0,0,0.42)", padding: "4px 12px 8px", zIndex: 30, display: "grid", gap: 0 }}>
                 {searchResults.map((result) => (
                   <button
                     key={result.id}
                     type="button"
                     onClick={() => selectEntity(result)}
-                    style={{ textAlign: "left", borderRadius: 12, border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.03)", padding: "10px 12px", color: "#f5f0e8", cursor: "pointer" }}
+                    className="np-terminal-row np-terminal-row--interactive np-terminal-button"
+                    style={{ borderTop: "1px solid rgba(143,157,177,0.16)", textAlign: "left", background: "transparent", color: "var(--np-terminal-text)", cursor: "pointer", padding: "10px 0", borderLeft: "none", borderRight: "none", borderBottom: "none" }}
                   >
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: isMobileViewport ? "1fr" : "minmax(0,1fr) auto", gap: 10, alignItems: "center" }}>
                       <div style={{ minWidth: 0 }}>
-                        <div style={{ fontWeight: 700, fontSize: 13 }}>{result.name || result.title}</div>
-                        <div style={{ fontSize: 11, color: "rgba(245,240,232,0.44)" }}>
+                        <div style={{ fontWeight: 700, fontSize: 12.5, color: "var(--np-terminal-text)" }}>{result.name || result.title}</div>
+                        <div style={{ fontSize: 11, marginTop: 4, ...terminalMutedStyle() }}>
                           {result.entityType}{result.country ? ` | ${result.country}` : ""}
                         </div>
                       </div>
-                      <span style={{ fontSize: 10, textTransform: "uppercase", color: "#d4a54a", letterSpacing: "0.08em" }}>
+                      <span style={terminalTagStyle({ tone: "cyan", compact: true })}>
                         {result.form || result.tag || result.theme || result.status || result.stage || result.entityType}
                       </span>
                     </div>
@@ -90,25 +101,31 @@ export default function TerminalCommandBar({ isMobileViewport, onExitTerminal, o
             ) : null}
           </div>
 
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <button type="button" onClick={onRefreshData} style={terminalButtonStyle(false)}>
-              Refresh
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: isMobileViewport ? "flex-start" : "flex-end" }}>
+            <button type="button" onClick={onRefreshData} className="np-terminal-button" style={terminalButtonStyle(false, { tone: "cyan" })}>
+              Refresh feeds
             </button>
-            <button type="button" onClick={resetWorkspace} style={terminalButtonStyle(false)}>
-              Reset
+            <button type="button" onClick={resetWorkspace} className="np-terminal-button" style={terminalButtonStyle(false)}>
+              Reset filters
+            </button>
+            <button type="button" onClick={onExitTerminal} className="np-terminal-button" style={terminalButtonStyle(false, { tone: "amber" })}>
+              Editorial view
             </button>
           </div>
         </div>
 
-        {activeChips.length ? (
+        <div style={{ display: "grid", gridTemplateColumns: isMobileViewport ? "1fr" : "auto minmax(0,1fr)", gap: 10, alignItems: "start" }}>
+          <div style={terminalLabelStyle("cyan")}>Workspace state</div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {activeChips.map((chip) => (
-              <span key={chip} style={terminalPillStyle("rgba(245,240,232,0.72)")}>
+            {activeChips.length ? activeChips.map((chip) => (
+              <span key={chip} style={terminalTagStyle({ compact: true })}>
                 {chip}
               </span>
-            ))}
+            )) : (
+              <span style={terminalTagStyle({ tone: "cyan", compact: true })}>Global scope // no filters armed</span>
+            )}
           </div>
-        ) : null}
+        </div>
       </div>
     </div>
   );

@@ -20,33 +20,62 @@ export default function NuclearTerminal({
   onExitTerminal,
   onRefreshData,
 }) {
+  const workspaceStyle = isMobileViewport
+    ? {
+        display: "grid",
+        gap: 14,
+      }
+    : {
+        display: "grid",
+        gridTemplateColumns: "minmax(0, 1.45fr) minmax(360px, 0.92fr)",
+        gridTemplateAreas: `
+          "map focus"
+          "map wire"
+          "market pipeline"
+          "ops filings"
+          "scoreboard sources"
+        `,
+        gap: 16,
+        alignItems: "start",
+      };
+
   return (
     <TerminalProvider snapshot={snapshot} isMobileViewport={isMobileViewport}>
-      <div style={{ minHeight: "100vh", background: "linear-gradient(180deg, #080b11 0%, #0a1018 100%)", color: "#f5f0e8" }}>
+      <div className="np-terminal-shell">
         <TerminalCommandBar isMobileViewport={isMobileViewport} onExitTerminal={onExitTerminal} onRefreshData={onRefreshData} />
 
-        <div style={{ maxWidth: 1520, margin: "0 auto", padding: isMobileViewport ? "18px" : "22px 24px 28px", display: "grid", gap: 20 }}>
+        <div className="np-terminal-content" style={{ maxWidth: 1540, margin: "0 auto", padding: isMobileViewport ? "14px 14px 18px" : "16px 20px 28px", display: "grid", gap: 16 }}>
           <TerminalBlotter isMobileViewport={isMobileViewport} />
 
-          <div style={{ display: "grid", gridTemplateColumns: isMobileViewport ? "1fr" : "minmax(0, 1.4fr) minmax(340px, 0.8fr)", gap: 20, alignItems: "start" }}>
-            <div style={{ display: "grid", gap: 20 }}>
+          <div style={workspaceStyle}>
+            <div style={isMobileViewport ? undefined : { gridArea: "map" }}>
               <MapNexusPanel GlobeComponent={GlobeComponent} isMobileViewport={isMobileViewport} onOpenPlant={onOpenPlant} />
-              <div style={{ display: "grid", gridTemplateColumns: isMobileViewport ? "1fr" : "repeat(2, minmax(0, 1fr))", gap: 20 }}>
-                <MarketMonitorPanel onOpenStock={onOpenStock} />
-                <OperationsPulsePanel />
-              </div>
+            </div>
+            <div style={isMobileViewport ? undefined : { gridArea: "focus" }}>
+              <EntityFocusDrawer isMobileViewport={isMobileViewport} />
+            </div>
+            <div style={isMobileViewport ? undefined : { gridArea: "wire" }}>
+              <CatalystWirePanel onRefreshData={onRefreshData} />
+            </div>
+            <div style={isMobileViewport ? undefined : { gridArea: "market" }}>
+              <MarketMonitorPanel onOpenStock={onOpenStock} />
+            </div>
+            <div style={isMobileViewport ? undefined : { gridArea: "ops" }}>
+              <OperationsPulsePanel />
+            </div>
+            <div style={isMobileViewport ? undefined : { gridArea: "pipeline" }}>
               <PipelinePanel isMobileViewport={isMobileViewport} />
             </div>
-
-            <div style={{ display: "grid", gap: 20 }}>
-              <EntityFocusDrawer isMobileViewport={isMobileViewport} />
-              <CatalystWirePanel onRefreshData={onRefreshData} />
+            <div style={isMobileViewport ? undefined : { gridArea: "filings" }}>
               <FilingRadarPanel />
+            </div>
+            <div style={isMobileViewport ? undefined : { gridArea: "sources" }}>
               <SourceRadarPanel />
             </div>
+            <div style={isMobileViewport ? undefined : { gridArea: "scoreboard" }}>
+              <FleetScoreboardPanel isMobileViewport={isMobileViewport} />
+            </div>
           </div>
-
-          <FleetScoreboardPanel isMobileViewport={isMobileViewport} />
         </div>
       </div>
     </TerminalProvider>

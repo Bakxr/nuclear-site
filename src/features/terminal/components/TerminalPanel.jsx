@@ -1,18 +1,22 @@
-import { terminalPanelStyle } from "./styles.js";
+import { terminalLabelStyle, terminalMutedStyle, terminalPanelStyle } from "./styles.js";
 
 export default function TerminalPanel({ title, subtitle, actions, children }) {
   return (
-    <section style={{ ...terminalPanelStyle(), padding: 18 }}>
+    <section className="np-terminal-panel" style={terminalPanelStyle()}>
       {(title || subtitle || actions) ? (
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap", marginBottom: 14 }}>
-          <div>
-            {title ? <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: "rgba(212,165,74,0.78)", fontWeight: 700, marginBottom: 4 }}>{title}</div> : null}
-            {subtitle ? <div style={{ fontSize: 13, color: "rgba(245,240,232,0.62)" }}>{subtitle}</div> : null}
+        <div className="np-terminal-panel-header">
+          <div style={{ minWidth: 0 }}>
+            {title ? <div style={terminalLabelStyle()}>{title}</div> : null}
+            {subtitle ? (
+              <div style={{ marginTop: 6, fontSize: 12.5, lineHeight: 1.5, ...terminalMutedStyle() }}>
+                {subtitle}
+              </div>
+            ) : null}
           </div>
-          {actions ? <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>{actions}</div> : null}
+          {actions ? <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>{actions}</div> : null}
         </div>
       ) : null}
-      {children}
+      <div className="np-terminal-panel-body">{children}</div>
     </section>
   );
 }

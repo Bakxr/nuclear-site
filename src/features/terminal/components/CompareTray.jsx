@@ -1,23 +1,26 @@
 import { useTerminal } from "../context.jsx";
-import { terminalButtonStyle } from "./styles.js";
+import { terminalButtonStyle, terminalDataRowStyle, terminalLabelStyle, terminalMutedStyle, terminalTagStyle } from "./styles.js";
 
 export default function CompareTray() {
   const { compareEntities, toggleCompare } = useTerminal();
   if (!compareEntities.length) return null;
 
   return (
-    <div style={{ display: "grid", gap: 10 }}>
-      <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: "rgba(212,165,74,0.78)", fontWeight: 700 }}>
-        Compare set
+    <div style={{ display: "grid", gap: 8, border: "1px solid rgba(97,230,255,0.14)", borderRadius: 8, background: "rgba(8,12,18,0.68)", padding: "12px 14px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+        <div style={terminalLabelStyle("cyan")}>Compare queue</div>
+        <span style={terminalTagStyle({ tone: "cyan", compact: true })}>{compareEntities.length} armed</span>
       </div>
-      <div style={{ display: "grid", gap: 8 }}>
+      <div style={{ display: "grid", gap: 0 }}>
         {compareEntities.map((entity) => (
-          <div key={entity.id} style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) auto", gap: 10, alignItems: "center", borderRadius: 12, border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.03)", padding: "12px 13px" }}>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 13 }}>{entity.name || entity.country || entity.title}</div>
-              <div style={{ fontSize: 11, color: "rgba(245,240,232,0.46)" }}>{entity.entityType}</div>
+          <div key={entity.id} className="np-terminal-row" style={{ ...terminalDataRowStyle(), display: "grid", gridTemplateColumns: "minmax(0,1fr) auto", gap: 10, alignItems: "center" }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontWeight: 700, fontSize: 12.5, color: "var(--np-terminal-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {entity.name || entity.country || entity.title}
+              </div>
+              <div style={{ fontSize: 11, marginTop: 4, ...terminalMutedStyle() }}>{entity.entityType}</div>
             </div>
-            <button type="button" onClick={() => toggleCompare(entity.id)} style={terminalButtonStyle(false)}>
+            <button type="button" onClick={() => toggleCompare(entity.id)} className="np-terminal-button" style={terminalButtonStyle(false)}>
               Remove
             </button>
           </div>
