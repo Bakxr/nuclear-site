@@ -4,40 +4,48 @@ const TERMINAL_MUTED = "var(--np-terminal-muted)";
 function resolveTone(tone = "default") {
   if (tone === "amber") {
     return {
-      border: "rgba(255,159,28,0.42)",
-      borderSoft: "rgba(255,159,28,0.16)",
-      background: "rgba(34,20,6,0.9)",
+      border: "rgba(255,156,26,0.56)",
+      borderSoft: "rgba(255,156,26,0.18)",
+      background: "rgba(37,24,9,0.96)",
       color: "var(--np-terminal-amber)",
     };
   }
   if (tone === "cyan") {
     return {
-      border: "rgba(97,230,255,0.34)",
-      borderSoft: "rgba(97,230,255,0.16)",
-      background: "rgba(8,25,30,0.88)",
+      border: "rgba(78,184,214,0.52)",
+      borderSoft: "rgba(78,184,214,0.16)",
+      background: "rgba(10,27,34,0.96)",
       color: "var(--np-terminal-cyan)",
     };
   }
   if (tone === "success") {
     return {
-      border: "rgba(125,255,155,0.34)",
-      borderSoft: "rgba(125,255,155,0.14)",
-      background: "rgba(8,24,14,0.88)",
+      border: "rgba(73,184,122,0.5)",
+      borderSoft: "rgba(73,184,122,0.16)",
+      background: "rgba(12,31,21,0.96)",
       color: "var(--np-terminal-green)",
     };
   }
   if (tone === "danger") {
     return {
-      border: "rgba(255,107,107,0.34)",
-      borderSoft: "rgba(255,107,107,0.16)",
-      background: "rgba(36,12,16,0.9)",
+      border: "rgba(213,92,92,0.52)",
+      borderSoft: "rgba(213,92,92,0.16)",
+      background: "rgba(37,15,18,0.96)",
       color: "var(--np-terminal-red)",
     };
   }
+  if (tone === "warning") {
+    return {
+      border: "rgba(240,199,92,0.54)",
+      borderSoft: "rgba(240,199,92,0.18)",
+      background: "rgba(42,34,14,0.96)",
+      color: "var(--np-terminal-yellow)",
+    };
+  }
   return {
-    border: "rgba(74,91,114,0.72)",
-    borderSoft: "rgba(74,91,114,0.22)",
-    background: "rgba(12,18,26,0.92)",
+    border: "rgba(88,95,108,0.88)",
+    borderSoft: "rgba(88,95,108,0.18)",
+    background: "rgba(17,20,25,0.96)",
     color: TERMINAL_TEXT,
   };
 }
@@ -46,11 +54,11 @@ export function terminalPanelStyle({ alt = false } = {}) {
   return {
     position: "relative",
     minWidth: 0,
-    border: `1px solid ${alt ? "rgba(97,230,255,0.18)" : "var(--np-terminal-border)"}`,
-    borderRadius: 3,
+    border: `1px solid ${alt ? "rgba(96,106,120,0.92)" : "var(--np-terminal-border)"}`,
+    borderRadius: 2,
     overflow: "hidden",
-    background: alt ? "rgba(8,13,19,0.98)" : "rgba(6,10,15,0.98)",
-    boxShadow: "0 10px 24px rgba(0,0,0,0.22)",
+    background: alt ? "rgba(18,22,28,0.98)" : "rgba(10,12,16,0.985)",
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.02)",
   };
 }
 
@@ -63,22 +71,21 @@ export function terminalButtonStyle(active = false, { compact = false, tone = "d
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    border: `1px solid ${active ? "rgba(255,159,28,0.92)" : palette.borderSoft}`,
-    background: active
-      ? "linear-gradient(180deg, rgba(255,191,97,0.98) 0%, rgba(255,159,28,0.92) 100%)"
-      : "linear-gradient(180deg, rgba(17,24,35,0.98) 0%, rgba(9,14,20,0.96) 100%)",
-    color: active ? "#090d12" : palette.color,
+    minHeight: compact ? 28 : 32,
+    border: `1px solid ${active ? "rgba(255,156,26,0.92)" : palette.borderSoft}`,
+    background: active ? "rgba(255,156,26,0.94)" : "rgba(18,21,27,0.98)",
+    color: active ? "#090b0f" : palette.color,
     borderRadius: 2,
     padding: compact ? "5px 8px" : "7px 10px",
     fontSize: compact ? 10 : 10.5,
     fontWeight: 700,
-    letterSpacing: "0.1em",
+    letterSpacing: "0.08em",
     textTransform: "uppercase",
     cursor: "pointer",
-    fontFamily: "'DM Sans',sans-serif",
+    fontFamily: "'DM Mono',monospace",
     lineHeight: 1.05,
     whiteSpace: "nowrap",
-    boxShadow: active ? "inset 0 1px 0 rgba(255,255,255,0.3)" : "none",
+    boxShadow: active ? "inset 0 1px 0 rgba(255,255,255,0.22)" : "inset 0 1px 0 rgba(255,255,255,0.04)",
   };
 }
 
@@ -93,13 +100,13 @@ export function terminalTagStyle({ tone = "default", compact = false } = {}) {
     borderRadius: 2,
     border: `1px solid ${palette.borderSoft}`,
     background: palette.background,
-    padding: compact ? "4px 7px" : "6px 9px",
-    fontSize: compact ? 9.5 : 10,
+    padding: compact ? "4px 7px" : "5px 8px",
+    fontSize: compact ? 9 : 9.5,
     fontWeight: 700,
     letterSpacing: "0.1em",
     textTransform: "uppercase",
     color: palette.color,
-    fontFamily: "'DM Sans',sans-serif",
+    fontFamily: "'DM Mono',monospace",
     lineHeight: 1.05,
   };
 }
@@ -113,7 +120,9 @@ export function terminalPillStyle(color = TERMINAL_TEXT) {
         ? "danger"
         : color === "var(--np-terminal-amber)"
           ? "amber"
-          : "default";
+          : color === "var(--np-terminal-yellow)"
+            ? "warning"
+            : "default";
 
   return terminalTagStyle({ tone });
 }
@@ -122,17 +131,17 @@ export function terminalMetricTileStyle({ accent = "var(--np-terminal-amber)" } 
   return {
     minWidth: 0,
     borderRadius: 2,
-    border: "1px solid rgba(55,68,88,0.78)",
-    background: "linear-gradient(180deg, rgba(13,18,26,0.98) 0%, rgba(8,11,17,0.98) 100%)",
+    border: "1px solid rgba(69,74,84,0.92)",
+    background: "rgba(15,18,23,0.98)",
     padding: "9px 10px 8px",
-    boxShadow: `inset 3px 0 0 ${accent}`,
+    boxShadow: `inset 2px 0 0 ${accent}`,
   };
 }
 
 export function terminalDataRowStyle() {
   return {
     minWidth: 0,
-    borderTop: "1px solid rgba(51,66,86,0.78)",
+    borderTop: "1px solid rgba(55,59,68,0.9)",
     padding: "8px 0",
   };
 }
@@ -154,8 +163,8 @@ export function terminalSelectStyle(disabled = false) {
     width: "100%",
     minWidth: 0,
     borderRadius: 2,
-    border: "1px solid rgba(51,66,86,0.9)",
-    background: disabled ? "rgba(12,16,24,0.78)" : "rgba(10,14,21,0.96)",
+    border: "1px solid rgba(62,67,77,0.94)",
+    background: disabled ? "rgba(14,16,20,0.9)" : "rgba(18,21,27,0.98)",
     color: disabled ? "rgba(143,157,177,0.52)" : TERMINAL_TEXT,
     padding: "8px 10px",
     fontFamily: "'DM Sans',sans-serif",
@@ -171,12 +180,12 @@ export function terminalInputShellStyle() {
   return {
     display: "flex",
     alignItems: "center",
-    gap: 8,
+    gap: 9,
     minWidth: 0,
     borderRadius: 2,
-    border: "1px solid rgba(55,68,88,0.92)",
-    background: "linear-gradient(180deg, rgba(9,14,20,0.98) 0%, rgba(6,10,15,0.98) 100%)",
-    padding: "8px 10px",
+    border: "1px solid rgba(66,72,82,0.94)",
+    background: "rgba(12,14,18,0.98)",
+    padding: "9px 10px",
     boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)",
   };
 }
@@ -195,19 +204,21 @@ export function terminalInputStyle() {
 }
 
 export function terminalLabelStyle(tone = "amber") {
-  const palette = tone === "cyan"
+  const color = tone === "cyan"
     ? "var(--np-terminal-cyan)"
     : tone === "success"
       ? "var(--np-terminal-green)"
       : tone === "danger"
         ? "var(--np-terminal-red)"
-        : "var(--np-terminal-amber)";
+        : tone === "warning"
+          ? "var(--np-terminal-yellow)"
+          : "var(--np-terminal-amber)";
 
   return {
-    fontSize: 9.5,
+    fontSize: 9,
     textTransform: "uppercase",
     letterSpacing: "0.16em",
-    color: palette,
+    color,
     fontWeight: 700,
     fontFamily: "'DM Mono',monospace",
     lineHeight: 1.1,
@@ -234,9 +245,11 @@ export function terminalValueStyle({ tone = "default", size = 16 } = {}) {
       ? "var(--np-terminal-green)"
       : tone === "danger"
         ? "var(--np-terminal-red)"
-        : tone === "amber"
-          ? "var(--np-terminal-amber)"
-          : TERMINAL_TEXT;
+        : tone === "warning"
+          ? "var(--np-terminal-yellow)"
+          : tone === "amber"
+            ? "var(--np-terminal-amber)"
+            : TERMINAL_TEXT;
 
   return {
     fontFamily: "'DM Mono',monospace",
@@ -251,9 +264,9 @@ export function terminalLinkStyle(tone = "amber") {
     color: tone === "cyan" ? "var(--np-terminal-cyan)" : "var(--np-terminal-amber)",
     fontSize: 9.5,
     fontWeight: 700,
-    letterSpacing: "0.1em",
+    letterSpacing: "0.08em",
     textTransform: "uppercase",
     textDecoration: "none",
-    fontFamily: "'DM Sans',sans-serif",
+    fontFamily: "'DM Mono',monospace",
   };
 }

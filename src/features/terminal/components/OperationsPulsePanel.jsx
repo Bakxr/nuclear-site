@@ -21,6 +21,7 @@ export default function OperationsPulsePanel() {
 
   return (
     <TerminalPanel
+      panelId="terminal-panel-ops"
       title="Operations pulse"
       subtitle="U.S. reactor unit power levels from the NRC plant status feed."
       actions={[

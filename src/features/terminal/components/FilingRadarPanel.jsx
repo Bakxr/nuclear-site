@@ -22,6 +22,7 @@ export default function FilingRadarPanel() {
 
   return (
     <TerminalPanel
+      panelId="terminal-panel-filings"
       title="Filing radar"
       subtitle="Latest SEC disclosures across the tracked nuclear equity set."
       actions={[

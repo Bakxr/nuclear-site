@@ -1,10 +1,20 @@
 import { terminalLabelStyle, terminalMutedStyle, terminalPanelStyle } from "./styles.js";
 
-export default function TerminalPanel({ title, subtitle, actions, children }) {
+export default function TerminalPanel({
+  panelId,
+  className = "",
+  style,
+  headerStyle,
+  bodyStyle,
+  title,
+  subtitle,
+  actions,
+  children,
+}) {
   return (
-    <section className="np-terminal-panel" style={terminalPanelStyle()}>
+    <section id={panelId} className={`np-terminal-panel ${className}`.trim()} style={{ ...terminalPanelStyle(), ...style }}>
       {(title || subtitle || actions) ? (
-        <div className="np-terminal-panel-header">
+        <div className="np-terminal-panel-header" style={headerStyle}>
           <div style={{ minWidth: 0, display: "grid", gap: 4 }}>
             {title ? <div style={terminalLabelStyle()}>{title}</div> : null}
             {subtitle ? (
@@ -20,7 +30,7 @@ export default function TerminalPanel({ title, subtitle, actions, children }) {
           ) : null}
         </div>
       ) : null}
-      <div className="np-terminal-panel-body">{children}</div>
+      <div className="np-terminal-panel-body" style={bodyStyle}>{children}</div>
     </section>
   );
 }

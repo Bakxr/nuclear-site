@@ -21,6 +21,7 @@ export default function SourceRadarPanel() {
 
   return (
     <TerminalPanel
+      panelId="terminal-panel-sources"
       title="Source radar"
       subtitle="What is live now, what is snapshot-backed, and what is premium-ready next."
       actions={[

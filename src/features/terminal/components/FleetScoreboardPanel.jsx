@@ -22,6 +22,7 @@ export default function FleetScoreboardPanel({ isMobileViewport = false }) {
 
   return (
     <TerminalPanel
+      panelId="terminal-panel-fleet"
       title="Fleet scoreboard"
       subtitle="Rank countries by fleet size, nuclear share, supply relevance, and tracked buildout."
       actions={metrics.map((metric) => (

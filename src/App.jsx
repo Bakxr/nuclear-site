@@ -1553,7 +1553,6 @@ export default function NuclearPulse() {
     return (
       <MotionConfig reducedMotion="user">
         <div className="np-app-shell" style={{ minHeight: "100vh", background: "var(--np-bg)", fontFamily: "'DM Sans',sans-serif", color: "var(--np-text)" }}>
-          <StockTicker stocks={stocks} onClickStock={setSelectedStock} />
           {terminalContent}
 
           {selectedPlant && (

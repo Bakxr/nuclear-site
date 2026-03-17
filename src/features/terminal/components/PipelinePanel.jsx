@@ -14,6 +14,7 @@ export default function PipelinePanel({ isMobileViewport = false }) {
 
   return (
     <TerminalPanel
+      panelId="terminal-panel-pipeline"
       title="Project and licensing pipeline"
       subtitle="Construction, advanced reactor deployment, and milestone watch items."
       actions={[

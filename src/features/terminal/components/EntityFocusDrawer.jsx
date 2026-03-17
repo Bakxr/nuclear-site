@@ -169,7 +169,7 @@ export default function EntityFocusDrawer({ isMobileViewport }) {
 
   return (
     <div style={{ display: "grid", gap: 10 }}>
-      <TerminalPanel title="Focus drawer" subtitle="Active entity context, metadata, compare, and linked surface counts.">
+      <TerminalPanel panelId="terminal-panel-focus" title="Focus drawer" subtitle="Active entity context, metadata, compare, and linked surface counts.">
         <div style={{ display: "grid", gap: 10 }}>
           <div style={{ display: "grid", gap: 4 }}>
             <div style={terminalLabelStyle("cyan")}>{eyebrow}</div>

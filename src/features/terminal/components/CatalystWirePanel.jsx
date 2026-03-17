@@ -18,6 +18,7 @@ export default function CatalystWirePanel({ onRefreshData, isMobileViewport = fa
 
   return (
     <TerminalPanel
+      panelId="terminal-panel-wire"
       title="Catalyst wire"
       subtitle={`${officialRows.length} official-source items linked to the current map and project stack.`}
       actions={[

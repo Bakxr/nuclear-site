@@ -22,6 +22,7 @@ export default function MarketMonitorPanel({ onOpenStock, isMobileViewport = fal
 
   return (
     <TerminalPanel
+      panelId="terminal-panel-market"
       title="Market monitor"
       subtitle="Delayed nuclear watchlist linked to fleets, fuel-cycle exposures, and live catalyst focus."
       actions={actions.map((sort) => (

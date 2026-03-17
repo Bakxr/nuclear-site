@@ -152,11 +152,11 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors" }) {
     mount.appendChild(renderer.domElement);
 
     // Lights
-    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-    const sun = new THREE.DirectionalLight(0xfff5e6, 1.0);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.42));
+    const sun = new THREE.DirectionalLight(0xf6d9a7, 0.95);
     sun.position.set(5, 3, 5);
     scene.add(sun);
-    const rim = new THREE.DirectionalLight(0x88aacc, 0.25);
+    const rim = new THREE.DirectionalLight(0x5bb2cf, 0.22);
     rim.position.set(-3, -2, -3);
     scene.add(rim);
 
@@ -173,7 +173,7 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors" }) {
       starPositions[i * 3 + 2] = radius * Math.sin(phi) * Math.sin(theta);
     }
     starsGeom.setAttribute("position", new THREE.BufferAttribute(starPositions, 3));
-    const starsMat = new THREE.PointsMaterial({ color: 0xd7e6ff, size: 0.035, transparent: true, opacity: 0.75 });
+    const starsMat = new THREE.PointsMaterial({ color: 0xaab6ca, size: 0.03, transparent: true, opacity: 0.55 });
     const starField = new THREE.Points(starsGeom, starsMat);
     scene.add(starField);
 
@@ -184,7 +184,7 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors" }) {
 
     // Ocean sphere
     const oceanGeom = new THREE.SphereGeometry(0.995, 96, 96);
-    const oceanMat = new THREE.MeshPhongMaterial({ color: 0x102a46, emissive: 0x081726, shininess: 90, transparent: true, opacity: 0.96 });
+    const oceanMat = new THREE.MeshPhongMaterial({ color: 0x0d1f31, emissive: 0x09131c, shininess: 70, transparent: true, opacity: 0.98 });
     const ocean = new THREE.Mesh(oceanGeom, oceanMat);
     pivotGroup.add(ocean);
 
@@ -208,15 +208,15 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors" }) {
       ctx.fillRect(0, 0, 2048, 1024);
 
       if (land) {
-        ctx.fillStyle = "#d5c2a2";
-        ctx.strokeStyle = "#8f826c";
+        ctx.fillStyle = "#cab38e";
+        ctx.strokeStyle = "#70614d";
         ctx.lineWidth = 0.5;
         ctx.beginPath();
         path(land);
         ctx.fill();
         ctx.stroke();
 
-        ctx.strokeStyle = "rgba(212,165,74,0.16)";
+        ctx.strokeStyle = "rgba(78,184,214,0.12)";
         ctx.lineWidth = 0.6;
         const graticule = d3.geoGraticule().step([15, 15])();
         ctx.beginPath();
@@ -226,11 +226,11 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors" }) {
         landTexture = new THREE.CanvasTexture(texCanvas);
         landTexture.needsUpdate = true;
         globeGeom = new THREE.SphereGeometry(1, 96, 96);
-        globeMat = new THREE.MeshPhongMaterial({ map: landTexture, transparent: true, shininess: 10 });
+        globeMat = new THREE.MeshPhongMaterial({ map: landTexture, transparent: true, shininess: 8 });
       } else {
         // Fallback: solid color globe
         globeGeom = new THREE.SphereGeometry(1, 64, 64);
-        globeMat = new THREE.MeshPhongMaterial({ color: 0xc8b89a, shininess: 10 });
+        globeMat = new THREE.MeshPhongMaterial({ color: 0xc8b89a, shininess: 8 });
       }
       pivotGroup.add(new THREE.Mesh(globeGeom, globeMat));
     });
@@ -239,7 +239,7 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors" }) {
     const atmosGeom = new THREE.SphereGeometry(1.06, 64, 64);
     const atmosMat = new THREE.ShaderMaterial({
       vertexShader: `varying vec3 vNormal; void main(){ vNormal=normalize(normalMatrix*normal); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
-      fragmentShader: `varying vec3 vNormal; void main(){ float intensity=pow(0.65-dot(vNormal,vec3(0.0,0.0,1.0)),3.0); gl_FragColor=vec4(0.4,0.6,1.0,1.0)*intensity*0.5; }`,
+      fragmentShader: `varying vec3 vNormal; void main(){ float intensity=pow(0.65-dot(vNormal,vec3(0.0,0.0,1.0)),3.0); gl_FragColor=vec4(0.31,0.72,0.83,1.0)*intensity*0.42; }`,
       blending: THREE.AdditiveBlending,
       side: THREE.BackSide,
       transparent: true,
@@ -248,9 +248,9 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors" }) {
 
     const haloGeom = new THREE.SphereGeometry(1.12, 64, 64);
     const haloMat = new THREE.MeshBasicMaterial({
-      color: 0xd4a54a,
+      color: 0xff9c1a,
       transparent: true,
-      opacity: 0.05,
+      opacity: 0.035,
       side: THREE.BackSide,
     });
     scene.add(new THREE.Mesh(haloGeom, haloMat));
@@ -510,14 +510,14 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors" }) {
   }
 
   const controlButtonStyle = {
-    border: "1px solid rgba(212,165,74,0.28)",
-    background: "rgba(20,18,14,0.72)",
-    color: "#f5f0e8",
-    fontFamily: "'DM Sans',sans-serif",
+    border: "1px solid rgba(67,72,81,0.9)",
+    background: "rgba(10,12,16,0.84)",
+    color: "#e9edf4",
+    fontFamily: "'DM Mono',monospace",
     fontWeight: 700,
     cursor: "pointer",
-    backdropFilter: "blur(12px)",
-    boxShadow: "0 8px 24px rgba(0,0,0,0.22)",
+    backdropFilter: "blur(8px)",
+    boxShadow: "none",
   };
 
   return (
@@ -531,7 +531,7 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors" }) {
         height: "100%",
         position: "relative",
         cursor: isInteractive ? "grab" : "pointer",
-        borderRadius: 16,
+        borderRadius: 2,
         overflow: "hidden",
         touchAction: isInteractive ? "none" : "auto",
       }}
@@ -555,7 +555,7 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors" }) {
             minWidth: 40,
             height: 38,
             padding: "0 12px",
-            borderRadius: 999,
+            borderRadius: 2,
             fontSize: 20,
             letterSpacing: "0",
           }}
@@ -571,7 +571,7 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors" }) {
             minWidth: 40,
             height: 38,
             padding: "0 12px",
-            borderRadius: 999,
+            borderRadius: 2,
             fontSize: 20,
             letterSpacing: "0",
           }}
@@ -587,7 +587,7 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors" }) {
             minWidth: 58,
             height: 38,
             padding: "0 14px",
-            borderRadius: 999,
+            borderRadius: 2,
             fontSize: 11,
             letterSpacing: "0.08em",
             textTransform: "uppercase",
@@ -604,7 +604,7 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors" }) {
             minWidth: 58,
             height: 38,
             padding: "0 14px",
-            borderRadius: 999,
+            borderRadius: 2,
             fontSize: 11,
             letterSpacing: "0.08em",
             textTransform: "uppercase",
@@ -621,7 +621,7 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors" }) {
             minWidth: 58,
             height: 38,
             padding: "0 14px",
-            borderRadius: 999,
+            borderRadius: 2,
             fontSize: 11,
             letterSpacing: "0.08em",
             textTransform: "uppercase",
@@ -640,15 +640,15 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors" }) {
         alignItems: "center",
         gap: 10,
         padding: "9px 12px",
-        borderRadius: 999,
-        background: "rgba(20,18,14,0.66)",
-        border: "1px solid rgba(212,165,74,0.22)",
-        color: "rgba(245,240,232,0.82)",
+        borderRadius: 2,
+        background: "rgba(10,12,16,0.8)",
+        border: "1px solid rgba(67,72,81,0.86)",
+        color: "rgba(233,237,244,0.82)",
         fontSize: 11,
         fontWeight: 700,
         letterSpacing: "0.08em",
         textTransform: "uppercase",
-        backdropFilter: "blur(12px)",
+        backdropFilter: "blur(8px)",
       }}>
         {isInteractive ? (
           <>
@@ -665,10 +665,10 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors" }) {
           position: "absolute",
           left: `clamp(12px, ${tooltip.x + 14}px, calc(100% - 252px))`,
           top: Math.max(12, tooltip.y - 10),
-          background: "rgba(20,18,14,0.94)", color: "#f5f0e8", padding: "12px 16px", borderRadius: 8,
+          background: "rgba(10,12,16,0.96)", color: "#e9edf4", padding: "12px 16px", borderRadius: 2,
           fontSize: 13, fontFamily: "'DM Sans',sans-serif", pointerEvents: "none", zIndex: 10,
-          border: "1px solid rgba(212,165,74,0.3)", maxWidth: "min(240px, calc(100% - 24px))", lineHeight: 1.4,
-          backdropFilter: "blur(10px)", boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
+          border: "1px solid rgba(67,72,81,0.92)", maxWidth: "min(240px, calc(100% - 24px))", lineHeight: 1.4,
+          backdropFilter: "blur(8px)", boxShadow: "0 8px 28px rgba(0,0,0,0.28)",
         }}>
           <div style={{ fontWeight: 700, fontSize: 15 }}>{hoveredPlant.name}</div>
           {mode === "reactors" ? (

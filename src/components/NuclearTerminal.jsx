@@ -1,4 +1,5 @@
-import { TerminalProvider } from "../features/terminal/context.jsx";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { TerminalProvider, useTerminal } from "../features/terminal/context.jsx";
 import TerminalCommandBar from "../features/terminal/components/TerminalCommandBar.jsx";
 import TerminalBlotter from "../features/terminal/components/TerminalBlotter.jsx";
 import MapNexusPanel from "../features/terminal/components/MapNexusPanel.jsx";
@@ -10,6 +11,431 @@ import EntityFocusDrawer from "../features/terminal/components/EntityFocusDrawer
 import OperationsPulsePanel from "../features/terminal/components/OperationsPulsePanel.jsx";
 import FilingRadarPanel from "../features/terminal/components/FilingRadarPanel.jsx";
 import SourceRadarPanel from "../features/terminal/components/SourceRadarPanel.jsx";
+import {
+  terminalLabelStyle,
+  terminalMetricTileStyle,
+  terminalMutedStyle,
+  terminalTagStyle,
+  terminalValueStyle,
+} from "../features/terminal/components/styles.js";
+
+function scrollToPanel(panelId) {
+  if (typeof document === "undefined") return;
+  if (panelId === "terminal-workspace-top") {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    return;
+  }
+  document.getElementById(panelId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function RailCard({ children, style }) {
+  return (
+    <section
+      className="np-terminal-rail-card"
+      style={{
+        border: "1px solid var(--np-terminal-border)",
+        background: "rgba(10,12,16,0.985)",
+        padding: "10px",
+        ...style,
+      }}
+    >
+      {children}
+    </section>
+  );
+}
+
+function RailMetric({ label, value, tone = "amber" }) {
+  const accent = tone === "cyan"
+    ? "var(--np-terminal-cyan)"
+    : tone === "success"
+      ? "var(--np-terminal-green)"
+      : tone === "warning"
+        ? "var(--np-terminal-yellow)"
+        : "var(--np-terminal-amber)";
+
+  return (
+    <div style={terminalMetricTileStyle({ accent })}>
+      <div style={terminalLabelStyle(tone)}>{label}</div>
+      <div style={{ ...terminalValueStyle({ tone, size: 15 }), marginTop: 7 }}>{value}</div>
+    </div>
+  );
+}
+
+function LeftRail({
+  activeDesk,
+  onActivateDesk,
+}) {
+  const {
+    snapshot,
+    selectedEntity,
+    watchedSet,
+    getEntityById,
+    sourceRows,
+  } = useTerminal();
+
+  const watchEntities = useMemo(
+    () => Array.from(watchedSet).map((id) => getEntityById(id)).filter(Boolean).slice(0, 5),
+    [getEntityById, watchedSet],
+  );
+  const liveSources = sourceRows.filter((item) => item.status === "Live").length;
+  const leadCountry = snapshot.entities.countries
+    .slice()
+    .sort((left, right) => (right.capacityGw || 0) - (left.capacityGw || 0))[0];
+  const desks = [
+    { id: "overview", key: "1", label: "Overview", hint: "Reset desk and jump to the top frame." },
+    { id: "map", key: "2", label: "Global map", hint: "Return to the globe and reactor fleet view." },
+    { id: "fuel", key: "3", label: "Fuel cycle", hint: "Flip the globe to uranium and supply infrastructure." },
+    { id: "markets", key: "4", label: "Markets", hint: "Jump to equities, movers, and watchlist names." },
+    { id: "pipeline", key: "5", label: "Pipeline", hint: "Surface buildout, licensing, and milestone queues." },
+    { id: "filings", key: "6", label: "Filings", hint: "Route into SEC disclosures and source-backed detail." },
+  ];
+
+  return (
+    <div className="np-terminal-rail np-terminal-rail-left">
+      <RailCard>
+        <div style={{ display: "grid", gap: 8 }}>
+          <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+            <div
+              style={{
+                width: 44,
+                height: 44,
+                display: "grid",
+                placeItems: "center",
+                border: "1px solid rgba(255,156,26,0.34)",
+                background: "rgba(31,20,8,0.96)",
+                color: "var(--np-terminal-amber)",
+                fontFamily: "'DM Mono',monospace",
+                fontWeight: 700,
+                fontSize: 11,
+                letterSpacing: "0.14em",
+                flexShrink: 0,
+              }}
+            >
+              NP
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={terminalLabelStyle("amber")}>Nuclear Pulse</div>
+              <div style={{ marginTop: 5, fontSize: 18, fontWeight: 700, color: "var(--np-terminal-text)", lineHeight: 1.05 }}>
+                Terminal
+                <span style={{ fontFamily: "'Playfair Display',serif", fontStyle: "italic", fontWeight: 400, color: "var(--np-terminal-amber)", marginLeft: 7 }}>
+                  Pulse
+                </span>
+              </div>
+              <div style={{ fontSize: 10.5, lineHeight: 1.55, marginTop: 6, ...terminalMutedStyle() }}>
+                A dense global command surface for fleet, fuel-cycle, filings, and geopolitical infrastructure signals.
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0,1fr))", gap: 8 }}>
+            <RailMetric label="Countries" value={snapshot.entities.countries.length} tone="amber" />
+            <RailMetric label="Live rails" value={liveSources} tone="cyan" />
+            <RailMetric label="Stories" value={snapshot.entities.newsArticles.length} tone="success" />
+          </div>
+
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            <span style={terminalTagStyle({ tone: "amber", compact: true })}>world monitor</span>
+            <span style={terminalTagStyle({ tone: "cyan", compact: true })}>data dense shell</span>
+            {selectedEntity ? <span style={terminalTagStyle({ tone: "warning", compact: true })}>focus active</span> : null}
+          </div>
+        </div>
+      </RailCard>
+
+      <RailCard>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", marginBottom: 8 }}>
+          <div style={terminalLabelStyle("cyan")}>Function rail</div>
+          <span style={terminalTagStyle({ tone: "cyan", compact: true })}>1-6 hotkeys</span>
+        </div>
+        <div style={{ display: "grid", gap: 6 }}>
+          {desks.map((desk) => {
+            const active = activeDesk === desk.id;
+            return (
+              <button
+                key={desk.id}
+                type="button"
+                onClick={() => onActivateDesk(desk.id)}
+                className={`np-terminal-rail-button${active ? " is-active" : ""}`}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "28px minmax(0,1fr)",
+                  gap: 10,
+                  alignItems: "start",
+                  width: "100%",
+                  border: `1px solid ${active ? "rgba(255,156,26,0.52)" : "rgba(61,66,76,0.9)"}`,
+                  background: active ? "rgba(34,22,8,0.98)" : "rgba(15,18,23,0.98)",
+                  color: "var(--np-terminal-text)",
+                  padding: "8px 9px",
+                  cursor: "pointer",
+                  textAlign: "left",
+                }}
+              >
+                <span
+                  style={{
+                    display: "grid",
+                    placeItems: "center",
+                    minHeight: 20,
+                    border: `1px solid ${active ? "rgba(255,156,26,0.46)" : "rgba(61,66,76,0.82)"}`,
+                    background: active ? "rgba(255,156,26,0.12)" : "rgba(10,12,16,0.96)",
+                    color: active ? "var(--np-terminal-amber)" : "var(--np-terminal-muted)",
+                    fontSize: 10,
+                    fontFamily: "'DM Mono',monospace",
+                    fontWeight: 700,
+                  }}
+                >
+                  {desk.key}
+                </span>
+                <span style={{ minWidth: 0 }}>
+                  <span style={{ display: "block", fontSize: 11.5, fontWeight: 700 }}>{desk.label}</span>
+                  <span style={{ display: "block", fontSize: 10, lineHeight: 1.45, marginTop: 3, ...terminalMutedStyle() }}>{desk.hint}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </RailCard>
+
+      <RailCard>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", marginBottom: 8 }}>
+          <div style={terminalLabelStyle("amber")}>Watched entities</div>
+          <span style={terminalTagStyle({ tone: "amber", compact: true })}>{watchEntities.length} pinned</span>
+        </div>
+        <div style={{ display: "grid", gap: 0 }}>
+          {watchEntities.length ? watchEntities.map((entity, index) => (
+            <div
+              key={entity.id}
+              style={{
+                borderTop: index === 0 ? "none" : "1px solid rgba(55,59,68,0.9)",
+                padding: "8px 0",
+              }}
+            >
+              <div style={{ fontSize: 11.5, fontWeight: 700, color: "var(--np-terminal-text)" }}>{entity.name || entity.title || entity.country}</div>
+              <div style={{ fontSize: 10, marginTop: 4, ...terminalMutedStyle() }}>{entity.entityType}{entity.country ? ` | ${entity.country}` : ""}</div>
+            </div>
+          )) : (
+            <div style={{ fontSize: 10.5, lineHeight: 1.55, ...terminalMutedStyle() }}>
+              Use the focus drawer, market monitor, or globe markers to star the entities you want on the desk.
+            </div>
+          )}
+        </div>
+      </RailCard>
+
+      <RailCard>
+        <div style={terminalLabelStyle("cyan")}>Desk cues</div>
+        <div style={{ display: "grid", gap: 8, marginTop: 8 }}>
+          <div style={{ fontSize: 10.5, lineHeight: 1.55, ...terminalMutedStyle() }}>
+            Press `/` to route straight into command search.
+          </div>
+          <div style={{ fontSize: 10.5, lineHeight: 1.55, ...terminalMutedStyle() }}>
+            Click globe markers to synchronize the right rail and all linked data panels.
+          </div>
+          {leadCountry ? (
+            <div style={{ fontSize: 10.5, lineHeight: 1.55, ...terminalMutedStyle() }}>
+              Capacity leader: <span style={{ color: "var(--np-terminal-text)" }}>{leadCountry.country}</span> at {leadCountry.capacityGw.toFixed(1)} GW tracked.
+            </div>
+          ) : null}
+        </div>
+      </RailCard>
+    </div>
+  );
+}
+
+function FooterStrip({ onOpenStock }) {
+  const { marketRows, newsRows, operationsRows, filingRows, selectEntity } = useTerminal();
+  const tapeItems = [
+    ...marketRows.slice(0, 4).map((stock) => ({
+      id: `market-${stock.id}`,
+      label: stock.ticker,
+      value: `${stock.pct >= 0 ? "+" : ""}${(stock.pct || 0).toFixed(2)}%`,
+      detail: stock.name,
+      tone: stock.pct >= 0 ? "success" : "danger",
+      onClick: () => {
+        selectEntity(stock.company || stock);
+        onOpenStock?.(stock);
+      },
+    })),
+    ...newsRows.slice(0, 3).map((item) => ({
+      id: `story-${item.id}`,
+      label: item.tag,
+      value: item.title,
+      detail: item.sourceName,
+      tone: item.isOfficial ? "success" : "amber",
+      onClick: () => selectEntity(item),
+    })),
+    ...operationsRows.slice(0, 2).map((signal) => ({
+      id: `ops-${signal.id}`,
+      label: "Ops",
+      value: `${signal.plantName} ${signal.powerPct}%`,
+      detail: signal.status,
+      tone: signal.powerPct >= 95 ? "success" : signal.powerPct >= 60 ? "warning" : "danger",
+      onClick: () => selectEntity(signal),
+    })),
+    ...filingRows.slice(0, 2).map((filing) => ({
+      id: `filing-${filing.id}`,
+      label: filing.ticker,
+      value: filing.form,
+      detail: filing.companyName,
+      tone: "cyan",
+      onClick: () => selectEntity(filing),
+    })),
+  ];
+
+  return (
+    <footer className="np-terminal-footer-strip">
+      <div className="np-terminal-content" style={{ maxWidth: 1840, margin: "0 auto", padding: "0 12px 12px" }}>
+        <div className="np-terminal-footer-track">
+          <div className="np-terminal-footer-title">
+            <span style={terminalLabelStyle("amber")}>Live tape</span>
+          </div>
+          {tapeItems.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={item.onClick}
+              className="np-terminal-footer-item"
+            >
+              <span style={terminalTagStyle({ tone: item.tone, compact: true })}>{item.label}</span>
+              <span style={{ ...terminalValueStyle({ tone: item.tone, size: 12 }), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.value}</span>
+              <span className="np-terminal-footer-detail">{item.detail}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+function TerminalWorkspaceShell({
+  GlobeComponent,
+  isMobileViewport,
+  onOpenPlant,
+  onOpenStock,
+  onExitTerminal,
+  onRefreshData,
+}) {
+  const { setLayer, resetWorkspace } = useTerminal();
+  const [activeDesk, setActiveDesk] = useState("overview");
+
+  const activeDeskLabel = useMemo(() => {
+    const labels = {
+      overview: "Overview",
+      map: "Global Map",
+      fuel: "Fuel Cycle",
+      markets: "Markets",
+      pipeline: "Pipeline",
+      filings: "Filings",
+    };
+    return labels[activeDesk] || "Overview";
+  }, [activeDesk]);
+
+  const activateDesk = useCallback((deskId) => {
+    setActiveDesk(deskId);
+
+    if (deskId === "overview") {
+      resetWorkspace();
+      scrollToPanel("terminal-workspace-top");
+      return;
+    }
+    if (deskId === "map") {
+      setLayer("reactors");
+      scrollToPanel("terminal-panel-map");
+      return;
+    }
+    if (deskId === "fuel") {
+      setLayer("uranium");
+      scrollToPanel("terminal-panel-map");
+      return;
+    }
+    if (deskId === "markets") {
+      scrollToPanel("terminal-panel-market");
+      return;
+    }
+    if (deskId === "pipeline") {
+      scrollToPanel("terminal-panel-pipeline");
+      return;
+    }
+    if (deskId === "filings") {
+      scrollToPanel("terminal-panel-filings");
+    }
+  }, [resetWorkspace, setLayer]);
+
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      const target = event.target;
+      const tagName = target?.tagName;
+      const isTypingSurface = tagName === "INPUT" || tagName === "TEXTAREA" || tagName === "SELECT" || target?.isContentEditable;
+      if (isTypingSurface) return;
+
+      if (event.key === "/") {
+        event.preventDefault();
+        document.getElementById("np-terminal-command-input")?.focus();
+        return;
+      }
+
+      const hotkeyMap = {
+        "1": "overview",
+        "2": "map",
+        "3": "fuel",
+        "4": "markets",
+        "5": "pipeline",
+        "6": "filings",
+      };
+      const nextDesk = hotkeyMap[event.key];
+      if (nextDesk) {
+        event.preventDefault();
+        activateDesk(nextDesk);
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [activateDesk]);
+
+  return (
+    <div className="np-terminal-shell">
+      <TerminalCommandBar
+        isMobileViewport={isMobileViewport}
+        onExitTerminal={onExitTerminal}
+        onRefreshData={onRefreshData}
+        activeDeskLabel={activeDeskLabel}
+      />
+
+      <div id="terminal-workspace-top" className="np-terminal-mainframe">
+        <LeftRail
+          activeDesk={activeDesk}
+          onActivateDesk={activateDesk}
+        />
+
+        <main className="np-terminal-workspace">
+          <div className="np-terminal-workspace-stack">
+            <TerminalBlotter isMobileViewport={isMobileViewport} />
+            <MapNexusPanel
+              GlobeComponent={GlobeComponent}
+              isMobileViewport={isMobileViewport}
+              onOpenPlant={onOpenPlant}
+            />
+            <div className="np-terminal-pair-grid">
+              <MarketMonitorPanel onOpenStock={onOpenStock} isMobileViewport={isMobileViewport} />
+              <CatalystWirePanel onRefreshData={onRefreshData} isMobileViewport={isMobileViewport} />
+            </div>
+            <div className="np-terminal-pair-grid">
+              <FleetScoreboardPanel isMobileViewport={isMobileViewport} />
+              <PipelinePanel isMobileViewport={isMobileViewport} />
+            </div>
+          </div>
+        </main>
+
+        <aside className="np-terminal-rail np-terminal-rail-right">
+          <EntityFocusDrawer isMobileViewport={isMobileViewport} />
+          <OperationsPulsePanel />
+          <FilingRadarPanel />
+          <SourceRadarPanel />
+        </aside>
+      </div>
+
+      <FooterStrip onOpenStock={onOpenStock} />
+    </div>
+  );
+}
 
 export default function NuclearTerminal({
   GlobeComponent,
@@ -20,80 +446,16 @@ export default function NuclearTerminal({
   onExitTerminal,
   onRefreshData,
 }) {
-  const workspaceStyle = isMobileViewport
-    ? {
-        display: "grid",
-        gap: 10,
-      }
-    : {
-        display: "grid",
-        gridTemplateColumns: "minmax(0,1.38fr) minmax(0,1.04fr) minmax(320px,0.88fr)",
-        gridTemplateAreas: `
-          "map map focus"
-          "map map wire"
-          "market ops filings"
-          "scoreboard pipeline sources"
-        `,
-        gap: 10,
-        alignItems: "start",
-      };
-
   return (
     <TerminalProvider snapshot={snapshot} isMobileViewport={isMobileViewport}>
-      <div className="np-terminal-shell">
-        <TerminalCommandBar
-          isMobileViewport={isMobileViewport}
-          onExitTerminal={onExitTerminal}
-          onRefreshData={onRefreshData}
-        />
-
-        <div
-          className="np-terminal-content"
-          style={{
-            maxWidth: 1800,
-            margin: "0 auto",
-            padding: isMobileViewport ? "10px 10px 18px" : "10px 12px 18px",
-            display: "grid",
-            gap: 10,
-          }}
-        >
-          <TerminalBlotter isMobileViewport={isMobileViewport} />
-
-          <div style={workspaceStyle}>
-            <div style={isMobileViewport ? undefined : { gridArea: "map" }}>
-              <MapNexusPanel
-                GlobeComponent={GlobeComponent}
-                isMobileViewport={isMobileViewport}
-                onOpenPlant={onOpenPlant}
-              />
-            </div>
-            <div style={isMobileViewport ? undefined : { gridArea: "focus" }}>
-              <EntityFocusDrawer isMobileViewport={isMobileViewport} />
-            </div>
-            <div style={isMobileViewport ? undefined : { gridArea: "wire" }}>
-              <CatalystWirePanel onRefreshData={onRefreshData} isMobileViewport={isMobileViewport} />
-            </div>
-            <div style={isMobileViewport ? undefined : { gridArea: "market" }}>
-              <MarketMonitorPanel onOpenStock={onOpenStock} isMobileViewport={isMobileViewport} />
-            </div>
-            <div style={isMobileViewport ? undefined : { gridArea: "ops" }}>
-              <OperationsPulsePanel />
-            </div>
-            <div style={isMobileViewport ? undefined : { gridArea: "pipeline" }}>
-              <PipelinePanel isMobileViewport={isMobileViewport} />
-            </div>
-            <div style={isMobileViewport ? undefined : { gridArea: "filings" }}>
-              <FilingRadarPanel />
-            </div>
-            <div style={isMobileViewport ? undefined : { gridArea: "sources" }}>
-              <SourceRadarPanel />
-            </div>
-            <div style={isMobileViewport ? undefined : { gridArea: "scoreboard" }}>
-              <FleetScoreboardPanel isMobileViewport={isMobileViewport} />
-            </div>
-          </div>
-        </div>
-      </div>
+      <TerminalWorkspaceShell
+        GlobeComponent={GlobeComponent}
+        isMobileViewport={isMobileViewport}
+        onOpenPlant={onOpenPlant}
+        onOpenStock={onOpenStock}
+        onExitTerminal={onExitTerminal}
+        onRefreshData={onRefreshData}
+      />
     </TerminalProvider>
   );
 }
