@@ -31,21 +31,21 @@ export default function FleetScoreboardPanel({ isMobileViewport = false }) {
         </button>
       ))}
     >
-      <div style={{ display: "grid", gap: 6 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "30px minmax(0,1fr) auto auto", gap: 10, padding: "0 10px 6px", borderBottom: "1px solid rgba(51,66,86,0.92)" }}>
+      <div style={{ display: "grid", gap: 8 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "30px minmax(0,1fr) auto auto", gap: 12, padding: "0 14px 8px", borderBottom: "1px solid rgba(125,139,156,0.1)" }}>
           <div style={terminalTableHeaderStyle("left", "cyan")}>#</div>
           <div style={terminalTableHeaderStyle("left", "cyan")}>Country</div>
           <div style={terminalTableHeaderStyle("right", "cyan")}>Metric</div>
           <div style={terminalTableHeaderStyle("right", "cyan")}>Watch</div>
         </div>
 
-        <div className="np-terminal-scroll" style={{ ...terminalScrollAreaStyle(isMobileViewport ? 360 : 300), padding: "0 10px" }}>
+        <div className="np-terminal-scroll" style={{ ...terminalScrollAreaStyle(isMobileViewport ? 360 : 320), padding: "0 14px" }}>
           {rankingRows.slice(0, 12).map((country, index) => (
-            <div key={country.id} className="np-terminal-row np-terminal-row--interactive" style={{ ...terminalDataRowStyle(), display: "grid", gridTemplateColumns: "30px minmax(0,1fr) auto auto", gap: 10, alignItems: "center" }}>
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 10.5, color: "var(--np-terminal-muted)" }}>{String(index + 1).padStart(2, "0")}</div>
+            <div key={country.id} className="np-terminal-row np-terminal-row--interactive" style={{ ...terminalDataRowStyle(), display: "grid", gridTemplateColumns: "30px minmax(0,1fr) auto auto", gap: 12, alignItems: "center" }}>
+              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 10.5, color: "var(--np-terminal-subtle)" }}>{String(index + 1).padStart(2, "0")}</div>
               <button type="button" onClick={() => selectEntity(country)} className="np-terminal-button" style={{ background: "transparent", border: "none", color: "var(--np-terminal-text)", textAlign: "left", cursor: "pointer", padding: 0, minWidth: 0 }}>
-                <div style={{ fontWeight: 700, fontSize: 11.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{country.country}</div>
-                <div style={{ fontSize: 10, marginTop: 3, ...terminalMutedStyle() }}>{country.reactors} reactors | {country.capacityGw.toFixed(1)} GW</div>
+                <div style={{ fontWeight: 700, fontSize: 12.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{country.country}</div>
+                <div style={{ fontSize: 10.5, marginTop: 4, ...terminalMutedStyle() }}>{country.reactors} reactors | {country.capacityGw.toFixed(1)} GW</div>
               </button>
               <div style={{ ...terminalValueStyle({ tone: "amber", size: 12 }), fontWeight: 700, textAlign: "right" }}>
                 {state.rankingMetric === "capacity" ? `${country.capacityGw.toFixed(1)} GW` : state.rankingMetric === "reactors" ? `${country.reactors}` : state.rankingMetric === "nuclear" ? `${country.nuclearShare ?? 0}%` : state.rankingMetric === "projects" ? `${country.activeProjects}` : `${country.supplyCount}`}

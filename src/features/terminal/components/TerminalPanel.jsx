@@ -1,4 +1,4 @@
-import { terminalLabelStyle, terminalMutedStyle, terminalPanelStyle } from "./styles.js";
+import { terminalMutedStyle, terminalPanelStyle } from "./styles.js";
 
 export default function TerminalPanel({
   panelId,
@@ -6,19 +6,28 @@ export default function TerminalPanel({
   style,
   headerStyle,
   bodyStyle,
+  emphasis = "default",
   title,
   subtitle,
   actions,
   children,
 }) {
   return (
-    <section id={panelId} className={`np-terminal-panel ${className}`.trim()} style={{ ...terminalPanelStyle(), ...style }}>
+    <section
+      id={panelId}
+      className={`np-terminal-panel ${className}`.trim()}
+      style={{ ...terminalPanelStyle({ emphasis }), ...style }}
+    >
       {(title || subtitle || actions) ? (
         <div className="np-terminal-panel-header" style={headerStyle}>
           <div style={{ minWidth: 0, display: "grid", gap: 4 }}>
-            {title ? <div style={terminalLabelStyle()}>{title}</div> : null}
+            {title ? (
+              <div style={{ fontSize: 16, lineHeight: 1.15, color: "var(--np-terminal-text)", fontWeight: 700, letterSpacing: "-0.01em" }}>
+                {title}
+              </div>
+            ) : null}
             {subtitle ? (
-              <div style={{ fontSize: 11, lineHeight: 1.45, ...terminalMutedStyle() }}>
+              <div style={{ fontSize: 12, lineHeight: 1.55, maxWidth: 760, ...terminalMutedStyle() }}>
                 {subtitle}
               </div>
             ) : null}

@@ -32,16 +32,16 @@ export default function CatalystWirePanel({ onRefreshData, isMobileViewport = fa
         </button>,
       ]}
     >
-      <div style={{ display: "grid", gap: 6 }}>
+      <div style={{ display: "grid", gap: 8 }}>
         {!isMobileViewport ? (
-          <div style={{ display: "grid", gridTemplateColumns: "64px minmax(0,1fr) 110px", gap: 10, padding: "0 10px 6px", borderBottom: "1px solid rgba(51,66,86,0.92)" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "64px minmax(0,1fr) 110px", gap: 12, padding: "0 14px 8px", borderBottom: "1px solid rgba(125,139,156,0.1)" }}>
             <div style={terminalTableHeaderStyle("left", "cyan")}>Time</div>
             <div style={terminalTableHeaderStyle("left", "cyan")}>Story</div>
             <div style={terminalTableHeaderStyle("right", "cyan")}>Source</div>
           </div>
         ) : null}
 
-        <div className="np-terminal-scroll" style={{ ...terminalScrollAreaStyle(350), padding: "0 10px" }}>
+        <div className="np-terminal-scroll" style={{ ...terminalScrollAreaStyle(360), padding: "0 14px" }}>
           {newsRows.slice(0, 10).map((item) => (
             <div
               key={item.id}
@@ -50,7 +50,7 @@ export default function CatalystWirePanel({ onRefreshData, isMobileViewport = fa
                 ...terminalDataRowStyle(),
                 display: "grid",
                 gridTemplateColumns: isMobileViewport ? "1fr" : "64px minmax(0,1fr) 110px",
-                gap: 10,
+                gap: 12,
                 alignItems: "start",
               }}
             >
@@ -65,14 +65,14 @@ export default function CatalystWirePanel({ onRefreshData, isMobileViewport = fa
                   <span style={terminalTagStyle({ tone: item.isOfficial ? "success" : "amber", compact: true })}>
                     {item.tag} {item.isOfficial ? "official" : "wire"}
                   </span>
-                  {isMobileViewport ? <span style={{ fontSize: 10, ...terminalMutedStyle() }}>{item.dateLabel}</span> : null}
+                  {isMobileViewport ? <span style={{ fontSize: 10.5, ...terminalMutedStyle() }}>{item.dateLabel}</span> : null}
                 </div>
-                <div style={{ fontSize: 11.5, fontWeight: 700, lineHeight: 1.4, marginTop: 6 }}>{item.title}</div>
-                <div style={{ fontSize: 10.5, lineHeight: 1.45, marginTop: 5, ...terminalMutedStyle() }}>{item.whyItMatters || item.curiosityHook}</div>
+                <div style={{ fontSize: 12.5, fontWeight: 700, lineHeight: 1.45, marginTop: 6 }}>{item.title}</div>
+                <div style={{ fontSize: 10.5, lineHeight: 1.6, marginTop: 6, ...terminalMutedStyle() }}>{item.whyItMatters || item.curiosityHook}</div>
               </button>
 
               <div style={{ display: "grid", justifyItems: isMobileViewport ? "start" : "end", gap: 4 }}>
-                <div style={{ fontSize: 10, textAlign: isMobileViewport ? "left" : "right", ...terminalMutedStyle() }}>
+                <div style={{ fontSize: 10.5, textAlign: isMobileViewport ? "left" : "right", ...terminalMutedStyle() }}>
                   {item.sourceName}{item.country ? ` | ${item.country}` : ""}
                 </div>
                 <a href={item.url} target="_blank" rel="noopener noreferrer" className="np-terminal-link" style={terminalLinkStyle()}>

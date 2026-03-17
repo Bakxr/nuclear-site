@@ -1,19 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { TerminalProvider, useTerminal } from "../features/terminal/context.jsx";
 import TerminalCommandBar from "../features/terminal/components/TerminalCommandBar.jsx";
-import TerminalBlotter from "../features/terminal/components/TerminalBlotter.jsx";
 import MapNexusPanel from "../features/terminal/components/MapNexusPanel.jsx";
 import FleetScoreboardPanel from "../features/terminal/components/FleetScoreboardPanel.jsx";
-import MarketMonitorPanel from "../features/terminal/components/MarketMonitorPanel.jsx";
 import CatalystWirePanel from "../features/terminal/components/CatalystWirePanel.jsx";
-import PipelinePanel from "../features/terminal/components/PipelinePanel.jsx";
-import EntityFocusDrawer from "../features/terminal/components/EntityFocusDrawer.jsx";
-import OperationsPulsePanel from "../features/terminal/components/OperationsPulsePanel.jsx";
-import FilingRadarPanel from "../features/terminal/components/FilingRadarPanel.jsx";
-import SourceRadarPanel from "../features/terminal/components/SourceRadarPanel.jsx";
+import OperatorPanel from "../features/terminal/components/OperatorPanel.jsx";
+import IntelligenceDeckPanel from "../features/terminal/components/IntelligenceDeckPanel.jsx";
 import {
+  terminalDataRowStyle,
   terminalLabelStyle,
-  terminalMetricTileStyle,
   terminalMutedStyle,
   terminalTagStyle,
   terminalValueStyle,
@@ -28,43 +23,7 @@ function scrollToPanel(panelId) {
   document.getElementById(panelId)?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-function RailCard({ children, style }) {
-  return (
-    <section
-      className="np-terminal-rail-card"
-      style={{
-        border: "1px solid var(--np-terminal-border)",
-        background: "rgba(22,18,14,0.985)",
-        padding: "10px",
-        ...style,
-      }}
-    >
-      {children}
-    </section>
-  );
-}
-
-function RailMetric({ label, value, tone = "amber" }) {
-  const accent = tone === "cyan"
-    ? "var(--np-terminal-cyan)"
-    : tone === "success"
-      ? "var(--np-terminal-green)"
-      : tone === "warning"
-        ? "var(--np-terminal-yellow)"
-        : "var(--np-terminal-amber)";
-
-  return (
-    <div style={terminalMetricTileStyle({ accent })}>
-      <div style={terminalLabelStyle(tone)}>{label}</div>
-      <div style={{ ...terminalValueStyle({ tone, size: 15 }), marginTop: 7 }}>{value}</div>
-    </div>
-  );
-}
-
-function LeftRail({
-  activeDesk,
-  onActivateDesk,
-}) {
+function LeftRail({ activeDesk, onActivateDesk }) {
   const {
     snapshot,
     selectedEntity,
@@ -78,9 +37,7 @@ function LeftRail({
     [getEntityById, watchedSet],
   );
   const liveSources = sourceRows.filter((item) => item.status === "Live").length;
-  const leadCountry = snapshot.entities.countries
-    .slice()
-    .sort((left, right) => (right.capacityGw || 0) - (left.capacityGw || 0))[0];
+  const operatingPlants = snapshot.entities.plants.filter((plant) => plant.status === "Operating").length;
   const desks = [
     { id: "overview", key: "1", label: "Overview" },
     { id: "map", key: "2", label: "Global map" },
@@ -91,108 +48,112 @@ function LeftRail({
   ];
 
   return (
-    <div className="np-terminal-rail np-terminal-rail-left">
-      <RailCard style={{ padding: "8px 9px" }}>
-        <div style={{ display: "grid", gap: 8 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
-            <div>
-              <div style={terminalLabelStyle("amber")}>Desk snapshot</div>
-              <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--np-terminal-text)", marginTop: 4 }}>
-                {selectedEntity ? (selectedEntity.name || selectedEntity.title || selectedEntity.country) : "Global scope"}
-              </div>
-            </div>
+    <aside className="np-terminal-rail np-terminal-rail-left">
+      <div style={{ display: "grid", gap: 16, padding: "6px 4px" }}>
+        <div style={{ display: "grid", gap: 10, paddingBottom: 14, borderBottom: "1px solid rgba(125,139,156,0.1)" }}>
+          <div style={terminalLabelStyle("cyan")}>Control spine</div>
+          <div style={{ fontSize: 20, lineHeight: 1.05, fontWeight: 700, color: "var(--np-terminal-text)" }}>
+            Operator desks
+          </div>
+          <div style={{ fontSize: 11.5, lineHeight: 1.6, ...terminalMutedStyle() }}>
+            {selectedEntity
+              ? `Current focus: ${selectedEntity.name || selectedEntity.title || selectedEntity.country}`
+              : "Start globally, then use the globe and operator panel to narrow the question."}
+          </div>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             <span style={terminalTagStyle({ tone: selectedEntity ? "warning" : "cyan", compact: true })}>
-              {selectedEntity ? "focus" : "global"}
+              {selectedEntity ? "Focused" : "Global scope"}
+            </span>
+            <span style={terminalTagStyle({ tone: "amber", compact: true })}>{operatingPlants} operating</span>
+            <span style={terminalTagStyle({ tone: "success", compact: true })}>{liveSources} live rails</span>
+          </div>
+        </div>
+
+        <div style={{ display: "grid", gap: 8 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
+            <div style={terminalLabelStyle("amber")}>Desk navigation</div>
+            <span style={terminalTagStyle({ tone: "cyan", compact: true })}>
+              1-6
             </span>
           </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0,1fr))", gap: 6 }}>
-            <RailMetric label="Countries" value={snapshot.entities.countries.length} tone="amber" />
-            <RailMetric label="Live" value={liveSources} tone="cyan" />
-            <RailMetric label="Stories" value={snapshot.entities.newsArticles.length} tone="success" />
-          </div>
-
-          {leadCountry ? (
-            <div style={{ fontSize: 10, lineHeight: 1.45, ...terminalMutedStyle() }}>
-              Lead market: <span style={{ color: "var(--np-terminal-text)" }}>{leadCountry.country}</span> {leadCountry.capacityGw.toFixed(1)} GW
-            </div>
-          ) : null}
-        </div>
-      </RailCard>
-
-      <RailCard>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", marginBottom: 8 }}>
-          <div style={terminalLabelStyle("cyan")}>Function rail</div>
-          <span style={terminalTagStyle({ tone: "cyan", compact: true })}>1-6 hotkeys</span>
-        </div>
-        <div style={{ display: "grid", gap: 6 }}>
-          {desks.map((desk) => {
-            const active = activeDesk === desk.id;
-            return (
-              <button
-                key={desk.id}
-                type="button"
-                onClick={() => onActivateDesk(desk.id)}
-                className={`np-terminal-rail-button${active ? " is-active" : ""}`}
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "28px minmax(0,1fr)",
-                  gap: 10,
-                  alignItems: "center",
-                  width: "100%",
-                  border: `1px solid ${active ? "rgba(212,165,74,0.42)" : "rgba(122,103,76,0.42)"}`,
-                  background: active ? "rgba(42,31,18,0.98)" : "rgba(28,23,18,0.98)",
-                  color: "var(--np-terminal-text)",
-                  padding: "8px 9px",
-                  cursor: "pointer",
-                  textAlign: "left",
-                }}
-              >
-                <span
+          <nav className="np-terminal-spine-nav">
+            {desks.map((desk) => {
+              const active = activeDesk === desk.id;
+              return (
+                <button
+                  key={desk.id}
+                  type="button"
+                  onClick={() => onActivateDesk(desk.id)}
+                  className="np-terminal-button np-terminal-spine-item"
                   style={{
                     display: "grid",
-                    placeItems: "center",
-                    minHeight: 20,
-                    border: `1px solid ${active ? "rgba(212,165,74,0.38)" : "rgba(122,103,76,0.38)"}`,
-                    background: active ? "rgba(212,165,74,0.1)" : "rgba(22,18,14,0.96)",
-                    color: active ? "var(--np-terminal-amber)" : "var(--np-terminal-muted)",
-                    fontSize: 10,
-                    fontFamily: "'DM Mono',monospace",
-                    fontWeight: 700,
+                    gridTemplateColumns: "30px minmax(0,1fr)",
+                    gap: 12,
+                    alignItems: "center",
+                    width: "100%",
+                    border: `1px solid ${active ? "rgba(216,160,74,0.24)" : "rgba(125,139,156,0.12)"}`,
+                    borderRadius: 16,
+                    background: active ? "rgba(216,160,74,0.08)" : "rgba(255,255,255,0.03)",
+                    color: "var(--np-terminal-text)",
+                    padding: "10px 12px",
+                    cursor: "pointer",
+                    textAlign: "left",
                   }}
                 >
-                  {desk.key}
-                </span>
-                <span style={{ display: "block", minWidth: 0, fontSize: 11.5, fontWeight: 700 }}>{desk.label}</span>
-              </button>
-            );
-          })}
+                  <span
+                    style={{
+                      display: "grid",
+                      placeItems: "center",
+                      minHeight: 24,
+                      borderRadius: 999,
+                      border: `1px solid ${active ? "rgba(216,160,74,0.22)" : "rgba(125,139,156,0.12)"}`,
+                      background: active ? "rgba(216,160,74,0.92)" : "rgba(255,255,255,0.02)",
+                      color: active ? "#11161d" : "var(--np-terminal-subtle)",
+                      fontSize: 10,
+                      fontFamily: "'DM Mono',monospace",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {desk.key}
+                  </span>
+                  <span style={{ display: "grid", gap: 3, minWidth: 0 }}>
+                    <span style={{ fontSize: 12.5, fontWeight: 700 }}>{desk.label}</span>
+                    <span style={{ fontSize: 10.5, ...terminalMutedStyle() }}>
+                      {desk.id === "map" ? "Hero globe" : desk.id === "filings" ? "Operator panel tab" : "Scroll desk"}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+          </nav>
         </div>
-      </RailCard>
 
-      {watchEntities.length ? (
-        <RailCard>
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", marginBottom: 8 }}>
-            <div style={terminalLabelStyle("amber")}>Watched entities</div>
-            <span style={terminalTagStyle({ tone: "amber", compact: true })}>{watchEntities.length} pinned</span>
+        {watchEntities.length ? (
+          <div style={{ display: "grid", gap: 8, paddingTop: 14, borderTop: "1px solid rgba(125,139,156,0.1)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
+              <div style={terminalLabelStyle("amber")}>Pinned watchlist</div>
+              <span style={terminalTagStyle({ tone: "amber", compact: true })}>{watchEntities.length}</span>
+            </div>
+            <div style={{ display: "grid", gap: 0 }}>
+              {watchEntities.map((entity, index) => (
+                <div
+                  key={entity.id}
+                  style={{
+                    ...terminalDataRowStyle(),
+                    borderTop: index === 0 ? "none" : terminalDataRowStyle().borderTop,
+                  }}
+                >
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "var(--np-terminal-text)" }}>{entity.name || entity.title || entity.country}</div>
+                  <div style={{ fontSize: 10.5, marginTop: 4, ...terminalMutedStyle() }}>
+                    {entity.entityType}{entity.country ? ` | ${entity.country}` : ""}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-          <div style={{ display: "grid", gap: 0 }}>
-            {watchEntities.map((entity, index) => (
-              <div
-                key={entity.id}
-                style={{
-                  borderTop: index === 0 ? "none" : "1px solid rgba(55,59,68,0.9)",
-                  padding: "8px 0",
-                }}
-              >
-                <div style={{ fontSize: 11.5, fontWeight: 700, color: "var(--np-terminal-text)" }}>{entity.name || entity.title || entity.country}</div>
-                <div style={{ fontSize: 10, marginTop: 4, ...terminalMutedStyle() }}>{entity.entityType}{entity.country ? ` | ${entity.country}` : ""}</div>
-              </div>
-            ))}
-          </div>
-        </RailCard>
-      ) : null}
-    </div>
+        ) : null}
+      </div>
+    </aside>
   );
 }
 
@@ -238,7 +199,7 @@ function FooterStrip({ onOpenStock }) {
 
   return (
     <footer className="np-terminal-footer-strip">
-      <div className="np-terminal-content" style={{ maxWidth: 1840, margin: "0 auto", padding: "0 12px 12px" }}>
+      <div className="np-terminal-content" style={{ maxWidth: 1840, margin: "0 auto", padding: "0 14px 14px" }}>
         <div className="np-terminal-footer-track">
           <div className="np-terminal-footer-title">
             <span style={terminalLabelStyle("amber")}>Live tape</span>
@@ -271,12 +232,14 @@ function TerminalWorkspaceShell({
 }) {
   const { setLayer, resetWorkspace } = useTerminal();
   const [activeDesk, setActiveDesk] = useState("overview");
+  const [operatorTab, setOperatorTab] = useState("focus");
+  const [intelligenceTab, setIntelligenceTab] = useState("markets");
 
   const activeDeskLabel = useMemo(() => {
     const labels = {
       overview: "Overview",
-      map: "Global Map",
-      fuel: "Fuel Cycle",
+      map: "Global map",
+      fuel: "Fuel cycle",
       markets: "Markets",
       pipeline: "Pipeline",
       filings: "Filings",
@@ -284,11 +247,25 @@ function TerminalWorkspaceShell({
     return labels[activeDesk] || "Overview";
   }, [activeDesk]);
 
+  const handleOperatorTabChange = useCallback((tab) => {
+    setOperatorTab(tab);
+    if (tab === "filings") setActiveDesk("filings");
+    if (tab === "focus") setActiveDesk("overview");
+  }, []);
+
+  const handleIntelligenceTabChange = useCallback((tab) => {
+    setIntelligenceTab(tab);
+    setActiveDesk(tab === "pipeline" ? "pipeline" : "markets");
+  }, []);
+
   const activateDesk = useCallback((deskId) => {
     setActiveDesk(deskId);
 
     if (deskId === "overview") {
       resetWorkspace();
+      setLayer("reactors");
+      setOperatorTab("focus");
+      setIntelligenceTab("markets");
       scrollToPanel("terminal-workspace-top");
       return;
     }
@@ -303,15 +280,18 @@ function TerminalWorkspaceShell({
       return;
     }
     if (deskId === "markets") {
-      scrollToPanel("terminal-panel-market");
+      setIntelligenceTab("markets");
+      scrollToPanel("terminal-panel-intelligence");
       return;
     }
     if (deskId === "pipeline") {
-      scrollToPanel("terminal-panel-pipeline");
+      setIntelligenceTab("pipeline");
+      scrollToPanel("terminal-panel-intelligence");
       return;
     }
     if (deskId === "filings") {
-      scrollToPanel("terminal-panel-filings");
+      setOperatorTab("filings");
+      scrollToPanel("terminal-panel-operator");
     }
   }, [resetWorkspace, setLayer]);
 
@@ -364,28 +344,30 @@ function TerminalWorkspaceShell({
 
         <main className="np-terminal-workspace">
           <div className="np-terminal-workspace-stack">
-            <TerminalBlotter isMobileViewport={isMobileViewport} />
             <MapNexusPanel
               GlobeComponent={GlobeComponent}
               isMobileViewport={isMobileViewport}
               onOpenPlant={onOpenPlant}
             />
             <div className="np-terminal-pair-grid">
-              <MarketMonitorPanel onOpenStock={onOpenStock} isMobileViewport={isMobileViewport} />
               <CatalystWirePanel onRefreshData={onRefreshData} isMobileViewport={isMobileViewport} />
-            </div>
-            <div className="np-terminal-pair-grid">
               <FleetScoreboardPanel isMobileViewport={isMobileViewport} />
-              <PipelinePanel isMobileViewport={isMobileViewport} />
             </div>
+            <IntelligenceDeckPanel
+              activeTab={intelligenceTab}
+              onTabChange={handleIntelligenceTabChange}
+              onOpenStock={onOpenStock}
+              isMobileViewport={isMobileViewport}
+            />
           </div>
         </main>
 
         <aside className="np-terminal-rail np-terminal-rail-right">
-          <EntityFocusDrawer isMobileViewport={isMobileViewport} />
-          <OperationsPulsePanel />
-          <FilingRadarPanel />
-          <SourceRadarPanel />
+          <OperatorPanel
+            activeTab={operatorTab}
+            onTabChange={handleOperatorTabChange}
+            isMobileViewport={isMobileViewport}
+          />
         </aside>
       </div>
 

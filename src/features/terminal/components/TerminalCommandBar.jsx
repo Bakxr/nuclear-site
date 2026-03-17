@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTerminal } from "../context.jsx";
 import {
   terminalButtonStyle,
@@ -27,24 +27,21 @@ function formatClock(now, timeZone) {
   }).format(now);
 }
 
-function StatusTile({ label, value, detail, tone = "cyan" }) {
-  return (
-    <div className="np-terminal-command-tile">
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 6, alignItems: "baseline" }}>
-        <span style={terminalLabelStyle(tone)}>{label}</span>
-        <span style={{ fontSize: 9.5, ...terminalMutedStyle() }}>{detail}</span>
-      </div>
-      <div style={{ ...terminalValueStyle({ tone, size: 13 }), marginTop: 5 }}>{value}</div>
-    </div>
-  );
-}
-
 function FreshnessBadge({ item }) {
   const tone = item.stale ? "warning" : "success";
   return (
     <div className="np-terminal-command-badge">
       <span style={terminalLabelStyle(tone)}>{item.label}</span>
-      <span style={{ ...terminalValueStyle({ tone, size: 12 }), marginLeft: "auto" }}>{formatFreshness(item.updatedAt)}</span>
+      <span style={{ ...terminalValueStyle({ tone, size: 11.5 }), marginLeft: "auto" }}>{formatFreshness(item.updatedAt)}</span>
+    </div>
+  );
+}
+
+function ClockBadge({ label, time, tone = "cyan" }) {
+  return (
+    <div className="np-terminal-command-badge" style={{ minWidth: 112 }}>
+      <span style={terminalLabelStyle(tone)}>{label}</span>
+      <span style={{ ...terminalValueStyle({ tone, size: 11.5 }), marginLeft: "auto" }}>{time}</span>
     </div>
   );
 }
@@ -59,6 +56,7 @@ export default function TerminalCommandBar({
     snapshot,
     searchResults,
     state,
+    selectedEntity,
     compareEntities,
     watchedSet,
     setQuery,
@@ -72,108 +70,80 @@ export default function TerminalCommandBar({
     return () => window.clearInterval(timer);
   }, []);
 
-  const activeChips = [
-    activeDeskLabel,
-    state.layer === "uranium" ? "Fuel Cycle" : "Reactor Fleet",
-    state.countryFilter ? `Country ${state.countryFilter}` : null,
-    state.reactorTypeFilter ? `Type ${state.reactorTypeFilter}` : null,
-    state.statusFilter ? `Status ${state.statusFilter}` : null,
-    compareEntities.length ? `Compare ${compareEntities.length}` : null,
-    watchedSet.size ? `Watch ${watchedSet.size}` : null,
+  const focusLabel = selectedEntity
+    ? (selectedEntity.name || selectedEntity.title || selectedEntity.country)
+    : "Global scope";
+  const freshnessItems = useMemo(() => Object.values(snapshot.freshness || {}).slice(0, 3), [snapshot.freshness]);
+  const deskStateChips = [
+    { value: activeDeskLabel, tone: "amber" },
+    { value: state.layer === "uranium" ? "Fuel cycle" : "Fleet layer", tone: state.layer === "uranium" ? "cyan" : "default" },
+    selectedEntity ? { value: selectedEntity.entityType, tone: "warning" } : null,
+    compareEntities.length ? { value: `Compare ${compareEntities.length}`, tone: "cyan" } : null,
+    watchedSet.size ? { value: `Watch ${watchedSet.size}`, tone: "success" } : null,
   ].filter(Boolean);
-  const clocks = [
-    { label: "New York", detail: "Desk", timeZone: "America/New_York", tone: "amber" },
-    { label: "UTC", detail: "Base", timeZone: "UTC", tone: "cyan" },
-    { label: "Tokyo", detail: "Asia", timeZone: "Asia/Tokyo", tone: "success" },
-  ];
-  const freshnessItems = Object.values(snapshot.freshness || {}).slice(0, 4);
 
   return (
     <div className="np-terminal-commandbar">
-      <div className="np-terminal-content" style={{ maxWidth: 1840, margin: "0 auto", padding: isMobileViewport ? "8px 10px 10px" : "8px 12px 10px", display: "grid", gap: 8 }}>
+      <div
+        className="np-terminal-content"
+        style={{
+          maxWidth: 1840,
+          margin: "0 auto",
+          padding: isMobileViewport ? "10px 10px 12px" : "12px 14px 14px",
+          display: "grid",
+          gap: 10,
+        }}
+      >
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: isMobileViewport ? "1fr" : "minmax(260px,300px) minmax(0,1fr) minmax(260px,320px)",
-            gap: 8,
-            alignItems: "start",
+            gridTemplateColumns: isMobileViewport ? "1fr" : "minmax(250px, 316px) minmax(0, 1fr) auto",
+            gap: 10,
+            alignItems: "stretch",
           }}
         >
-          <div className="np-terminal-command-card">
-            <div style={{ display: "flex", gap: 10, alignItems: "flex-start", minWidth: 0 }}>
+          <div className="np-terminal-command-card" style={{ display: "grid", gap: 10 }}>
+            <div style={{ display: "flex", gap: 12, alignItems: "flex-start", minWidth: 0 }}>
               <div
                 style={{
-                  minWidth: 38,
-                  height: 38,
+                  width: 42,
+                  height: 42,
                   display: "grid",
                   placeItems: "center",
-                  border: "1px solid rgba(212,165,74,0.28)",
-                  background: "rgba(42,31,18,0.94)",
+                  borderRadius: 14,
+                  border: "1px solid rgba(216,160,74,0.22)",
+                  background: "rgba(216,160,74,0.08)",
                   color: "var(--np-terminal-amber)",
                   fontFamily: "'DM Mono',monospace",
-                  fontSize: 11,
+                  fontSize: 12,
                   fontWeight: 700,
                   letterSpacing: "0.14em",
+                  flexShrink: 0,
                 }}
               >
                 NP
               </div>
               <div style={{ minWidth: 0, display: "grid", gap: 4 }}>
-                <div style={terminalLabelStyle()}>Nuclear Pulse terminal</div>
-                <div style={{ fontSize: 15, lineHeight: 1.05, color: "var(--np-terminal-text)", fontWeight: 700 }}>
-                  Global nuclear workstation
+                <div style={terminalLabelStyle("cyan")}>Nuclear Pulse terminal</div>
+                <div style={{ fontSize: 19, lineHeight: 1.05, fontWeight: 700, color: "var(--np-terminal-text)" }}>
+                  Operator intelligence
                 </div>
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-                  <span style={terminalTagStyle({ tone: "amber", compact: true })}>{activeDeskLabel}</span>
-                  <span style={terminalTagStyle({ tone: "default", compact: true })}>Snapshot {formatFreshness(snapshot.generatedAt)}</span>
+                <div style={{ fontSize: 11.5, lineHeight: 1.55, ...terminalMutedStyle() }}>
+                  Follow the fleet, see what is live, and route quickly into the next reactor, filing, or source signal.
                 </div>
               </div>
             </div>
-          </div>
 
-          <div className="np-terminal-command-card">
-            <div style={{ display: "grid", gap: 6 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-                <span style={terminalLabelStyle("cyan")}>Feed health</span>
-                <span style={terminalTagStyle({ tone: "cyan", compact: true })}>{freshnessItems.length} rails</span>
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: isMobileViewport ? "repeat(2, minmax(0,1fr))" : "repeat(4, minmax(0,1fr))", gap: 6 }}>
-                {freshnessItems.map((item) => <FreshnessBadge key={item.label} item={item} />)}
-              </div>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+              <span style={terminalTagStyle({ tone: "amber", compact: true })}>{activeDeskLabel}</span>
+              <span style={terminalTagStyle({ tone: "default", compact: true })}>Snapshot {formatFreshness(snapshot.generatedAt)}</span>
+              <span style={terminalTagStyle({ tone: selectedEntity ? "warning" : "cyan", compact: true })}>{focusLabel}</span>
             </div>
           </div>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(3, minmax(0,1fr))",
-              gap: 6,
-            }}
-          >
-            {clocks.map((clock) => (
-              <StatusTile
-                key={clock.label}
-                label={clock.label}
-                detail={clock.detail}
-                tone={clock.tone}
-                value={formatClock(now, clock.timeZone)}
-              />
-            ))}
-          </div>
-        </div>
-
-        <div
-          className="np-terminal-command-card"
-          style={{
-            display: "grid",
-            gridTemplateColumns: isMobileViewport ? "1fr" : "minmax(0,1fr) auto",
-            gap: 8,
-            alignItems: "start",
-          }}
-        >
-          <div style={{ position: "relative", minWidth: 0, display: "grid", gap: 6 }}>
+          <div className="np-terminal-command-card" style={{ position: "relative", minWidth: 0, display: "grid", gap: 10 }}>
             <div style={terminalInputShellStyle()}>
-              <span style={terminalLabelStyle("cyan")}>Cmd</span>
+              <span style={terminalLabelStyle("cyan")}>Command</span>
               <span style={{ ...terminalValueStyle({ tone: "amber", size: 13 }) }}>{">"}</span>
               <input
                 id="np-terminal-command-input"
@@ -186,27 +156,41 @@ export default function TerminalCommandBar({
               <span style={terminalTagStyle({ tone: "amber", compact: true })}>/ focus</span>
             </div>
 
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-              <span style={terminalLabelStyle("cyan")}>Desk state</span>
-              {activeChips.map((chip, index) => (
-                <span key={`${chip}-${index}`} style={terminalTagStyle({ tone: index === 0 ? "amber" : "default", compact: true })}>
-                  {chip}
-                </span>
-              ))}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: isMobileViewport ? "1fr" : "minmax(0,1fr) auto",
+                gap: 10,
+                alignItems: "center",
+              }}
+            >
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+                {freshnessItems.map((item) => <FreshnessBadge key={item.label} item={item} />)}
+              </div>
+
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: isMobileViewport ? "flex-start" : "flex-end" }}>
+                {deskStateChips.map((chip) => (
+                  <span key={`${chip.value}-${chip.tone}`} style={terminalTagStyle({ tone: chip.tone, compact: true })}>
+                    {chip.value}
+                  </span>
+                ))}
+              </div>
             </div>
 
             {state.query.trim() && searchResults.length > 0 ? (
               <div
                 style={{
                   position: "absolute",
-                  inset: "calc(100% + 4px) 0 auto 0",
-                  border: "1px solid rgba(122,103,76,0.48)",
-                  background: "rgba(23,18,14,0.995)",
-                  boxShadow: "0 18px 38px rgba(0,0,0,0.4)",
-                  padding: "0 10px",
+                  inset: "calc(100% - 2px) 0 auto 0",
+                  border: "1px solid rgba(125,139,156,0.18)",
+                  borderRadius: 18,
+                  background: "rgba(15,20,27,0.98)",
+                  boxShadow: "0 22px 46px rgba(0,0,0,0.38)",
+                  padding: "0 14px",
                   zIndex: 30,
                   display: "grid",
                   gap: 0,
+                  overflow: "hidden",
                 }}
               >
                 {searchResults.map((result) => (
@@ -216,23 +200,23 @@ export default function TerminalCommandBar({
                     onClick={() => selectEntity(result)}
                     className="np-terminal-row np-terminal-row--interactive np-terminal-button"
                     style={{
-                      borderTop: "1px solid rgba(122,103,76,0.22)",
+                      borderTop: "1px solid rgba(125,139,156,0.11)",
                       textAlign: "left",
                       background: "transparent",
                       color: "var(--np-terminal-text)",
                       cursor: "pointer",
-                      padding: "8px 0",
+                      padding: "11px 0",
                       borderLeft: "none",
                       borderRight: "none",
                       borderBottom: "none",
                     }}
                   >
-                    <div style={{ display: "grid", gridTemplateColumns: isMobileViewport ? "1fr" : "minmax(0,1fr) auto", gap: 10, alignItems: "center" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: isMobileViewport ? "1fr" : "minmax(0,1fr) auto", gap: 12, alignItems: "center" }}>
                       <div style={{ minWidth: 0 }}>
-                        <div style={{ fontWeight: 700, fontSize: 11.5, color: "var(--np-terminal-text)" }}>
+                        <div style={{ fontWeight: 700, fontSize: 12.5, color: "var(--np-terminal-text)" }}>
                           {result.name || result.title}
                         </div>
-                        <div style={{ fontSize: 10, marginTop: 3, ...terminalMutedStyle() }}>
+                        <div style={{ fontSize: 10.5, marginTop: 4, ...terminalMutedStyle() }}>
                           {result.entityType}{result.country ? ` | ${result.country}` : ""}
                         </div>
                       </div>
@@ -246,16 +230,28 @@ export default function TerminalCommandBar({
             ) : null}
           </div>
 
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: isMobileViewport ? "flex-start" : "flex-end" }}>
-            <button type="button" onClick={onRefreshData} className="np-terminal-button" style={terminalButtonStyle(false, { tone: "cyan" })}>
-              Refresh
-            </button>
-            <button type="button" onClick={resetWorkspace} className="np-terminal-button" style={terminalButtonStyle(false)}>
-              Reset
-            </button>
-            <button type="button" onClick={onExitTerminal} className="np-terminal-button" style={terminalButtonStyle(false, { tone: "amber" })}>
-              Editorial
-            </button>
+          <div className="np-terminal-command-card" style={{ display: "grid", gap: 10, alignContent: "space-between" }}>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: isMobileViewport ? "flex-start" : "flex-end" }}>
+              <button type="button" onClick={onRefreshData} className="np-terminal-button" style={terminalButtonStyle(false, { tone: "cyan" })}>
+                Refresh
+              </button>
+              <button type="button" onClick={resetWorkspace} className="np-terminal-button" style={terminalButtonStyle(false)}>
+                Reset
+              </button>
+              <button type="button" onClick={onExitTerminal} className="np-terminal-button" style={terminalButtonStyle(false, { tone: "amber" })}>
+                Editorial
+              </button>
+            </div>
+
+            <div style={{ display: "grid", gap: 8 }}>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: isMobileViewport ? "flex-start" : "flex-end" }}>
+                <ClockBadge label="New York" tone="amber" time={formatClock(now, "America/New_York")} />
+                <ClockBadge label="UTC" tone="cyan" time={formatClock(now, "UTC")} />
+              </div>
+              <div style={{ fontSize: 10.5, textAlign: isMobileViewport ? "left" : "right", ...terminalMutedStyle() }}>
+                Desk focus follows the active command, search, and selected entity.
+              </div>
+            </div>
           </div>
         </div>
       </div>

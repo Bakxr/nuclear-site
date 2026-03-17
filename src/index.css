@@ -90,26 +90,26 @@ html {
 }
 
 .np-terminal-shell {
-  --np-terminal-bg: #0f0c09;
-  --np-terminal-panel: #16120e;
-  --np-terminal-panel-alt: #1b1611;
-  --np-terminal-border: rgba(122, 103, 76, 0.62);
-  --np-terminal-border-soft: rgba(212, 165, 74, 0.16);
-  --np-terminal-text: #f5f0e8;
-  --np-terminal-muted: #b0a18a;
-  --np-terminal-subtle: #7c6f5d;
-  --np-terminal-amber: #d4a54a;
-  --np-terminal-cyan: #7f9aa7;
-  --np-terminal-green: #7ea07d;
-  --np-terminal-red: #b87468;
-  --np-terminal-yellow: #d7bf78;
+  --np-terminal-bg: #0a0f14;
+  --np-terminal-panel: #10151c;
+  --np-terminal-panel-alt: #151c25;
+  --np-terminal-border: rgba(125, 139, 156, 0.16);
+  --np-terminal-border-soft: rgba(216, 160, 74, 0.14);
+  --np-terminal-text: #edf1f5;
+  --np-terminal-muted: #94a0ad;
+  --np-terminal-subtle: #667280;
+  --np-terminal-amber: #d8a04a;
+  --np-terminal-cyan: #7ea8c0;
+  --np-terminal-green: #7cb98a;
+  --np-terminal-red: #d78477;
+  --np-terminal-yellow: #d7b567;
   position: relative;
   min-height: 100vh;
   overflow: hidden;
   background:
-    radial-gradient(circle at 14% 12%, rgba(212, 165, 74, 0.08), transparent 16%),
-    radial-gradient(circle at 84% 10%, rgba(127, 154, 167, 0.04), transparent 18%),
-    linear-gradient(180deg, #14110d 0%, #110d0a 42%, #0d0a08 100%);
+    radial-gradient(circle at 12% 8%, rgba(216, 160, 74, 0.07), transparent 18%),
+    radial-gradient(circle at 84% 12%, rgba(126, 168, 192, 0.05), transparent 22%),
+    linear-gradient(180deg, #0e141b 0%, #0b1117 42%, #090d13 100%);
   color: var(--np-terminal-text);
   font-family: 'DM Sans', sans-serif;
 }
@@ -124,21 +124,21 @@ html {
 
 .np-terminal-shell::before {
   background-image:
-    linear-gradient(rgba(122, 103, 76, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(122, 103, 76, 0.08) 1px, transparent 1px);
-  background-size: 28px 28px;
-  opacity: 0.12;
+    linear-gradient(rgba(125, 139, 156, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(125, 139, 156, 0.06) 1px, transparent 1px);
+  background-size: 36px 36px;
+  opacity: 0.08;
 }
 
 .np-terminal-shell::after {
   background: repeating-linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.015) 0,
-    rgba(255, 255, 255, 0.015) 1px,
+    rgba(255, 255, 255, 0.01) 0,
+    rgba(255, 255, 255, 0.01) 1px,
     transparent 1px,
-    transparent 4px
+    transparent 5px
   );
-  opacity: 0.03;
+  opacity: 0.018;
 }
 
 .np-terminal-content {
@@ -150,11 +150,11 @@ html {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr) 342px;
-  gap: 8px;
+  grid-template-columns: 212px minmax(0, 1fr) 336px;
+  gap: 14px;
   max-width: 1840px;
   margin: 0 auto;
-  padding: 8px 12px 0;
+  padding: 14px 14px 0;
   align-items: start;
 }
 
@@ -166,37 +166,39 @@ html {
 
 .np-terminal-workspace-stack {
   display: grid;
-  gap: 8px;
+  gap: 14px;
   align-content: start;
 }
 
 .np-terminal-rail {
   display: grid;
-  gap: 8px;
+  gap: 14px;
   align-content: start;
 }
 
 .np-terminal-pair-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  gap: 14px;
 }
 
 .np-terminal-commandbar {
   position: sticky;
   top: 0;
   z-index: 110;
-  background: rgba(15, 12, 9, 0.97);
-  border-bottom: 1px solid rgba(122, 103, 76, 0.46);
-  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.34);
+  background: rgba(10, 15, 20, 0.86);
+  border-bottom: 1px solid rgba(125, 139, 156, 0.12);
+  box-shadow: 0 20px 36px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(18px);
 }
 
-.np-terminal-command-card,
-.np-terminal-command-tile {
-  border: 1px solid var(--np-terminal-border);
-  background: rgba(22, 18, 14, 0.985);
-  padding: 8px 10px;
+.np-terminal-command-card {
+  border: 1px solid rgba(125, 139, 156, 0.12);
+  background: rgba(16, 21, 28, 0.76);
+  padding: 14px;
   align-self: start;
+  border-radius: 18px;
+  backdrop-filter: blur(16px);
 }
 
 .np-terminal-command-badge {
@@ -204,35 +206,14 @@ html {
   align-items: center;
   gap: 8px;
   min-width: 0;
-  border: 1px solid rgba(122, 103, 76, 0.4);
-  background: rgba(28, 23, 18, 0.98);
-  padding: 5px 7px;
-}
-
-.np-terminal-status-board {
-  display: grid;
-  gap: 6px;
-}
-
-.np-terminal-status-cell {
-  min-width: 0;
-  border: 1px solid var(--np-terminal-border);
-  background: rgba(19, 15, 12, 0.985);
-  padding: 7px 9px;
+  border: 1px solid rgba(125, 139, 156, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 6px 9px;
+  border-radius: 999px;
 }
 
 .np-terminal-panel {
   position: relative;
-}
-
-.np-terminal-panel::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 1px;
-  pointer-events: none;
-  background: linear-gradient(90deg, rgba(212,165,74,0.82), rgba(212,165,74,0.18) 48%, transparent 84%);
-  opacity: 1;
 }
 
 .np-terminal-panel-header {
@@ -240,23 +221,23 @@ html {
   z-index: 1;
   display: flex;
   justify-content: space-between;
-  gap: 8px;
+  gap: 12px;
   align-items: flex-start;
   flex-wrap: wrap;
-  padding: 7px 9px 6px;
-  border-bottom: 1px solid rgba(122, 103, 76, 0.26);
-  background: rgba(26, 21, 17, 0.985);
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid rgba(125, 139, 156, 0.1);
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .np-terminal-panel-body {
   position: relative;
   z-index: 1;
-  padding: 9px;
+  padding: 16px 18px 18px;
 }
 
 .np-terminal-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgba(212, 165, 74, 0.38) rgba(27, 22, 18, 0.82);
+  scrollbar-color: rgba(216, 160, 74, 0.3) rgba(255, 255, 255, 0.03);
 }
 
 .np-terminal-scroll::-webkit-scrollbar {
@@ -265,12 +246,12 @@ html {
 }
 
 .np-terminal-scroll::-webkit-scrollbar-track {
-  background: rgba(24, 20, 16, 0.96);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .np-terminal-scroll::-webkit-scrollbar-thumb {
-  background: rgba(212, 165, 74, 0.34);
-  border-radius: 0;
+  background: rgba(216, 160, 74, 0.3);
+  border-radius: 999px;
 }
 
 .np-terminal-scroll > *:first-child {
@@ -279,11 +260,11 @@ html {
 
 .np-terminal-row {
   position: relative;
-  transition: background 0.16s ease, border-color 0.16s ease;
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
 }
 
 .np-terminal-row--interactive:hover {
-  background: linear-gradient(90deg, rgba(212, 165, 74, 0.12), rgba(245, 240, 232, 0.025) 56%, transparent 100%);
+  background: linear-gradient(90deg, rgba(216, 160, 74, 0.09), rgba(126, 168, 192, 0.03) 58%, transparent 100%);
 }
 
 .np-terminal-button {
@@ -301,7 +282,7 @@ html {
 .np-terminal-footer-strip {
   position: relative;
   z-index: 1;
-  margin-top: 8px;
+  margin-top: 14px;
 }
 
 .np-terminal-footer-track {
@@ -310,8 +291,9 @@ html {
   grid-auto-columns: max-content;
   gap: 0;
   overflow-x: auto;
-  border: 1px solid var(--np-terminal-border);
-  background: rgba(18, 14, 11, 0.985);
+  border: 1px solid rgba(125, 139, 156, 0.12);
+  background: rgba(13, 17, 23, 0.78);
+  border-radius: 18px;
 }
 
 .np-terminal-footer-title,
@@ -320,15 +302,15 @@ html {
   align-items: center;
   gap: 6px;
   min-width: 0;
-  padding: 9px 10px;
-  border-right: 1px solid rgba(55, 59, 68, 0.92);
+  padding: 12px 14px;
+  border-right: 1px solid rgba(125, 139, 156, 0.1);
 }
 
 .np-terminal-footer-title {
   position: sticky;
   left: 0;
   z-index: 2;
-  background: rgba(24, 19, 15, 0.985);
+  background: rgba(16, 21, 28, 0.92);
 }
 
 .np-terminal-footer-item {
@@ -343,39 +325,97 @@ html {
 }
 
 .np-terminal-footer-item:hover {
-  background: rgba(212, 165, 74, 0.08);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .np-terminal-footer-detail {
   font-size: 10px;
-  color: var(--np-terminal-muted);
+  color: rgba(148, 160, 173, 0.8);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .np-terminal-shell :is(button, a, input, select):focus-visible {
-  outline: 2px solid rgba(212, 165, 74, 0.56);
+  outline: 2px solid rgba(216, 160, 74, 0.42);
   outline-offset: 2px;
 }
 
 .np-terminal-shell input::placeholder {
-  color: rgba(176, 161, 138, 0.58);
+  color: rgba(148, 160, 173, 0.58);
 }
 
 .np-terminal-shell select option {
-  background: #1d1713;
-  color: #f5f0e8;
+  background: #121922;
+  color: #edf1f5;
+}
+
+.np-terminal-rail-left {
+  position: relative;
+}
+
+.np-terminal-spine-nav {
+  display: grid;
+  gap: 6px;
+}
+
+.np-terminal-spine-item {
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+
+.np-terminal-spine-item:hover {
+  transform: translateX(2px);
+}
+
+.np-terminal-tab-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.np-terminal-hero-map {
+  position: relative;
+  overflow: hidden;
+  border-radius: 22px;
+}
+
+.np-terminal-hero-map::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 120px;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent 0%, rgba(8, 12, 17, 0.48) 100%);
+}
+
+.np-terminal-companion-list {
+  display: grid;
+  gap: 0;
+}
+
+.np-terminal-companion-list > *:first-child {
+  border-top: none !important;
+}
+
+.np-terminal-operator-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.np-terminal-operator-section {
+  display: grid;
+  gap: 12px;
 }
 
 @media (min-width: 1200px) {
   .np-terminal-rail-left,
   .np-terminal-rail-right {
     position: sticky;
-    top: 92px;
-    max-height: calc(100vh - 104px);
+    top: 96px;
+    max-height: calc(100vh - 110px);
     overflow-y: auto;
-    padding-right: 2px;
+    padding-right: 4px;
   }
 }
 
@@ -386,7 +426,7 @@ html {
 
   .np-terminal-rail-right {
     grid-column: 1 / -1;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
 }
 
@@ -407,21 +447,19 @@ html {
 
 @media (max-width: 768px) {
   .np-terminal-mainframe {
-    padding: 10px 10px 0;
+    padding: 12px 10px 0;
   }
 
   .np-terminal-panel-header {
-    padding: 8px 9px 7px;
+    padding: 14px 14px 10px;
   }
 
   .np-terminal-panel-body {
-    padding: 9px;
+    padding: 14px;
   }
 
-  .np-terminal-status-cell,
-  .np-terminal-command-card,
-  .np-terminal-command-tile {
-    padding: 8px;
+  .np-terminal-command-card {
+    padding: 12px;
   }
 
   .np-terminal-footer-track {
