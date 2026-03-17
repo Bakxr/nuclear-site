@@ -192,13 +192,26 @@ html {
   backdrop-filter: blur(18px);
 }
 
-.np-terminal-command-card {
+.np-terminal-command-deck {
+  display: grid;
+  grid-template-columns: minmax(250px, 300px) minmax(0, 1fr) minmax(240px, 286px);
+  gap: 0;
   border: 1px solid rgba(125, 139, 156, 0.12);
-  background: rgba(16, 21, 28, 0.76);
-  padding: 14px;
-  align-self: start;
-  border-radius: 18px;
-  backdrop-filter: blur(16px);
+  background: rgba(16, 21, 28, 0.78);
+  border-radius: 22px;
+  overflow: visible;
+  backdrop-filter: blur(18px);
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.18);
+}
+
+.np-terminal-command-zone {
+  position: relative;
+  padding: 14px 16px;
+  min-width: 0;
+}
+
+.np-terminal-command-zone + .np-terminal-command-zone {
+  border-left: 1px solid rgba(125, 139, 156, 0.1);
 }
 
 .np-terminal-command-badge {
@@ -237,20 +250,20 @@ html {
 
 .np-terminal-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgba(216, 160, 74, 0.3) rgba(255, 255, 255, 0.03);
+  scrollbar-color: rgba(125, 139, 156, 0.24) rgba(255, 255, 255, 0.015);
 }
 
 .np-terminal-scroll::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
+  width: 5px;
+  height: 5px;
 }
 
 .np-terminal-scroll::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.015);
 }
 
 .np-terminal-scroll::-webkit-scrollbar-thumb {
-  background: rgba(216, 160, 74, 0.3);
+  background: rgba(125, 139, 156, 0.22);
   border-radius: 999px;
 }
 
@@ -356,7 +369,7 @@ html {
 
 .np-terminal-spine-nav {
   display: grid;
-  gap: 6px;
+  gap: 4px;
 }
 
 .np-terminal-spine-item {
@@ -397,6 +410,21 @@ html {
   border-top: none !important;
 }
 
+.np-terminal-selection-strip {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(240px, 0.8fr);
+  gap: 14px;
+  padding: 14px 18px 18px;
+  border-bottom: 1px solid rgba(125, 139, 156, 0.1);
+}
+
+.np-terminal-selection-card {
+  border: 1px solid rgba(125, 139, 156, 0.12);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 14px 16px;
+}
+
 .np-terminal-operator-tabs {
   display: flex;
   gap: 6px;
@@ -424,6 +452,16 @@ html {
     grid-template-columns: 220px minmax(0, 1fr);
   }
 
+  .np-terminal-command-deck {
+    grid-template-columns: 260px minmax(0, 1fr);
+  }
+
+  .np-terminal-command-zone--actions {
+    grid-column: 1 / -1;
+    border-left: none !important;
+    border-top: 1px solid rgba(125, 139, 156, 0.1);
+  }
+
   .np-terminal-rail-right {
     grid-column: 1 / -1;
     grid-template-columns: 1fr;
@@ -431,6 +469,15 @@ html {
 }
 
 @media (max-width: 980px) {
+  .np-terminal-command-deck {
+    grid-template-columns: 1fr;
+  }
+
+  .np-terminal-command-zone + .np-terminal-command-zone {
+    border-left: none;
+    border-top: 1px solid rgba(125, 139, 156, 0.1);
+  }
+
   .np-terminal-mainframe {
     grid-template-columns: 1fr;
   }
@@ -442,6 +489,10 @@ html {
 
   .np-terminal-rail-left {
     order: -1;
+  }
+
+  .np-terminal-selection-strip {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -458,8 +509,8 @@ html {
     padding: 14px;
   }
 
-  .np-terminal-command-card {
-    padding: 12px;
+  .np-terminal-command-zone {
+    padding: 12px 13px;
   }
 
   .np-terminal-footer-track {

@@ -94,15 +94,8 @@ export default function TerminalCommandBar({
           gap: 10,
         }}
       >
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: isMobileViewport ? "1fr" : "minmax(250px, 316px) minmax(0, 1fr) auto",
-            gap: 10,
-            alignItems: "stretch",
-          }}
-        >
-          <div className="np-terminal-command-card" style={{ display: "grid", gap: 10 }}>
+        <div className="np-terminal-command-deck">
+          <div className="np-terminal-command-zone np-terminal-command-zone--identity" style={{ display: "grid", gap: 10 }}>
             <div style={{ display: "flex", gap: 12, alignItems: "flex-start", minWidth: 0 }}>
               <div
                 style={{
@@ -124,12 +117,12 @@ export default function TerminalCommandBar({
                 NP
               </div>
               <div style={{ minWidth: 0, display: "grid", gap: 4 }}>
-                <div style={terminalLabelStyle("cyan")}>Nuclear Pulse terminal</div>
+                <div style={terminalLabelStyle("cyan")}>Command deck</div>
                 <div style={{ fontSize: 19, lineHeight: 1.05, fontWeight: 700, color: "var(--np-terminal-text)" }}>
                   Operator intelligence
                 </div>
                 <div style={{ fontSize: 11.5, lineHeight: 1.55, ...terminalMutedStyle() }}>
-                  Follow the fleet, see what is live, and route quickly into the next reactor, filing, or source signal.
+                  Follow the fleet, see what is live, and move quickly into the next reactor, filing, or source signal.
                 </div>
               </div>
             </div>
@@ -141,7 +134,7 @@ export default function TerminalCommandBar({
             </div>
           </div>
 
-          <div className="np-terminal-command-card" style={{ position: "relative", minWidth: 0, display: "grid", gap: 10 }}>
+          <div className="np-terminal-command-zone np-terminal-command-zone--search" style={{ position: "relative", minWidth: 0, display: "grid", gap: 10 }}>
             <div style={terminalInputShellStyle()}>
               <span style={terminalLabelStyle("cyan")}>Command</span>
               <span style={{ ...terminalValueStyle({ tone: "amber", size: 13 }) }}>{">"}</span>
@@ -181,7 +174,7 @@ export default function TerminalCommandBar({
               <div
                 style={{
                   position: "absolute",
-                  inset: "calc(100% - 2px) 0 auto 0",
+                  inset: "calc(100% + 8px) 0 auto 0",
                   border: "1px solid rgba(125,139,156,0.18)",
                   borderRadius: 18,
                   background: "rgba(15,20,27,0.98)",
@@ -230,7 +223,7 @@ export default function TerminalCommandBar({
             ) : null}
           </div>
 
-          <div className="np-terminal-command-card" style={{ display: "grid", gap: 10, alignContent: "space-between" }}>
+          <div className="np-terminal-command-zone np-terminal-command-zone--actions" style={{ display: "grid", gap: 10, alignContent: "space-between" }}>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: isMobileViewport ? "flex-start" : "flex-end" }}>
               <button type="button" onClick={onRefreshData} className="np-terminal-button" style={terminalButtonStyle(false, { tone: "cyan" })}>
                 Refresh
@@ -249,7 +242,7 @@ export default function TerminalCommandBar({
                 <ClockBadge label="UTC" tone="cyan" time={formatClock(now, "UTC")} />
               </div>
               <div style={{ fontSize: 10.5, textAlign: isMobileViewport ? "left" : "right", ...terminalMutedStyle() }}>
-                Desk focus follows the active command, search, and selected entity.
+                Search, hotkeys, and selection state stay synchronized across the desk.
               </div>
             </div>
           </div>

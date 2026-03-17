@@ -21,6 +21,44 @@ function formatCompactCapacity(value) {
   return `${Math.round(value).toLocaleString("en-US")} MW`;
 }
 
+function getSelectionSummary(entity) {
+  if (!entity) {
+    return {
+      eyebrow: "Active selection",
+      title: "No active selection",
+      detail: "Choose a country, plant, project, or supply node from the globe or map list to route the rest of the desk.",
+      tone: "cyan",
+      chips: ["Global monitoring", "Awaiting focus"],
+    };
+  }
+
+  if (entity.entityType === "country") {
+    return {
+      eyebrow: "Active selection",
+      title: entity.country,
+      detail: `${entity.reactors} reactors | ${entity.capacityGw.toFixed(1)} GW | ${entity.activeProjects} active projects`,
+      tone: "amber",
+      chips: [entity.entityType, entity.nuclearShare ? `${entity.nuclearShare}% share` : "Country view"],
+    };
+  }
+  if (entity.entityType === "plant") {
+    return {
+      eyebrow: "Active selection",
+      title: entity.name,
+      detail: `${entity.country} | ${entity.normalizedType} | ${entity.capacityMw.toLocaleString("en-US")} MW`,
+      tone: entity.status === "Operating" ? "success" : "warning",
+      chips: [entity.status, entity.entityType],
+    };
+  }
+  return {
+    eyebrow: "Active selection",
+    title: entity.name || entity.title || entity.country,
+    detail: entity.summary || entity.desc || `${entity.entityType}${entity.country ? ` | ${entity.country}` : ""}`,
+    tone: "warning",
+    chips: [entity.entityType, entity.status || entity.stage || entity.tag || "in focus"],
+  };
+}
+
 export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpenPlant }) {
   const {
     snapshot,
@@ -89,6 +127,7 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
         label: stage,
         color: SUPPLY_STAGE_COLORS[stage] || "var(--np-terminal-cyan)",
       }));
+  const selectionSummary = getSelectionSummary(selectedEntity);
 
   const actions = (
     <>
@@ -110,8 +149,8 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
     <TerminalPanel
       panelId="terminal-panel-map"
       emphasis="hero"
-      title="Global fleet nexus"
-      subtitle="Lead with the reactor map, then drill into the country, asset, or signal that matters next."
+      title="Global reactor map"
+      subtitle="Lead with the map, then drill into the country, asset, or signal that matters next."
       actions={actions}
       bodyStyle={{ padding: 0 }}
     >
@@ -163,6 +202,28 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
               <div style={{ fontSize: 10.5, marginTop: 4, ...terminalMutedStyle() }}>
                 {selectedEntity ? `${selectedEntity.entityType} linked across the desk` : "Use the globe to route the rest of the workspace"}
               </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="np-terminal-selection-strip">
+          <div className="np-terminal-selection-card" style={{ display: "grid", gap: 8 }}>
+            <div style={terminalLabelStyle(selectionSummary.tone)}>{selectionSummary.eyebrow}</div>
+            <div style={{ ...terminalValueStyle({ tone: selectionSummary.tone, size: 20 }), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {selectionSummary.title}
+            </div>
+            <div style={{ fontSize: 11.5, lineHeight: 1.6, ...terminalMutedStyle() }}>{selectionSummary.detail}</div>
+          </div>
+          <div className="np-terminal-selection-card" style={{ display: "grid", gap: 10, alignContent: "center" }}>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {selectionSummary.chips.map((chip, index) => (
+                <span key={`${chip}-${index}`} style={terminalTagStyle({ tone: index === 0 ? selectionSummary.tone : "default", compact: true })}>
+                  {chip}
+                </span>
+              ))}
+            </div>
+            <div style={{ fontSize: 10.5, lineHeight: 1.55, ...terminalMutedStyle() }}>
+              Active selection is mirrored in the operator panel and highlighted in the companion list below.
             </div>
           </div>
         </div>
@@ -229,30 +290,6 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
                   <span style={terminalTagStyle({ tone: "cyan", compact: true })}>{visibleCountries} countries</span>
                   {selectedEntity ? <span style={terminalTagStyle({ tone: "warning", compact: true })}>Focus locked</span> : null}
                 </div>
-                <div style={{ position: "absolute", top: 16, right: 16, zIndex: 4, display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end", pointerEvents: "none" }}>
-                  {legendItems.map((item) => (
-                    <span
-                      key={item.label}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 6,
-                        padding: "5px 9px",
-                        borderRadius: 999,
-                        border: "1px solid rgba(125,139,156,0.12)",
-                        background: "rgba(9,13,18,0.48)",
-                        fontSize: 10,
-                        color: "var(--np-terminal-text)",
-                        fontFamily: "'DM Mono',monospace",
-                        letterSpacing: "0.06em",
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      <span style={{ width: 7, height: 7, borderRadius: "50%", background: item.color }} />
-                      {item.label}
-                    </span>
-                  ))}
-                </div>
                 <div style={{ position: "absolute", inset: 0 }}>
                   <Suspense fallback={<div style={{ height: "100%", display: "grid", placeItems: "center", color: "var(--np-terminal-muted)", fontFamily: "'DM Mono',monospace" }}>Loading globe...</div>}>
                     <GlobeView
@@ -265,12 +302,38 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
                     />
                   </Suspense>
                 </div>
-                <div style={{ position: "absolute", left: 16, right: 16, bottom: 16, zIndex: 4, display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", alignItems: "center", pointerEvents: "none" }}>
+                <div style={{ position: "absolute", left: 16, right: 16, bottom: 16, zIndex: 4, display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", alignItems: "flex-end", pointerEvents: "none" }}>
                   <div style={{ fontSize: 11, ...terminalMutedStyle() }}>
                     Rotate the globe to interrogate clusters and push the rest of the desk toward the selected region.
                   </div>
-                  <div style={{ ...terminalValueStyle({ tone: assetTone, size: 12 }) }}>
-                    {state.layer === "reactors" ? "Fleet command surface" : "Fuel-cycle command surface"}
+                  <div style={{ display: "grid", gap: 6, justifyItems: "end" }}>
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                      {legendItems.map((item) => (
+                        <span
+                          key={item.label}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
+                            padding: "5px 9px",
+                            borderRadius: 999,
+                            border: "1px solid rgba(125,139,156,0.12)",
+                            background: "rgba(9,13,18,0.48)",
+                            fontSize: 10,
+                            color: "var(--np-terminal-text)",
+                            fontFamily: "'DM Mono',monospace",
+                            letterSpacing: "0.06em",
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          <span style={{ width: 7, height: 7, borderRadius: "50%", background: item.color }} />
+                          {item.label}
+                        </span>
+                      ))}
+                    </div>
+                    <div style={{ ...terminalValueStyle({ tone: assetTone, size: 12 }) }}>
+                      {state.layer === "reactors" ? "Reactor layer active" : "Fuel-cycle layer active"}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -280,7 +343,7 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
               <div style={{ display: "grid", gap: 10 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
                   <div style={{ minWidth: 0 }}>
-                    <div style={terminalLabelStyle("cyan")}>Operator companion</div>
+                    <div style={terminalLabelStyle("cyan")}>Map list</div>
                     <div style={{ fontSize: 15, fontWeight: 700, color: "var(--np-terminal-text)", marginTop: 4 }}>
                       {companionView === "assets" ? "Assets in view" : "Countries in scope"}
                     </div>
@@ -310,78 +373,86 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
                 }}
               >
                 <div className="np-terminal-scroll np-terminal-companion-list" style={{ ...terminalScrollAreaStyle(isMobileViewport ? 260 : 474), padding: 0 }}>
-                  {companionView === "assets" ? mapItems.slice(0, isMobileViewport ? 9 : 12).map((item, index) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => {
-                        selectEntity(item);
-                        if (item.entityType === "plant") onOpenPlant?.(item);
-                      }}
-                      className="np-terminal-row np-terminal-row--interactive np-terminal-button"
-                      style={{
-                        ...terminalDataRowStyle(),
-                        borderTop: index === 0 ? "none" : terminalDataRowStyle().borderTop,
-                        display: "grid",
-                        gridTemplateColumns: "34px minmax(0,1fr) auto",
-                        gap: 12,
-                        alignItems: "center",
-                        textAlign: "left",
-                        color: "var(--np-terminal-text)",
-                        background: "transparent",
-                        borderLeft: "none",
-                        borderRight: "none",
-                        borderBottom: "none",
-                        cursor: "pointer",
-                        paddingInline: 0,
-                      }}
-                    >
-                      <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 10.5, color: "var(--np-terminal-subtle)" }}>{String(index + 1).padStart(2, "0")}</div>
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontWeight: 700, fontSize: 12.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.name}</div>
-                        <div style={{ fontSize: 10.5, marginTop: 4, ...terminalMutedStyle() }}>
-                          {item.country} | {state.layer === "reactors" ? item.type : item.stage}
+                  {companionView === "assets" ? mapItems.slice(0, isMobileViewport ? 9 : 12).map((item, index) => {
+                    const isActive = selectedEntity?.id === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => {
+                          selectEntity(item);
+                          if (item.entityType === "plant") onOpenPlant?.(item);
+                        }}
+                        className="np-terminal-row np-terminal-row--interactive np-terminal-button"
+                        style={{
+                          ...terminalDataRowStyle(),
+                          borderTop: index === 0 ? "none" : terminalDataRowStyle().borderTop,
+                          display: "grid",
+                          gridTemplateColumns: "34px minmax(0,1fr) auto",
+                          gap: 12,
+                          alignItems: "center",
+                          textAlign: "left",
+                          color: "var(--np-terminal-text)",
+                          background: isActive ? "rgba(216,160,74,0.08)" : "transparent",
+                          borderLeft: "none",
+                          borderRight: "none",
+                          borderBottom: "none",
+                          cursor: "pointer",
+                          paddingInline: 0,
+                          boxShadow: isActive ? "inset 3px 0 0 var(--np-terminal-amber)" : "none",
+                        }}
+                      >
+                        <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 10.5, color: "var(--np-terminal-subtle)" }}>{String(index + 1).padStart(2, "0")}</div>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontWeight: 700, fontSize: 12.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.name}</div>
+                          <div style={{ fontSize: 10.5, marginTop: 4, ...terminalMutedStyle() }}>
+                            {item.country} | {state.layer === "reactors" ? item.type : item.stage}
+                          </div>
                         </div>
-                      </div>
-                      <div style={{ fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700, color: state.layer === "reactors" ? (STATUS_COLORS[item.status] || "var(--np-terminal-amber)") : (SUPPLY_STAGE_COLORS[item.stage] || "var(--np-terminal-cyan)") }}>
-                        {state.layer === "reactors" ? item.status : item.stage}
-                      </div>
-                    </button>
-                  )) : companionCountries.map((country, index) => (
-                    <button
-                      key={country.id}
-                      type="button"
-                      onClick={() => selectEntity(country)}
-                      className="np-terminal-row np-terminal-row--interactive np-terminal-button"
-                      style={{
-                        ...terminalDataRowStyle(),
-                        borderTop: index === 0 ? "none" : terminalDataRowStyle().borderTop,
-                        display: "grid",
-                        gridTemplateColumns: "34px minmax(0,1fr) auto",
-                        gap: 12,
-                        alignItems: "center",
-                        textAlign: "left",
-                        background: "transparent",
-                        borderLeft: "none",
-                        borderRight: "none",
-                        borderBottom: "none",
-                        cursor: "pointer",
-                        color: "var(--np-terminal-text)",
-                        paddingInline: 0,
-                      }}
-                    >
-                      <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 10.5, color: "var(--np-terminal-subtle)" }}>{String(index + 1).padStart(2, "0")}</div>
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontWeight: 700, fontSize: 12.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{country.country}</div>
-                        <div style={{ fontSize: 10.5, marginTop: 4, ...terminalMutedStyle() }}>
-                          {country.reactors} reactors | {country.activeProjects} projects
+                        <div style={{ fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700, color: state.layer === "reactors" ? (STATUS_COLORS[item.status] || "var(--np-terminal-amber)") : (SUPPLY_STAGE_COLORS[item.stage] || "var(--np-terminal-cyan)") }}>
+                          {state.layer === "reactors" ? item.status : item.stage}
                         </div>
-                      </div>
-                      <div style={{ ...terminalValueStyle({ tone: "amber", size: 12 }), textAlign: "right" }}>
-                        {country.capacityGw.toFixed(1)} GW
-                      </div>
-                    </button>
-                  ))}
+                      </button>
+                    );
+                  }) : companionCountries.map((country, index) => {
+                    const isActive = selectedEntity?.id === country.id || selectedEntity?.country === country.country;
+                    return (
+                      <button
+                        key={country.id}
+                        type="button"
+                        onClick={() => selectEntity(country)}
+                        className="np-terminal-row np-terminal-row--interactive np-terminal-button"
+                        style={{
+                          ...terminalDataRowStyle(),
+                          borderTop: index === 0 ? "none" : terminalDataRowStyle().borderTop,
+                          display: "grid",
+                          gridTemplateColumns: "34px minmax(0,1fr) auto",
+                          gap: 12,
+                          alignItems: "center",
+                          textAlign: "left",
+                          background: isActive ? "rgba(216,160,74,0.08)" : "transparent",
+                          borderLeft: "none",
+                          borderRight: "none",
+                          borderBottom: "none",
+                          cursor: "pointer",
+                          color: "var(--np-terminal-text)",
+                          paddingInline: 0,
+                          boxShadow: isActive ? "inset 3px 0 0 var(--np-terminal-amber)" : "none",
+                        }}
+                      >
+                        <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 10.5, color: "var(--np-terminal-subtle)" }}>{String(index + 1).padStart(2, "0")}</div>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontWeight: 700, fontSize: 12.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{country.country}</div>
+                          <div style={{ fontSize: 10.5, marginTop: 4, ...terminalMutedStyle() }}>
+                            {country.reactors} reactors | {country.activeProjects} projects
+                          </div>
+                        </div>
+                        <div style={{ ...terminalValueStyle({ tone: "amber", size: 12 }), textAlign: "right" }}>
+                          {country.capacityGw.toFixed(1)} GW
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -395,7 +466,7 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
                   gap: 8,
                 }}
               >
-                <div style={terminalLabelStyle("amber")}>Current brief</div>
+                <div style={terminalLabelStyle("amber")}>Selection note</div>
                 <div style={{ fontSize: 12.5, lineHeight: 1.65, color: "var(--np-terminal-text)" }}>
                   {selectedEntity
                     ? `The desk is centered on ${selectedEntity.name || selectedEntity.title || selectedEntity.country}. Use the operator panel for filings, operations, and source-level follow-up.`

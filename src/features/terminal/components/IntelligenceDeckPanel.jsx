@@ -25,7 +25,7 @@ function MarketsView({ onOpenStock, isMobileViewport }) {
     <div style={{ display: "grid", gap: 12 }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
         <div>
-          <div style={terminalLabelStyle("cyan")}>Market monitor</div>
+          <div style={terminalLabelStyle("cyan")}>Market context</div>
           <div style={{ fontSize: 11.5, lineHeight: 1.6, marginTop: 5, ...terminalMutedStyle() }}>
             Delayed nuclear watchlist tied to fleets, fuel-cycle exposures, and live catalyst context.
           </div>
@@ -182,7 +182,7 @@ export default function IntelligenceDeckPanel({ activeTab = "markets", onTabChan
   return (
     <TerminalPanel
       panelId="terminal-panel-intelligence"
-      title="Markets and pipeline"
+      title="Supporting intelligence"
       subtitle={subtitle}
       actions={[
         <button key="markets" type="button" onClick={() => onTabChange("markets")} className="np-terminal-button" style={terminalButtonStyle(activeTab === "markets", { compact: true })}>

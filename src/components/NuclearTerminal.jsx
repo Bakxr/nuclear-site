@@ -51,9 +51,9 @@ function LeftRail({ activeDesk, onActivateDesk }) {
     <aside className="np-terminal-rail np-terminal-rail-left">
       <div style={{ display: "grid", gap: 16, padding: "6px 4px" }}>
         <div style={{ display: "grid", gap: 10, paddingBottom: 14, borderBottom: "1px solid rgba(125,139,156,0.1)" }}>
-          <div style={terminalLabelStyle("cyan")}>Control spine</div>
+          <div style={terminalLabelStyle("cyan")}>Navigation</div>
           <div style={{ fontSize: 20, lineHeight: 1.05, fontWeight: 700, color: "var(--np-terminal-text)" }}>
-            Operator desks
+            Operator desk
           </div>
           <div style={{ fontSize: 11.5, lineHeight: 1.6, ...terminalMutedStyle() }}>
             {selectedEntity
@@ -61,9 +61,6 @@ function LeftRail({ activeDesk, onActivateDesk }) {
               : "Start globally, then use the globe and operator panel to narrow the question."}
           </div>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            <span style={terminalTagStyle({ tone: selectedEntity ? "warning" : "cyan", compact: true })}>
-              {selectedEntity ? "Focused" : "Global scope"}
-            </span>
             <span style={terminalTagStyle({ tone: "amber", compact: true })}>{operatingPlants} operating</span>
             <span style={terminalTagStyle({ tone: "success", compact: true })}>{liveSources} live rails</span>
           </div>
@@ -71,9 +68,9 @@ function LeftRail({ activeDesk, onActivateDesk }) {
 
         <div style={{ display: "grid", gap: 8 }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
-            <div style={terminalLabelStyle("amber")}>Desk navigation</div>
+            <div style={terminalLabelStyle("amber")}>Sections</div>
             <span style={terminalTagStyle({ tone: "cyan", compact: true })}>
-              1-6
+              hotkeys
             </span>
           </div>
           <nav className="np-terminal-spine-nav">
@@ -87,40 +84,27 @@ function LeftRail({ activeDesk, onActivateDesk }) {
                   className="np-terminal-button np-terminal-spine-item"
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "30px minmax(0,1fr)",
-                    gap: 12,
+                    gridTemplateColumns: "minmax(0,1fr) auto",
+                    gap: 10,
                     alignItems: "center",
                     width: "100%",
-                    border: `1px solid ${active ? "rgba(216,160,74,0.24)" : "rgba(125,139,156,0.12)"}`,
-                    borderRadius: 16,
-                    background: active ? "rgba(216,160,74,0.08)" : "rgba(255,255,255,0.03)",
+                    border: `1px solid ${active ? "rgba(216,160,74,0.28)" : "transparent"}`,
+                    borderRadius: 14,
+                    background: active ? "rgba(216,160,74,0.08)" : "transparent",
                     color: "var(--np-terminal-text)",
-                    padding: "10px 12px",
+                    padding: "8px 10px",
                     cursor: "pointer",
                     textAlign: "left",
                   }}
                 >
-                  <span
-                    style={{
-                      display: "grid",
-                      placeItems: "center",
-                      minHeight: 24,
-                      borderRadius: 999,
-                      border: `1px solid ${active ? "rgba(216,160,74,0.22)" : "rgba(125,139,156,0.12)"}`,
-                      background: active ? "rgba(216,160,74,0.92)" : "rgba(255,255,255,0.02)",
-                      color: active ? "#11161d" : "var(--np-terminal-subtle)",
-                      fontSize: 10,
-                      fontFamily: "'DM Mono',monospace",
-                      fontWeight: 700,
-                    }}
-                  >
-                    {desk.key}
-                  </span>
-                  <span style={{ display: "grid", gap: 3, minWidth: 0 }}>
-                    <span style={{ fontSize: 12.5, fontWeight: 700 }}>{desk.label}</span>
+                  <span style={{ display: "grid", gap: 2, minWidth: 0 }}>
+                    <span style={{ fontSize: 12.5, fontWeight: active ? 700 : 600, color: active ? "var(--np-terminal-text)" : "rgba(237,241,245,0.8)" }}>{desk.label}</span>
                     <span style={{ fontSize: 10.5, ...terminalMutedStyle() }}>
-                      {desk.id === "map" ? "Hero globe" : desk.id === "filings" ? "Operator panel tab" : "Scroll desk"}
+                      {desk.id === "map" ? "Map" : desk.id === "fuel" ? "Layer" : desk.id === "filings" ? "Right panel" : "Workspace"}
                     </span>
+                  </span>
+                  <span style={{ fontSize: 10.5, fontFamily: "'DM Mono',monospace", color: active ? "var(--np-terminal-amber)" : "var(--np-terminal-subtle)" }}>
+                    {desk.key}
                   </span>
                 </button>
               );
@@ -131,7 +115,7 @@ function LeftRail({ activeDesk, onActivateDesk }) {
         {watchEntities.length ? (
           <div style={{ display: "grid", gap: 8, paddingTop: 14, borderTop: "1px solid rgba(125,139,156,0.1)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
-              <div style={terminalLabelStyle("amber")}>Pinned watchlist</div>
+              <div style={terminalLabelStyle("amber")}>Pinned list</div>
               <span style={terminalTagStyle({ tone: "amber", compact: true })}>{watchEntities.length}</span>
             </div>
             <div style={{ display: "grid", gap: 0 }}>

@@ -222,12 +222,19 @@ function FocusTab({ isMobileViewport }) {
     watchedSet,
   } = useTerminal();
 
-  const title = selectedEntity ? (selectedEntity.name || selectedEntity.title || selectedEntity.country) : "Global workspace";
-  const eyebrow = selectedEntity ? `${selectedEntity.entityType} focus` : "Live context";
+  const title = selectedEntity ? (selectedEntity.name || selectedEntity.title || selectedEntity.country) : "Workspace summary";
+  const eyebrow = selectedEntity ? "Current focus" : "Workspace";
   const body = renderEntityBody(selectedEntity, snapshot);
   const canCompare = selectedEntity && ["country", "plant", "company", "project"].includes(selectedEntity.entityType);
   const facts = buildFocusFacts(selectedEntity, snapshot);
   const metaRows = buildMetaRows(selectedEntity);
+  const connectedStats = [
+    { label: "Markets", value: marketRows.slice(0, 6).length, tone: "cyan" },
+    { label: "Catalysts", value: newsRows.slice(0, 6).length, tone: "success" },
+    { label: "Pipeline", value: pipelineRows.slice(0, 6).length, tone: "amber" },
+    { label: "Filings", value: filingRows.slice(0, 6).length, tone: "warning" },
+    { label: "Ops", value: operationsRows.slice(0, 6).length, tone: "success" },
+  ];
 
   return (
     <div className="np-terminal-operator-section">
@@ -295,20 +302,26 @@ function FocusTab({ isMobileViewport }) {
 
       <CompareQueue compareEntities={compareEntities} toggleCompare={toggleCompare} />
 
-      <div style={{ display: "grid", gap: 10 }}>
-        <div style={terminalLabelStyle("amber")}>Linked surfaces</div>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: isMobileViewport ? "repeat(2, minmax(0,1fr))" : "repeat(5, minmax(0,1fr))",
-            gap: 10,
-          }}
-        >
-          <ContextCell label="Markets" value={marketRows.slice(0, 6).length} tone="cyan" />
-          <ContextCell label="Catalysts" value={newsRows.slice(0, 6).length} tone="success" />
-          <ContextCell label="Pipeline" value={pipelineRows.slice(0, 6).length} tone="amber" />
-          <ContextCell label="Filings" value={filingRows.slice(0, 6).length} tone="warning" />
-          <ContextCell label="Ops" value={operationsRows.slice(0, 6).length} tone="success" />
+      <div style={{ display: "grid", gap: 8 }}>
+        <div style={terminalLabelStyle("amber")}>Connected data</div>
+        <div style={{ display: "grid", gap: 0, padding: "0 16px", border: "1px solid rgba(125,139,156,0.12)", borderRadius: 18, background: "rgba(255,255,255,0.03)" }}>
+          {connectedStats.map((item, index) => (
+            <div
+              key={item.label}
+              className="np-terminal-row"
+              style={{
+                ...terminalDataRowStyle(),
+                borderTop: index === 0 ? "none" : terminalDataRowStyle().borderTop,
+                display: "grid",
+                gridTemplateColumns: "minmax(0,1fr) auto",
+                gap: 10,
+                alignItems: "center",
+              }}
+            >
+              <div style={{ fontSize: 11.5, color: "var(--np-terminal-text)", fontWeight: 600 }}>{item.label}</div>
+              <span style={terminalTagStyle({ tone: item.tone, compact: true })}>{item.value}</span>
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -494,7 +507,7 @@ export default function OperatorPanel({ activeTab = "focus", onTabChange, isMobi
     <TerminalPanel
       panelId="terminal-panel-operator"
       title="Operator panel"
-      subtitle="Entity context, live unit status, filings, and source health stay consolidated here instead of competing as separate side modules."
+      subtitle="Selection details, live unit status, filings, and source health stay consolidated here instead of competing as separate side modules."
       actions={[
         <span key="focus" style={terminalTagStyle({ tone: selectedEntity ? "warning" : "cyan", compact: true })}>
           {selectedEntity ? "Focused" : "Global"}
