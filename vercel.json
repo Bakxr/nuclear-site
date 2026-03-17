@@ -1,4 +1,7 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "installCommand": "npm ci",
   "rewrites": [
     { "source": "/terminal", "destination": "/" },
     { "source": "/api/terminal/entity/:id", "destination": "/api/terminal/entity?id=:id" },
