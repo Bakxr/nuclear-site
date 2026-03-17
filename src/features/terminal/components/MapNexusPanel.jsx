@@ -24,38 +24,38 @@ function formatCompactCapacity(value) {
 function getSelectionSummary(entity) {
   if (!entity) {
     return {
-      eyebrow: "Active selection",
+      eyebrow: "Context",
       title: "No active selection",
-      detail: "Choose a country, plant, project, or supply node from the globe or map list to route the rest of the desk.",
-      tone: "cyan",
-      chips: ["Global monitoring", "Awaiting focus"],
+      detail: "Choose a country, plant, project, or supply node from the globe or list to route the rest of the workspace.",
+      tone: "default",
+      chips: ["Global scope"],
     };
   }
 
   if (entity.entityType === "country") {
     return {
-      eyebrow: "Active selection",
+      eyebrow: "Context",
       title: entity.country,
       detail: `${entity.reactors} reactors | ${entity.capacityGw.toFixed(1)} GW | ${entity.activeProjects} active projects`,
       tone: "amber",
-      chips: [entity.entityType, entity.nuclearShare ? `${entity.nuclearShare}% share` : "Country view"],
+      chips: ["Country", entity.nuclearShare ? `${entity.nuclearShare}% share` : "In scope"],
     };
   }
   if (entity.entityType === "plant") {
     return {
-      eyebrow: "Active selection",
+      eyebrow: "Context",
       title: entity.name,
       detail: `${entity.country} | ${entity.normalizedType} | ${entity.capacityMw.toLocaleString("en-US")} MW`,
       tone: entity.status === "Operating" ? "success" : "warning",
-      chips: [entity.status, entity.entityType],
+      chips: [entity.status, "Plant"],
     };
   }
   return {
-    eyebrow: "Active selection",
+    eyebrow: "Context",
     title: entity.name || entity.title || entity.country,
     detail: entity.summary || entity.desc || `${entity.entityType}${entity.country ? ` | ${entity.country}` : ""}`,
     tone: "warning",
-    chips: [entity.entityType, entity.status || entity.stage || entity.tag || "in focus"],
+    chips: [entity.entityType, entity.status || entity.stage || entity.tag || "In focus"],
   };
 }
 
@@ -150,7 +150,7 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
       panelId="terminal-panel-map"
       emphasis="hero"
       title="Global reactor map"
-      subtitle="Lead with the map, then drill into the country, asset, or signal that matters next."
+      subtitle="Start with the map, then move into the country, asset, or signal that matters next."
       actions={actions}
       bodyStyle={{ padding: 0 }}
     >
@@ -165,65 +165,76 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
           }}
         >
           <label style={{ display: "grid", gap: 6, minWidth: 0 }}>
-            <span style={terminalLabelStyle("cyan")}>Country</span>
-            <select value={state.countryFilter} onChange={(event) => setCountryFilter(event.target.value)} style={terminalSelectStyle(false)}>
+            <span style={terminalLabelStyle()}>Country</span>
+            <select value={state.countryFilter} onChange={(event) => setCountryFilter(event.target.value)} style={terminalSelectStyle({ active: Boolean(state.countryFilter) })}>
               <option value="">All countries</option>
               {availableCountries.map((country) => <option key={country} value={country}>{country}</option>)}
             </select>
           </label>
           <label style={{ display: "grid", gap: 6, minWidth: 0 }}>
-            <span style={terminalLabelStyle("cyan")}>Reactor type</span>
-            <select value={state.reactorTypeFilter} onChange={(event) => setReactorTypeFilter(event.target.value)} disabled={state.layer !== "reactors"} style={terminalSelectStyle(state.layer !== "reactors")}>
+            <span style={terminalLabelStyle()}>Reactor type</span>
+            <select
+              value={state.reactorTypeFilter}
+              onChange={(event) => setReactorTypeFilter(event.target.value)}
+              disabled={state.layer !== "reactors"}
+              style={terminalSelectStyle({ disabled: state.layer !== "reactors", active: Boolean(state.reactorTypeFilter) })}
+            >
               <option value="">All reactor types</option>
               {availableReactorTypes.map((type) => <option key={type} value={type}>{type}</option>)}
             </select>
           </label>
           <label style={{ display: "grid", gap: 6, minWidth: 0 }}>
-            <span style={terminalLabelStyle("cyan")}>Status</span>
-            <select value={state.statusFilter} onChange={(event) => setStatusFilter(event.target.value)} disabled={state.layer !== "reactors"} style={terminalSelectStyle(state.layer !== "reactors")}>
+            <span style={terminalLabelStyle()}>Status</span>
+            <select
+              value={state.statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+              disabled={state.layer !== "reactors"}
+              style={terminalSelectStyle({ disabled: state.layer !== "reactors", active: Boolean(state.statusFilter) })}
+            >
               <option value="">All statuses</option>
               {availableStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
             </select>
           </label>
           <div style={{ display: "grid", gap: 6, minWidth: 0 }}>
-            <span style={terminalLabelStyle("cyan")}>Layer</span>
-            <div style={{ border: "1px solid rgba(125,139,156,0.14)", borderRadius: 14, padding: "10px 12px", background: "rgba(255,255,255,0.03)" }}>
+            <span style={terminalLabelStyle()}>Layer</span>
+            <div style={{ border: "1px solid rgba(125,139,156,0.11)", borderRadius: 14, padding: "10px 12px", background: "rgba(255,255,255,0.02)" }}>
               <div style={{ ...terminalValueStyle({ tone: assetTone, size: 13 }), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                {state.layer === "reactors" ? "Reactor fleet overlay" : "Fuel-cycle overlay"}
+                {state.layer === "reactors" ? "Reactor layer" : "Fuel-cycle layer"}
               </div>
             </div>
           </div>
           <div style={{ display: "grid", gap: 6, minWidth: 0 }}>
-            <span style={terminalLabelStyle("cyan")}>Focus</span>
-            <div style={{ border: "1px solid rgba(125,139,156,0.14)", borderRadius: 14, padding: "10px 12px", background: "rgba(255,255,255,0.03)", minWidth: 0 }}>
+            <span style={terminalLabelStyle()}>Scope</span>
+            <div style={{ border: "1px solid rgba(125,139,156,0.11)", borderRadius: 14, padding: "10px 12px", background: "rgba(255,255,255,0.02)", minWidth: 0 }}>
               <div style={{ fontSize: 13, color: "var(--np-terminal-text)", fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                {selectedEntity ? (selectedEntity.name || selectedEntity.title || selectedEntity.country) : "Global scope"}
+                {selectedEntity ? (selectedEntity.name || selectedEntity.title || selectedEntity.country) : "Global"}
               </div>
               <div style={{ fontSize: 10.5, marginTop: 4, ...terminalMutedStyle() }}>
-                {selectedEntity ? `${selectedEntity.entityType} linked across the desk` : "Use the globe to route the rest of the workspace"}
+                {selectedEntity ? "Selection is mirrored across the workspace" : "Use the map to route the rest of the workspace"}
               </div>
             </div>
           </div>
         </div>
 
         <div className="np-terminal-selection-strip">
-          <div className="np-terminal-selection-card" style={{ display: "grid", gap: 8 }}>
-            <div style={terminalLabelStyle(selectionSummary.tone)}>{selectionSummary.eyebrow}</div>
-            <div style={{ ...terminalValueStyle({ tone: selectionSummary.tone, size: 20 }), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-              {selectionSummary.title}
-            </div>
-            <div style={{ fontSize: 11.5, lineHeight: 1.6, ...terminalMutedStyle() }}>{selectionSummary.detail}</div>
-          </div>
-          <div className="np-terminal-selection-card" style={{ display: "grid", gap: 10, alignContent: "center" }}>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {selectionSummary.chips.map((chip, index) => (
-                <span key={`${chip}-${index}`} style={terminalTagStyle({ tone: index === 0 ? selectionSummary.tone : "default", compact: true })}>
-                  {chip}
-                </span>
-              ))}
-            </div>
-            <div style={{ fontSize: 10.5, lineHeight: 1.55, ...terminalMutedStyle() }}>
-              Active selection is mirrored in the operator panel and highlighted in the companion list below.
+          <div className="np-terminal-selection-card np-terminal-selection-card--compact">
+            <div style={{ display: "grid", gap: 6, minWidth: 0 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+                <div style={{ display: "grid", gap: 4, minWidth: 0 }}>
+                  <div style={terminalLabelStyle(selectionSummary.tone)}>{selectionSummary.eyebrow}</div>
+                  <div style={{ ...terminalValueStyle({ tone: selectionSummary.tone, size: selectedEntity ? 18 : 14 }), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {selectionSummary.title}
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                  {selectionSummary.chips.map((chip, index) => (
+                    <span key={`${chip}-${index}`} style={terminalTagStyle({ tone: selectedEntity && index === 0 ? selectionSummary.tone : "default", compact: true })}>
+                      {chip}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div style={{ fontSize: 10.8, lineHeight: 1.55, ...terminalMutedStyle() }}>{selectionSummary.detail}</div>
             </div>
           </div>
         </div>
@@ -269,8 +280,8 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
                 className="np-terminal-hero-map"
                 style={{
                   minHeight: isMobileViewport ? 380 : 640,
-                  border: "1px solid rgba(125,139,156,0.14)",
-                  background: "radial-gradient(circle at 50% 34%, rgba(61,78,96,0.28) 0%, rgba(16,21,28,0.92) 42%, rgba(9,13,18,1) 100%)",
+                  border: "1px solid rgba(125,139,156,0.11)",
+                  background: "radial-gradient(circle at 50% 34%, rgba(56,70,85,0.26) 0%, rgba(15,20,27,0.9) 42%, rgba(8,12,17,1) 100%)",
                 }}
               >
                 <div
@@ -280,7 +291,7 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
                     pointerEvents: "none",
                     backgroundImage: "linear-gradient(rgba(125,139,156,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(125,139,156,0.06) 1px, transparent 1px)",
                     backgroundSize: "48px 48px",
-                    opacity: 0.3,
+                    opacity: 0.18,
                   }}
                 />
                 <div style={{ position: "absolute", top: 16, left: 16, zIndex: 4, display: "flex", gap: 6, flexWrap: "wrap", pointerEvents: "none" }}>
@@ -299,12 +310,13 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
                       }}
                       plants={mapItems}
                       mode={state.layer}
+                      selectedEntity={selectedEntity}
                     />
                   </Suspense>
                 </div>
                 <div style={{ position: "absolute", left: 16, right: 16, bottom: 16, zIndex: 4, display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", alignItems: "flex-end", pointerEvents: "none" }}>
                   <div style={{ fontSize: 11, ...terminalMutedStyle() }}>
-                    Rotate the globe to interrogate clusters and push the rest of the desk toward the selected region.
+                    Rotate the globe to inspect clusters and route the rest of the workspace toward the selected region.
                   </div>
                   <div style={{ display: "grid", gap: 6, justifyItems: "end" }}>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
@@ -317,8 +329,8 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
                             gap: 6,
                             padding: "5px 9px",
                             borderRadius: 999,
-                            border: "1px solid rgba(125,139,156,0.12)",
-                            background: "rgba(9,13,18,0.48)",
+                            border: "1px solid rgba(125,139,156,0.1)",
+                            background: "rgba(9,13,18,0.42)",
                             fontSize: 10,
                             color: "var(--np-terminal-text)",
                             fontFamily: "'DM Mono',monospace",
@@ -340,10 +352,10 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
             </div>
 
             <div style={{ display: "grid", gap: 14, alignContent: "start", minWidth: 0 }}>
-              <div style={{ display: "grid", gap: 10 }}>
+              <div style={{ display: "grid", gap: 8, paddingTop: 2 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
                   <div style={{ minWidth: 0 }}>
-                    <div style={terminalLabelStyle("cyan")}>Map list</div>
+                    <div style={terminalLabelStyle()}>List view</div>
                     <div style={{ fontSize: 15, fontWeight: 700, color: "var(--np-terminal-text)", marginTop: 4 }}>
                       {companionView === "assets" ? "Assets in view" : "Countries in scope"}
                     </div>
@@ -366,7 +378,7 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
 
               <div
                 style={{
-                  border: "1px solid rgba(125,139,156,0.12)",
+                  border: "1px solid rgba(125,139,156,0.1)",
                   borderRadius: 18,
                   background: "rgba(255,255,255,0.03)",
                   padding: "0 16px",
@@ -458,7 +470,7 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
 
               <div
                 style={{
-                  border: "1px solid rgba(125,139,156,0.12)",
+                  border: "1px solid rgba(125,139,156,0.1)",
                   borderRadius: 18,
                   background: "rgba(255,255,255,0.02)",
                   padding: "14px 16px",
@@ -466,11 +478,11 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
                   gap: 8,
                 }}
               >
-                <div style={terminalLabelStyle("amber")}>Selection note</div>
+                <div style={terminalLabelStyle()}>Workspace note</div>
                 <div style={{ fontSize: 12.5, lineHeight: 1.65, color: "var(--np-terminal-text)" }}>
                   {selectedEntity
-                    ? `The desk is centered on ${selectedEntity.name || selectedEntity.title || selectedEntity.country}. Use the operator panel for filings, operations, and source-level follow-up.`
-                    : "Stay global until the globe or companion list reveals a cluster worth drilling into, then hand off the detail work to the operator panel."}
+                    ? `The workspace is centered on ${selectedEntity.name || selectedEntity.title || selectedEntity.country}. Use the right-side workspace for filings, operations, and source follow-up.`
+                    : "Stay global until the map or list reveals a cluster worth drilling into, then hand off the detail work to the right-side workspace."}
                 </div>
               </div>
             </div>

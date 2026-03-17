@@ -186,22 +186,32 @@ html {
   position: sticky;
   top: 0;
   z-index: 110;
-  background: rgba(10, 15, 20, 0.86);
-  border-bottom: 1px solid rgba(125, 139, 156, 0.12);
-  box-shadow: 0 20px 36px rgba(0, 0, 0, 0.22);
+  background: rgba(9, 13, 18, 0.82);
+  border-bottom: 1px solid rgba(125, 139, 156, 0.1);
+  box-shadow: 0 18px 32px rgba(0, 0, 0, 0.2);
   backdrop-filter: blur(18px);
 }
 
 .np-terminal-command-deck {
+  position: relative;
   display: grid;
-  grid-template-columns: minmax(250px, 300px) minmax(0, 1fr) minmax(240px, 286px);
+  grid-template-columns: minmax(236px, 282px) minmax(0, 1fr) minmax(228px, 270px);
   gap: 0;
-  border: 1px solid rgba(125, 139, 156, 0.12);
-  background: rgba(16, 21, 28, 0.78);
+  border: 1px solid rgba(125, 139, 156, 0.11);
+  background: linear-gradient(180deg, rgba(14, 20, 27, 0.9) 0%, rgba(13, 18, 25, 0.82) 100%);
   border-radius: 22px;
   overflow: visible;
   backdrop-filter: blur(18px);
-  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.16);
+}
+
+.np-terminal-command-deck::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.018) 0%, transparent 24%, transparent 76%, rgba(255, 255, 255, 0.014) 100%);
 }
 
 .np-terminal-command-zone {
@@ -211,7 +221,11 @@ html {
 }
 
 .np-terminal-command-zone + .np-terminal-command-zone {
-  border-left: 1px solid rgba(125, 139, 156, 0.1);
+  border-left: 1px solid rgba(125, 139, 156, 0.08);
+}
+
+.np-terminal-command-zone--search {
+  padding-inline: 18px;
 }
 
 .np-terminal-command-badge {
@@ -219,8 +233,8 @@ html {
   align-items: center;
   gap: 8px;
   min-width: 0;
-  border: 1px solid rgba(125, 139, 156, 0.12);
-  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(125, 139, 156, 0.1);
+  background: rgba(255, 255, 255, 0.022);
   padding: 6px 9px;
   border-radius: 999px;
 }
@@ -238,8 +252,8 @@ html {
   align-items: flex-start;
   flex-wrap: wrap;
   padding: 16px 18px 12px;
-  border-bottom: 1px solid rgba(125, 139, 156, 0.1);
-  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(125, 139, 156, 0.08);
+  background: rgba(255, 255, 255, 0.015);
 }
 
 .np-terminal-panel-body {
@@ -250,7 +264,7 @@ html {
 
 .np-terminal-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgba(125, 139, 156, 0.24) rgba(255, 255, 255, 0.015);
+  scrollbar-color: rgba(125, 139, 156, 0.18) rgba(255, 255, 255, 0.015);
 }
 
 .np-terminal-scroll::-webkit-scrollbar {
@@ -263,7 +277,7 @@ html {
 }
 
 .np-terminal-scroll::-webkit-scrollbar-thumb {
-  background: rgba(125, 139, 156, 0.22);
+  background: rgba(125, 139, 156, 0.18);
   border-radius: 999px;
 }
 
@@ -277,7 +291,7 @@ html {
 }
 
 .np-terminal-row--interactive:hover {
-  background: linear-gradient(90deg, rgba(216, 160, 74, 0.09), rgba(126, 168, 192, 0.03) 58%, transparent 100%);
+  background: linear-gradient(90deg, rgba(216, 160, 74, 0.07), rgba(126, 168, 192, 0.025) 58%, transparent 100%);
 }
 
 .np-terminal-button {
@@ -396,7 +410,7 @@ html {
   content: "";
   position: absolute;
   inset: auto 0 0;
-  height: 120px;
+  height: 104px;
   pointer-events: none;
   background: linear-gradient(180deg, transparent 0%, rgba(8, 12, 17, 0.48) 100%);
 }
@@ -412,17 +426,21 @@ html {
 
 .np-terminal-selection-strip {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(240px, 0.8fr);
-  gap: 14px;
-  padding: 14px 18px 18px;
-  border-bottom: 1px solid rgba(125, 139, 156, 0.1);
+  grid-template-columns: 1fr;
+  gap: 10px;
+  padding: 12px 18px 14px;
+  border-bottom: 1px solid rgba(125, 139, 156, 0.08);
 }
 
 .np-terminal-selection-card {
-  border: 1px solid rgba(125, 139, 156, 0.12);
+  border: 1px solid rgba(125, 139, 156, 0.09);
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.02);
   padding: 14px 16px;
+}
+
+.np-terminal-selection-card--compact {
+  padding: 10px 14px;
 }
 
 .np-terminal-operator-tabs {

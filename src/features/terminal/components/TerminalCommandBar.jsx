@@ -75,7 +75,7 @@ export default function TerminalCommandBar({
     : "Global scope";
   const freshnessItems = useMemo(() => Object.values(snapshot.freshness || {}).slice(0, 3), [snapshot.freshness]);
   const deskStateChips = [
-    { value: activeDeskLabel, tone: "amber" },
+    { value: activeDeskLabel, tone: "default" },
     { value: state.layer === "uranium" ? "Fuel cycle" : "Fleet layer", tone: state.layer === "uranium" ? "cyan" : "default" },
     selectedEntity ? { value: selectedEntity.entityType, tone: "warning" } : null,
     compareEntities.length ? { value: `Compare ${compareEntities.length}`, tone: "cyan" } : null,
@@ -117,12 +117,12 @@ export default function TerminalCommandBar({
                 NP
               </div>
               <div style={{ minWidth: 0, display: "grid", gap: 4 }}>
-                <div style={terminalLabelStyle("cyan")}>Command deck</div>
+                <div style={terminalLabelStyle("cyan")}>Command</div>
                 <div style={{ fontSize: 19, lineHeight: 1.05, fontWeight: 700, color: "var(--np-terminal-text)" }}>
                   Operator intelligence
                 </div>
                 <div style={{ fontSize: 11.5, lineHeight: 1.55, ...terminalMutedStyle() }}>
-                  Follow the fleet, see what is live, and move quickly into the next reactor, filing, or source signal.
+                  Follow fleet status, source health, filings, and market context from one synchronized workspace.
                 </div>
               </div>
             </div>
@@ -242,7 +242,7 @@ export default function TerminalCommandBar({
                 <ClockBadge label="UTC" tone="cyan" time={formatClock(now, "UTC")} />
               </div>
               <div style={{ fontSize: 10.5, textAlign: isMobileViewport ? "left" : "right", ...terminalMutedStyle() }}>
-                Search, hotkeys, and selection state stay synchronized across the desk.
+                Search, hotkeys, and focus stay synchronized across the workspace.
               </div>
             </div>
           </div>

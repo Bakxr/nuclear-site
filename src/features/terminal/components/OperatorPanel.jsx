@@ -15,7 +15,7 @@ import {
 
 function renderEntityBody(entity, snapshot) {
   if (!entity) {
-    return `Track ${snapshot.entities.plants.length} plants, ${snapshot.entities.supplySites.length} supply sites, ${snapshot.entities.marketInstruments.length} equities, and ${snapshot.entities.companyFilings.length} filings from one operator surface.`;
+    return `Track ${snapshot.entities.plants.length} plants, ${snapshot.entities.supplySites.length} supply sites, ${snapshot.entities.marketInstruments.length} equities, and ${snapshot.entities.companyFilings.length} filings from one workspace.`;
   }
   if (entity.entityType === "country") return `${entity.reactors} reactors | ${entity.capacityGw.toFixed(1)} GW | ${entity.nuclearShare ?? 0}% nuclear share | ${entity.activeProjects} active projects`;
   if (entity.entityType === "plant") return `${entity.capacityMw.toLocaleString("en-US")} MW | ${entity.normalizedType} | ${entity.status}`;
@@ -162,11 +162,15 @@ function ContextCell({ label, value, tone }) {
         : tone === "danger"
           ? "var(--np-terminal-red)"
           : "var(--np-terminal-amber)";
+  const valueText = String(value);
+  const isMetricValue = /^[$~]?\d/.test(valueText);
 
   return (
     <div style={terminalMetricTileStyle({ accent })}>
-      <div style={terminalLabelStyle(tone)}>{label}</div>
-      <div style={{ ...terminalValueStyle({ tone, size: 18 }), marginTop: 8 }}>{value}</div>
+      <div style={terminalLabelStyle()}>{label}</div>
+      <div style={{ ...terminalValueStyle({ tone, size: isMetricValue ? 24 : 16 }), marginTop: 10, letterSpacing: isMetricValue ? "-0.02em" : "0" }}>
+        {value}
+      </div>
     </div>
   );
 }
@@ -335,9 +339,9 @@ function OpsTab() {
     <div className="np-terminal-operator-section">
       <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
         <div>
-          <div style={terminalLabelStyle("success")}>Operations pulse</div>
+          <div style={terminalLabelStyle("success")}>Operations</div>
           <div style={{ fontSize: 11.5, lineHeight: 1.6, marginTop: 5, ...terminalMutedStyle() }}>
-            U.S. unit power levels sit here so an operator can scan live performance without losing the current entity context.
+            U.S. unit power levels sit here so the current focus can be checked against live performance without leaving the workspace.
           </div>
         </div>
         <span style={terminalTagStyle({ tone: "success", compact: true })}>{operationsRows.length} units</span>
@@ -387,9 +391,9 @@ function FilingsTab() {
     <div className="np-terminal-operator-section">
       <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
         <div>
-          <div style={terminalLabelStyle("amber")}>Filing radar</div>
+          <div style={terminalLabelStyle("amber")}>Filings</div>
           <div style={{ fontSize: 11.5, lineHeight: 1.6, marginTop: 5, ...terminalMutedStyle() }}>
-            Disclosure flow stays close to the operator so a market or project question can be checked against the latest SEC paper trail.
+            Disclosure flow stays close so a market or project question can be checked against the latest SEC paper trail.
           </div>
         </div>
         <span style={terminalTagStyle({ tone: "amber", compact: true })}>{filingRows.length} filings</span>
@@ -450,9 +454,9 @@ function SourcesTab() {
     <div className="np-terminal-operator-section">
       <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
         <div>
-          <div style={terminalLabelStyle("cyan")}>Source radar</div>
+          <div style={terminalLabelStyle("cyan")}>Sources</div>
           <div style={{ fontSize: 11.5, lineHeight: 1.6, marginTop: 5, ...terminalMutedStyle() }}>
-            This is the quietest view in the desk: source status, access level, and live vs. snapshot posture at a glance.
+            This is the quietest view in the workspace: source status, access level, and live vs. snapshot posture at a glance.
           </div>
         </div>
         <span style={terminalTagStyle({ tone: "success", compact: true })}>{liveCount} live</span>
@@ -506,8 +510,8 @@ export default function OperatorPanel({ activeTab = "focus", onTabChange, isMobi
   return (
     <TerminalPanel
       panelId="terminal-panel-operator"
-      title="Operator panel"
-      subtitle="Selection details, live unit status, filings, and source health stay consolidated here instead of competing as separate side modules."
+      title="Workspace"
+      subtitle="Selection details, live unit status, filings, and source status stay consolidated here instead of competing as separate side modules."
       actions={[
         <span key="focus" style={terminalTagStyle({ tone: selectedEntity ? "warning" : "cyan", compact: true })}>
           {selectedEntity ? "Focused" : "Global"}

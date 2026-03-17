@@ -53,16 +53,16 @@ function LeftRail({ activeDesk, onActivateDesk }) {
         <div style={{ display: "grid", gap: 10, paddingBottom: 14, borderBottom: "1px solid rgba(125,139,156,0.1)" }}>
           <div style={terminalLabelStyle("cyan")}>Navigation</div>
           <div style={{ fontSize: 20, lineHeight: 1.05, fontWeight: 700, color: "var(--np-terminal-text)" }}>
-            Operator desk
+            Workspace
           </div>
           <div style={{ fontSize: 11.5, lineHeight: 1.6, ...terminalMutedStyle() }}>
             {selectedEntity
               ? `Current focus: ${selectedEntity.name || selectedEntity.title || selectedEntity.country}`
-              : "Start globally, then use the globe and operator panel to narrow the question."}
+              : "Start globally, then use the map and workspace to narrow the question."}
           </div>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             <span style={terminalTagStyle({ tone: "amber", compact: true })}>{operatingPlants} operating</span>
-            <span style={terminalTagStyle({ tone: "success", compact: true })}>{liveSources} live rails</span>
+            <span style={terminalTagStyle({ tone: "success", compact: true })}>{liveSources} live sources</span>
           </div>
         </div>
 
@@ -115,7 +115,7 @@ function LeftRail({ activeDesk, onActivateDesk }) {
         {watchEntities.length ? (
           <div style={{ display: "grid", gap: 8, paddingTop: 14, borderTop: "1px solid rgba(125,139,156,0.1)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
-              <div style={terminalLabelStyle("amber")}>Pinned list</div>
+              <div style={terminalLabelStyle("amber")}>Watchlist</div>
               <span style={terminalTagStyle({ tone: "amber", compact: true })}>{watchEntities.length}</span>
             </div>
             <div style={{ display: "grid", gap: 0 }}>

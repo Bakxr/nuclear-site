@@ -22,6 +22,39 @@ function latLngToVector3(lat, lng, radius) {
   );
 }
 
+function getMarkerState(plant, selectedEntity, hoveredPlant) {
+  const selectedId = selectedEntity?.id ?? null;
+  const selectedCountry = selectedEntity?.country ?? null;
+  const isSelected = Boolean(selectedId && plant.id === selectedId);
+  const isHovered = Boolean(hoveredPlant?.id && plant.id === hoveredPlant.id);
+  const isRelatedCountry = Boolean(!isSelected && !isHovered && selectedCountry && plant.country === selectedCountry);
+
+  return { isSelected, isHovered, isRelatedCountry };
+}
+
+function applyMarkerPresentation(marker, ring, state) {
+  if (!marker || !ring) return;
+  const { isSelected, isHovered, isRelatedCountry } = state;
+
+  const markerScale = isSelected ? 1.85 : isHovered ? 1.45 : isRelatedCountry ? 1.18 : 1;
+  marker.scale.setScalar(markerScale);
+  if (marker.material) {
+    marker.material.opacity = isSelected ? 1 : isHovered ? 0.96 : isRelatedCountry ? 0.88 : 0.74;
+    if ("emissiveIntensity" in marker.material) {
+      marker.material.emissiveIntensity = isSelected ? 0.72 : isHovered ? 0.48 : isRelatedCountry ? 0.28 : 0.14;
+    }
+  }
+
+  ring.userData.baseScale = isSelected ? 1.24 : isHovered ? 1.14 : isRelatedCountry ? 1.08 : 1;
+  ring.userData.baseOpacity = isSelected ? 0.3 : isHovered ? 0.18 : isRelatedCountry ? 0.09 : 0.03;
+  ring.userData.pulseStrength = isSelected ? 0.06 : isHovered ? 0.035 : isRelatedCountry ? 0.018 : 0;
+  ring.userData.pulseOpacity = isSelected ? 0.08 : isHovered ? 0.05 : isRelatedCountry ? 0.02 : 0;
+  ring.scale.setScalar(ring.userData.baseScale);
+  if (ring.material) {
+    ring.material.opacity = ring.userData.baseOpacity;
+  }
+}
+
 // Simple topojson decoder (no library needed) — lifted to module level so fetchLand can use it
 function decodeTopojson(topology, object) {
   const arcs = topology.arcs;
@@ -86,7 +119,7 @@ function fetchLand() {
   return landFetchPromise;
 }
 
-export default function Globe({ onSelectPlant, plants, mode = "reactors" }) {
+export default function Globe({ onSelectPlant, plants, mode = "reactors", selectedEntity = null }) {
   const mountRef = useRef(null);
   const cameraRef = useRef(null);
   const canvasRef = useRef(null);
@@ -103,10 +136,13 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors" }) {
   const autoRotateTimer = useRef(null);
   const onSelectPlantRef = useRef(onSelectPlant);
   const modeRef = useRef(mode);
+  const selectedEntityRef = useRef(selectedEntity);
+  const hoveredPlantRef = useRef(hoveredPlant);
 
   // Shared refs between the two effects
   const pivotGroupRef = useRef(null);
   const markersRef = useRef([]);
+  const ringsRef = useRef([]);
 
   useEffect(() => {
     onSelectPlantRef.current = onSelectPlant;
@@ -115,6 +151,14 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors" }) {
   useEffect(() => {
     modeRef.current = mode;
   }, [mode]);
+
+  useEffect(() => {
+    selectedEntityRef.current = selectedEntity;
+  }, [selectedEntity]);
+
+  useEffect(() => {
+    hoveredPlantRef.current = hoveredPlant;
+  }, [hoveredPlant]);
 
   useEffect(() => {
     const onFullscreenChange = () => {
@@ -153,16 +197,16 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors" }) {
 
     // Lights
     scene.add(new THREE.AmbientLight(0xffffff, 0.4));
-    const sun = new THREE.DirectionalLight(0xe6cca3, 0.92);
+    const sun = new THREE.DirectionalLight(0xe1ceb0, 0.84);
     sun.position.set(5, 3, 5);
     scene.add(sun);
-    const rim = new THREE.DirectionalLight(0x7c8f9a, 0.18);
+    const rim = new THREE.DirectionalLight(0x7c8f9a, 0.14);
     rim.position.set(-3, -2, -3);
     scene.add(rim);
 
     // Star field background
     const starsGeom = new THREE.BufferGeometry();
-    const starCount = 1400;
+    const starCount = 900;
     const starPositions = new Float32Array(starCount * 3);
     for (let i = 0; i < starCount; i++) {
       const radius = 9 + Math.random() * 7;
@@ -173,7 +217,7 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors" }) {
       starPositions[i * 3 + 2] = radius * Math.sin(phi) * Math.sin(theta);
     }
     starsGeom.setAttribute("position", new THREE.BufferAttribute(starPositions, 3));
-    const starsMat = new THREE.PointsMaterial({ color: 0xcabda7, size: 0.03, transparent: true, opacity: 0.4 });
+    const starsMat = new THREE.PointsMaterial({ color: 0xbda98b, size: 0.026, transparent: true, opacity: 0.26 });
     const starField = new THREE.Points(starsGeom, starsMat);
     scene.add(starField);
 
@@ -184,7 +228,14 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors" }) {
 
     // Ocean sphere
     const oceanGeom = new THREE.SphereGeometry(0.995, 96, 96);
-    const oceanMat = new THREE.MeshPhongMaterial({ color: 0x16212a, emissive: 0x0e1418, shininess: 56, transparent: true, opacity: 0.98 });
+    const oceanMat = new THREE.MeshPhongMaterial({
+      color: 0x121a23,
+      emissive: 0x0a1117,
+      specular: 0x2b3946,
+      shininess: 30,
+      transparent: true,
+      opacity: 0.97,
+    });
     const ocean = new THREE.Mesh(oceanGeom, oceanMat);
     pivotGroup.add(ocean);
 
@@ -208,15 +259,15 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors" }) {
       ctx.fillRect(0, 0, 2048, 1024);
 
       if (land) {
-        ctx.fillStyle = "#cab38e";
-        ctx.strokeStyle = "#70614d";
+        ctx.fillStyle = "#a79681";
+        ctx.strokeStyle = "#5d564a";
         ctx.lineWidth = 0.5;
         ctx.beginPath();
         path(land);
         ctx.fill();
         ctx.stroke();
 
-        ctx.strokeStyle = "rgba(212,165,74,0.08)";
+        ctx.strokeStyle = "rgba(126,168,192,0.05)";
         ctx.lineWidth = 0.6;
         const graticule = d3.geoGraticule().step([15, 15])();
         ctx.beginPath();
@@ -226,11 +277,18 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors" }) {
         landTexture = new THREE.CanvasTexture(texCanvas);
         landTexture.needsUpdate = true;
         globeGeom = new THREE.SphereGeometry(1, 96, 96);
-        globeMat = new THREE.MeshPhongMaterial({ map: landTexture, transparent: true, shininess: 8 });
+        globeMat = new THREE.MeshPhongMaterial({
+          map: landTexture,
+          color: 0xb8aa95,
+          specular: 0x1f2730,
+          transparent: true,
+          opacity: 0.95,
+          shininess: 10,
+        });
       } else {
         // Fallback: solid color globe
         globeGeom = new THREE.SphereGeometry(1, 64, 64);
-        globeMat = new THREE.MeshPhongMaterial({ color: 0xc8b89a, shininess: 8 });
+        globeMat = new THREE.MeshPhongMaterial({ color: 0xb8aa95, specular: 0x1f2730, shininess: 10 });
       }
       pivotGroup.add(new THREE.Mesh(globeGeom, globeMat));
     });
@@ -239,7 +297,7 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors" }) {
     const atmosGeom = new THREE.SphereGeometry(1.06, 64, 64);
     const atmosMat = new THREE.ShaderMaterial({
       vertexShader: `varying vec3 vNormal; void main(){ vNormal=normalize(normalMatrix*normal); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
-      fragmentShader: `varying vec3 vNormal; void main(){ float intensity=pow(0.65-dot(vNormal,vec3(0.0,0.0,1.0)),3.0); gl_FragColor=vec4(0.50,0.60,0.66,1.0)*intensity*0.28; }`,
+      fragmentShader: `varying vec3 vNormal; void main(){ float intensity=pow(0.68-dot(vNormal,vec3(0.0,0.0,1.0)),3.0); gl_FragColor=vec4(0.46,0.56,0.62,1.0)*intensity*0.22; }`,
       blending: THREE.AdditiveBlending,
       side: THREE.BackSide,
       transparent: true,
@@ -248,9 +306,9 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors" }) {
 
     const haloGeom = new THREE.SphereGeometry(1.12, 64, 64);
     const haloMat = new THREE.MeshBasicMaterial({
-      color: 0xd4a54a,
+      color: 0x7ea8c0,
       transparent: true,
-      opacity: 0.045,
+      opacity: 0.025,
       side: THREE.BackSide,
     });
     scene.add(new THREE.Mesh(haloGeom, haloMat));
@@ -262,17 +320,21 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors" }) {
     const animate = () => {
       frame = requestAnimationFrame(animate);
       if (autoRotate.current && !isDragging.current) {
-        rotation.current.y += 0.0015;
+        rotation.current.y += 0.0011;
       }
       pivotGroup.rotation.x = rotation.current.x;
       pivotGroup.rotation.y = rotation.current.y;
 
       const t = Date.now() * 0.003;
       pivotGroup.children.forEach(ch => {
-        if (ch.userData?.pulse) {
-          const s = 1 + 0.4 * Math.sin(t + ch.userData.phase);
-          ch.scale.set(s, s, s);
-          ch.material.opacity = 0.15 + 0.2 * Math.sin(t + ch.userData.phase);
+        if (ch.userData?.isRing) {
+          const pulseStrength = ch.userData.pulseStrength || 0;
+          const pulseOpacity = ch.userData.pulseOpacity || 0;
+          const phase = ch.userData.phase || 0;
+          const pulse = pulseStrength ? (0.5 + 0.5 * Math.sin(t + phase)) : 0;
+          const scale = (ch.userData.baseScale || 1) + (pulseStrength * pulse);
+          ch.scale.set(scale, scale, scale);
+          ch.material.opacity = (ch.userData.baseOpacity || 0) + (pulseOpacity * pulse);
         }
       });
       renderer.render(scene, camera);
@@ -428,7 +490,7 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors" }) {
     if (!pivotGroup) return;
 
     // Dispose and remove old markers and rings
-    const toRemove = pivotGroup.children.filter(ch => ch.userData?.isMarker || ch.userData?.pulse);
+    const toRemove = pivotGroup.children.filter(ch => ch.userData?.isMarker || ch.userData?.isRing);
     toRemove.forEach(ch => {
       ch.geometry?.dispose();
       ch.material?.dispose();
@@ -437,32 +499,54 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors" }) {
 
     // Add new markers
     const markers = [];
+    const rings = [];
     plants.forEach((plant, i) => {
       const pos = latLngToVector3(plant.lat, plant.lng, 1.015);
       const color = mode === "reactors"
         ? (STATUS_COLORS_HEX[plant.status] ?? STATUS_COLORS_HEX.Shutdown)
         : (SUPPLY_STAGE_COLORS[plant.stage] || "#d4a54a");
 
-      const markerGeom = new THREE.SphereGeometry(mode === "reactors" ? 0.012 : 0.016, 10, 10);
-      const markerMat = new THREE.MeshBasicMaterial({ color });
+      const markerGeom = new THREE.SphereGeometry(mode === "reactors" ? 0.0105 : 0.014, 12, 12);
+      const markerMat = new THREE.MeshPhongMaterial({
+        color,
+        emissive: new THREE.Color(color).multiplyScalar(0.2),
+        shininess: 34,
+        transparent: true,
+        opacity: 0.74,
+      });
       const marker = new THREE.Mesh(markerGeom, markerMat);
       marker.position.copy(pos);
       marker.userData = { plant, index: i, isMarker: true };
       markers.push(marker);
       pivotGroup.add(marker);
 
-      // Glow ring
-      const ringGeom = new THREE.RingGeometry(mode === "reactors" ? 0.014 : 0.018, mode === "reactors" ? 0.024 : 0.032, 16);
-      const ringMat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.3, side: THREE.DoubleSide });
+      // Quiet contextual ring, promoted only on hover or selection.
+      const ringGeom = new THREE.RingGeometry(mode === "reactors" ? 0.014 : 0.018, mode === "reactors" ? 0.021 : 0.028, 22);
+      const ringMat = new THREE.MeshBasicMaterial({
+        color,
+        transparent: true,
+        opacity: 0.03,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      });
       const ring = new THREE.Mesh(ringGeom, ringMat);
       ring.position.copy(pos);
       ring.lookAt(new THREE.Vector3(0, 0, 0));
-      ring.userData.pulse = true;
-      ring.userData.phase = Math.random() * 6.28;
+      ring.userData = {
+        isRing: true,
+        phase: Math.random() * 6.28,
+        baseScale: 1,
+        baseOpacity: 0.03,
+        pulseStrength: 0,
+        pulseOpacity: 0,
+      };
+      rings.push(ring);
       pivotGroup.add(ring);
+      applyMarkerPresentation(marker, ring, getMarkerState(plant, selectedEntityRef.current, hoveredPlantRef.current));
     });
 
     markersRef.current = markers;
+    ringsRef.current = rings;
 
     return () => {
       // Dispose marker GPU resources on re-run or unmount
@@ -472,8 +556,19 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors" }) {
         m.geometry?.dispose();
         m.material?.dispose();
       });
+      rings.forEach(ring => {
+        ring.geometry?.dispose();
+        ring.material?.dispose();
+      });
     };
   }, [plants, mode]);
+
+  useEffect(() => {
+    markersRef.current.forEach((marker, index) => {
+      const ring = ringsRef.current[index];
+      applyMarkerPresentation(marker, ring, getMarkerState(marker.userData.plant, selectedEntity, hoveredPlant));
+    });
+  }, [hoveredPlant, selectedEntity]);
 
   function setCameraZoom(nextZ) {
     const camera = cameraRef.current;
