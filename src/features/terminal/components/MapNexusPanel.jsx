@@ -77,6 +77,8 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
     selectEntity,
   } = useTerminal();
   const [companionView, setCompanionView] = useState("assets");
+  const [hoveredMapItemId, setHoveredMapItemId] = useState(null);
+  const [hoveredGlobeItemId, setHoveredGlobeItemId] = useState(null);
 
   const GlobeView = GlobeComponent;
   const assetTone = state.layer === "reactors" ? "amber" : "cyan";
@@ -97,26 +99,35 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
       value: fleetScopePlants.filter((plant) => plant.status === "Operating").length,
       detail: `${snapshot.entities.reactorUnits.length} tracked units`,
       tone: "amber",
+      emphasis: "primary",
+      valueSize: 27,
     },
     {
       label: "Visible capacity",
       value: formatCompactCapacity(fleetScopePlants.reduce((total, plant) => total + (plant.capacityMw || 0), 0)),
       detail: state.countryFilter ? `${state.countryFilter} scope` : "Global reactor scope",
       tone: "cyan",
+      emphasis: "secondary",
+      valueSize: 24,
     },
     {
       label: "Countries in scope",
       value: visibleCountries,
       detail: state.layer === "uranium" ? "Fuel-cycle footprint" : "Reactor footprint",
       tone: "success",
+      emphasis: "default",
+      valueSize: 20,
     },
     {
       label: "Construction watch",
       value: fleetScopePlants.filter((plant) => plant.status === "Construction").length,
       detail: "Buildout projects requiring follow-up",
       tone: "warning",
+      emphasis: "default",
+      valueSize: 20,
     },
   ];
+  const activeMapFocusId = hoveredMapItemId || hoveredGlobeItemId;
 
   const legendItems = state.layer === "reactors"
     ? [...new Set(mapItems.map((item) => item.status))].slice(0, 4).map((status) => ({
@@ -160,8 +171,8 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
             display: "grid",
             gridTemplateColumns: isMobileViewport ? "repeat(2, minmax(0,1fr))" : "repeat(4, minmax(0,1fr)) minmax(220px,0.95fr)",
             gap: 10,
-            padding: "0 18px 18px",
-            borderBottom: state.mapCollapsed ? "none" : "1px solid rgba(125,139,156,0.1)",
+            padding: "0 18px 14px",
+            borderBottom: state.mapCollapsed ? "none" : "1px solid rgba(125,139,156,0.08)",
           }}
         >
           <label style={{ display: "grid", gap: 6, minWidth: 0 }}>
@@ -244,16 +255,16 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
             style={{
               display: "grid",
               gridTemplateColumns: isMobileViewport ? "1fr" : "minmax(0,1.78fr) minmax(290px,0.76fr)",
-              gap: 18,
-              padding: "18px",
+              gap: 14,
+              padding: "14px 18px 18px",
             }}
           >
-            <div style={{ display: "grid", gap: 14, minWidth: 0 }}>
+            <div style={{ display: "grid", gap: 12, minWidth: 0 }}>
               <div
                 style={{
                   display: "grid",
                   gridTemplateColumns: isMobileViewport ? "repeat(2, minmax(0,1fr))" : "repeat(4, minmax(0,1fr))",
-                  gap: 10,
+                  gap: 8,
                 }}
               >
                 {headlineMetrics.map((metric) => (
@@ -264,14 +275,19 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
                         ? "var(--np-terminal-cyan)"
                         : metric.tone === "success"
                           ? "var(--np-terminal-green)"
-                          : metric.tone === "warning"
+                        : metric.tone === "warning"
                             ? "var(--np-terminal-yellow)"
                             : "var(--np-terminal-amber)",
+                      emphasis: metric.emphasis,
                     })}
                   >
-                    <div style={terminalLabelStyle(metric.tone)}>{metric.label}</div>
-                    <div style={{ ...terminalValueStyle({ tone: metric.tone, size: 22 }), marginTop: 8 }}>{metric.value}</div>
-                    <div style={{ fontSize: 10.5, lineHeight: 1.5, marginTop: 6, ...terminalMutedStyle() }}>{metric.detail}</div>
+                    <div style={terminalLabelStyle(metric.emphasis === "default" ? "default" : metric.tone)}>{metric.label}</div>
+                    <div style={{ ...terminalValueStyle({ tone: metric.tone, size: metric.valueSize }), marginTop: metric.emphasis === "primary" ? 10 : 8, letterSpacing: metric.emphasis === "primary" ? "-0.02em" : "0" }}>
+                      {metric.value}
+                    </div>
+                    <div style={{ fontSize: 10.5, lineHeight: 1.5, marginTop: metric.emphasis === "primary" ? 8 : 6, color: metric.emphasis === "primary" ? "rgba(148,160,173,0.9)" : undefined, ...terminalMutedStyle() }}>
+                      {metric.detail}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -280,8 +296,8 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
                 className="np-terminal-hero-map"
                 style={{
                   minHeight: isMobileViewport ? 380 : 640,
-                  border: "1px solid rgba(125,139,156,0.11)",
-                  background: "radial-gradient(circle at 50% 34%, rgba(56,70,85,0.26) 0%, rgba(15,20,27,0.9) 42%, rgba(8,12,17,1) 100%)",
+                  border: "1px solid rgba(125,139,156,0.1)",
+                  background: "radial-gradient(circle at 50% 36%, rgba(60,75,90,0.22) 0%, rgba(15,20,27,0.88) 42%, rgba(8,12,17,1) 100%)",
                 }}
               >
                 <div
@@ -291,7 +307,7 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
                     pointerEvents: "none",
                     backgroundImage: "linear-gradient(rgba(125,139,156,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(125,139,156,0.06) 1px, transparent 1px)",
                     backgroundSize: "48px 48px",
-                    opacity: 0.18,
+                    opacity: 0.12,
                   }}
                 />
                 <div style={{ position: "absolute", top: 16, left: 16, zIndex: 4, display: "flex", gap: 6, flexWrap: "wrap", pointerEvents: "none" }}>
@@ -308,9 +324,11 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
                         selectEntity(item);
                         if (item?.entityType === "plant") onOpenPlant?.(item);
                       }}
+                      onHoverPlant={(item) => setHoveredGlobeItemId(item?.id ?? null)}
                       plants={mapItems}
                       mode={state.layer}
                       selectedEntity={selectedEntity}
+                      highlightedEntityId={activeMapFocusId}
                     />
                   </Suspense>
                 </div>
@@ -329,10 +347,10 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
                             gap: 6,
                             padding: "5px 9px",
                             borderRadius: 999,
-                            border: "1px solid rgba(125,139,156,0.1)",
-                            background: "rgba(9,13,18,0.42)",
-                            fontSize: 10,
-                            color: "var(--np-terminal-text)",
+                            border: "1px solid rgba(125,139,156,0.08)",
+                            background: "rgba(9,13,18,0.34)",
+                            fontSize: 9.5,
+                            color: "rgba(237,241,245,0.82)",
                             fontFamily: "'DM Mono',monospace",
                             letterSpacing: "0.06em",
                             textTransform: "uppercase",
@@ -351,8 +369,8 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
               </div>
             </div>
 
-            <div style={{ display: "grid", gap: 14, alignContent: "start", minWidth: 0 }}>
-              <div style={{ display: "grid", gap: 8, paddingTop: 2 }}>
+            <div style={{ display: "grid", gap: 12, alignContent: "start", minWidth: 0 }}>
+              <div style={{ display: "grid", gap: 8 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
                   <div style={{ minWidth: 0 }}>
                     <div style={terminalLabelStyle()}>List view</div>
@@ -387,6 +405,7 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
                 <div className="np-terminal-scroll np-terminal-companion-list" style={{ ...terminalScrollAreaStyle(isMobileViewport ? 260 : 474), padding: 0 }}>
                   {companionView === "assets" ? mapItems.slice(0, isMobileViewport ? 9 : 12).map((item, index) => {
                     const isActive = selectedEntity?.id === item.id;
+                    const isLinked = !isActive && activeMapFocusId === item.id;
                     return (
                       <button
                         key={item.id}
@@ -395,6 +414,8 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
                           selectEntity(item);
                           if (item.entityType === "plant") onOpenPlant?.(item);
                         }}
+                        onMouseEnter={() => setHoveredMapItemId(item.id)}
+                        onMouseLeave={() => setHoveredMapItemId(null)}
                         className="np-terminal-row np-terminal-row--interactive np-terminal-button"
                         style={{
                           ...terminalDataRowStyle(),
@@ -405,13 +426,13 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
                           alignItems: "center",
                           textAlign: "left",
                           color: "var(--np-terminal-text)",
-                          background: isActive ? "rgba(216,160,74,0.08)" : "transparent",
+                          background: isActive ? "rgba(216,160,74,0.08)" : isLinked ? "rgba(126,168,192,0.06)" : "transparent",
                           borderLeft: "none",
                           borderRight: "none",
                           borderBottom: "none",
                           cursor: "pointer",
                           paddingInline: 0,
-                          boxShadow: isActive ? "inset 3px 0 0 var(--np-terminal-amber)" : "none",
+                          boxShadow: isActive ? "inset 3px 0 0 var(--np-terminal-amber)" : isLinked ? "inset 2px 0 0 var(--np-terminal-cyan)" : "none",
                         }}
                       >
                         <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 10.5, color: "var(--np-terminal-subtle)" }}>{String(index + 1).padStart(2, "0")}</div>

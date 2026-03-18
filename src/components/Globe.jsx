@@ -22,33 +22,34 @@ function latLngToVector3(lat, lng, radius) {
   );
 }
 
-function getMarkerState(plant, selectedEntity, hoveredPlant) {
+function getMarkerState(plant, selectedEntity, hoveredPlant, highlightedEntityId) {
   const selectedId = selectedEntity?.id ?? null;
   const selectedCountry = selectedEntity?.country ?? null;
   const isSelected = Boolean(selectedId && plant.id === selectedId);
   const isHovered = Boolean(hoveredPlant?.id && plant.id === hoveredPlant.id);
-  const isRelatedCountry = Boolean(!isSelected && !isHovered && selectedCountry && plant.country === selectedCountry);
+  const isLinkedHighlight = Boolean(!isSelected && !isHovered && highlightedEntityId && plant.id === highlightedEntityId);
+  const isRelatedCountry = Boolean(!isSelected && !isHovered && !isLinkedHighlight && selectedCountry && plant.country === selectedCountry);
 
-  return { isSelected, isHovered, isRelatedCountry };
+  return { isSelected, isHovered, isLinkedHighlight, isRelatedCountry };
 }
 
 function applyMarkerPresentation(marker, ring, state) {
   if (!marker || !ring) return;
-  const { isSelected, isHovered, isRelatedCountry } = state;
+  const { isSelected, isHovered, isLinkedHighlight, isRelatedCountry } = state;
 
-  const markerScale = isSelected ? 1.85 : isHovered ? 1.45 : isRelatedCountry ? 1.18 : 1;
+  const markerScale = isSelected ? 1.72 : isHovered ? 1.4 : isLinkedHighlight ? 1.26 : isRelatedCountry ? 1.14 : 0.98;
   marker.scale.setScalar(markerScale);
   if (marker.material) {
-    marker.material.opacity = isSelected ? 1 : isHovered ? 0.96 : isRelatedCountry ? 0.88 : 0.74;
+    marker.material.opacity = isSelected ? 1 : isHovered ? 0.94 : isLinkedHighlight ? 0.9 : isRelatedCountry ? 0.84 : 0.62;
     if ("emissiveIntensity" in marker.material) {
-      marker.material.emissiveIntensity = isSelected ? 0.72 : isHovered ? 0.48 : isRelatedCountry ? 0.28 : 0.14;
+      marker.material.emissiveIntensity = isSelected ? 0.5 : isHovered ? 0.34 : isLinkedHighlight ? 0.26 : isRelatedCountry ? 0.18 : 0.08;
     }
   }
 
-  ring.userData.baseScale = isSelected ? 1.24 : isHovered ? 1.14 : isRelatedCountry ? 1.08 : 1;
-  ring.userData.baseOpacity = isSelected ? 0.3 : isHovered ? 0.18 : isRelatedCountry ? 0.09 : 0.03;
-  ring.userData.pulseStrength = isSelected ? 0.06 : isHovered ? 0.035 : isRelatedCountry ? 0.018 : 0;
-  ring.userData.pulseOpacity = isSelected ? 0.08 : isHovered ? 0.05 : isRelatedCountry ? 0.02 : 0;
+  ring.userData.baseScale = isSelected ? 1.14 : isHovered ? 1.09 : isLinkedHighlight ? 1.06 : isRelatedCountry ? 1.03 : 1;
+  ring.userData.baseOpacity = isSelected ? 0.16 : isHovered ? 0.1 : isLinkedHighlight ? 0.07 : isRelatedCountry ? 0.05 : 0.016;
+  ring.userData.pulseStrength = isSelected ? 0.035 : isHovered ? 0.022 : isLinkedHighlight ? 0.014 : isRelatedCountry ? 0.01 : 0;
+  ring.userData.pulseOpacity = isSelected ? 0.035 : isHovered ? 0.024 : isLinkedHighlight ? 0.014 : isRelatedCountry ? 0.01 : 0;
   ring.scale.setScalar(ring.userData.baseScale);
   if (ring.material) {
     ring.material.opacity = ring.userData.baseOpacity;
@@ -119,7 +120,14 @@ function fetchLand() {
   return landFetchPromise;
 }
 
-export default function Globe({ onSelectPlant, plants, mode = "reactors", selectedEntity = null }) {
+export default function Globe({
+  onSelectPlant,
+  onHoverPlant,
+  plants,
+  mode = "reactors",
+  selectedEntity = null,
+  highlightedEntityId = null,
+}) {
   const mountRef = useRef(null);
   const cameraRef = useRef(null);
   const canvasRef = useRef(null);
@@ -135,9 +143,11 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors", select
   const autoRotate = useRef(true);
   const autoRotateTimer = useRef(null);
   const onSelectPlantRef = useRef(onSelectPlant);
+  const onHoverPlantRef = useRef(onHoverPlant);
   const modeRef = useRef(mode);
   const selectedEntityRef = useRef(selectedEntity);
   const hoveredPlantRef = useRef(hoveredPlant);
+  const highlightedEntityIdRef = useRef(highlightedEntityId);
 
   // Shared refs between the two effects
   const pivotGroupRef = useRef(null);
@@ -147,6 +157,10 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors", select
   useEffect(() => {
     onSelectPlantRef.current = onSelectPlant;
   }, [onSelectPlant]);
+
+  useEffect(() => {
+    onHoverPlantRef.current = onHoverPlant;
+  }, [onHoverPlant]);
 
   useEffect(() => {
     modeRef.current = mode;
@@ -159,6 +173,10 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors", select
   useEffect(() => {
     hoveredPlantRef.current = hoveredPlant;
   }, [hoveredPlant]);
+
+  useEffect(() => {
+    highlightedEntityIdRef.current = highlightedEntityId;
+  }, [highlightedEntityId]);
 
   useEffect(() => {
     const onFullscreenChange = () => {
@@ -197,10 +215,10 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors", select
 
     // Lights
     scene.add(new THREE.AmbientLight(0xffffff, 0.4));
-    const sun = new THREE.DirectionalLight(0xe1ceb0, 0.84);
+    const sun = new THREE.DirectionalLight(0xe1ceb0, 0.78);
     sun.position.set(5, 3, 5);
     scene.add(sun);
-    const rim = new THREE.DirectionalLight(0x7c8f9a, 0.14);
+    const rim = new THREE.DirectionalLight(0x7c8f9a, 0.1);
     rim.position.set(-3, -2, -3);
     scene.add(rim);
 
@@ -217,7 +235,7 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors", select
       starPositions[i * 3 + 2] = radius * Math.sin(phi) * Math.sin(theta);
     }
     starsGeom.setAttribute("position", new THREE.BufferAttribute(starPositions, 3));
-    const starsMat = new THREE.PointsMaterial({ color: 0xbda98b, size: 0.026, transparent: true, opacity: 0.26 });
+    const starsMat = new THREE.PointsMaterial({ color: 0xbda98b, size: 0.022, transparent: true, opacity: 0.18 });
     const starField = new THREE.Points(starsGeom, starsMat);
     scene.add(starField);
 
@@ -232,7 +250,7 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors", select
       color: 0x121a23,
       emissive: 0x0a1117,
       specular: 0x2b3946,
-      shininess: 30,
+      shininess: 24,
       transparent: true,
       opacity: 0.97,
     });
@@ -259,15 +277,15 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors", select
       ctx.fillRect(0, 0, 2048, 1024);
 
       if (land) {
-        ctx.fillStyle = "#a79681";
-        ctx.strokeStyle = "#5d564a";
+        ctx.fillStyle = "#a19687";
+        ctx.strokeStyle = "#5a554c";
         ctx.lineWidth = 0.5;
         ctx.beginPath();
         path(land);
         ctx.fill();
         ctx.stroke();
 
-        ctx.strokeStyle = "rgba(126,168,192,0.05)";
+        ctx.strokeStyle = "rgba(126,168,192,0.04)";
         ctx.lineWidth = 0.6;
         const graticule = d3.geoGraticule().step([15, 15])();
         ctx.beginPath();
@@ -282,8 +300,8 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors", select
           color: 0xb8aa95,
           specular: 0x1f2730,
           transparent: true,
-          opacity: 0.95,
-          shininess: 10,
+          opacity: 0.93,
+          shininess: 8,
         });
       } else {
         // Fallback: solid color globe
@@ -297,7 +315,7 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors", select
     const atmosGeom = new THREE.SphereGeometry(1.06, 64, 64);
     const atmosMat = new THREE.ShaderMaterial({
       vertexShader: `varying vec3 vNormal; void main(){ vNormal=normalize(normalMatrix*normal); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
-      fragmentShader: `varying vec3 vNormal; void main(){ float intensity=pow(0.68-dot(vNormal,vec3(0.0,0.0,1.0)),3.0); gl_FragColor=vec4(0.46,0.56,0.62,1.0)*intensity*0.22; }`,
+      fragmentShader: `varying vec3 vNormal; void main(){ float intensity=pow(0.7-dot(vNormal,vec3(0.0,0.0,1.0)),3.0); gl_FragColor=vec4(0.46,0.56,0.62,1.0)*intensity*0.17; }`,
       blending: THREE.AdditiveBlending,
       side: THREE.BackSide,
       transparent: true,
@@ -308,7 +326,7 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors", select
     const haloMat = new THREE.MeshBasicMaterial({
       color: 0x7ea8c0,
       transparent: true,
-      opacity: 0.025,
+      opacity: 0.014,
       side: THREE.BackSide,
     });
     scene.add(new THREE.Mesh(haloGeom, haloMat));
@@ -365,10 +383,12 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors", select
       const hits = raycaster.intersectObjects(markersRef.current);
       if (hits.length > 0) {
         setHoveredPlant(hits[0].object.userData.plant);
+        onHoverPlantRef.current?.(hits[0].object.userData.plant);
         setTooltip({ visible: true, x: e.clientX - rect.left, y: e.clientY - rect.top });
         mount.style.cursor = "pointer";
       } else {
         setHoveredPlant(null);
+        onHoverPlantRef.current?.(null);
         setTooltip(prev => ({ ...prev, visible: false }));
         mount.style.cursor = isDragging.current ? "grabbing" : "grab";
       }
@@ -542,7 +562,7 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors", select
       };
       rings.push(ring);
       pivotGroup.add(ring);
-      applyMarkerPresentation(marker, ring, getMarkerState(plant, selectedEntityRef.current, hoveredPlantRef.current));
+      applyMarkerPresentation(marker, ring, getMarkerState(plant, selectedEntityRef.current, hoveredPlantRef.current, highlightedEntityIdRef.current));
     });
 
     markersRef.current = markers;
@@ -566,9 +586,9 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors", select
   useEffect(() => {
     markersRef.current.forEach((marker, index) => {
       const ring = ringsRef.current[index];
-      applyMarkerPresentation(marker, ring, getMarkerState(marker.userData.plant, selectedEntity, hoveredPlant));
+      applyMarkerPresentation(marker, ring, getMarkerState(marker.userData.plant, selectedEntity, hoveredPlant, highlightedEntityId));
     });
-  }, [hoveredPlant, selectedEntity]);
+  }, [highlightedEntityId, hoveredPlant, selectedEntity]);
 
   function setCameraZoom(nextZ) {
     const camera = cameraRef.current;
@@ -582,6 +602,7 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors", select
     rotation.current = { x: 0.3, y: -1.0 };
     autoRotate.current = true;
     setHoveredPlant(null);
+    onHoverPlantRef.current?.(null);
     setTooltip((prev) => ({ ...prev, visible: false }));
     setCameraZoom(CAMERA_DEFAULT_Z);
   }
@@ -589,6 +610,7 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors", select
   function disengage() {
     setIsInteractive(false);
     setHoveredPlant(null);
+    onHoverPlantRef.current?.(null);
     setTooltip((prev) => ({ ...prev, visible: false }));
   }
 
@@ -605,13 +627,13 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors", select
   }
 
   const controlButtonStyle = {
-    border: "1px solid rgba(122,103,76,0.4)",
-    background: "rgba(24,19,15,0.84)",
-    color: "#f5f0e8",
+    border: "1px solid rgba(125,139,156,0.14)",
+    background: "rgba(10,14,19,0.76)",
+    color: "rgba(237,241,245,0.88)",
     fontFamily: "'DM Mono',monospace",
     fontWeight: 700,
     cursor: "pointer",
-    backdropFilter: "blur(8px)",
+    backdropFilter: "blur(10px)",
     boxShadow: "none",
   };
 
@@ -736,9 +758,9 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors", select
         gap: 10,
         padding: "9px 12px",
         borderRadius: 2,
-        background: "rgba(24,19,15,0.8)",
-        border: "1px solid rgba(122,103,76,0.38)",
-        color: "rgba(245,240,232,0.82)",
+        background: "rgba(10,14,19,0.72)",
+        border: "1px solid rgba(125,139,156,0.12)",
+        color: "rgba(237,241,245,0.78)",
         fontSize: 11,
         fontWeight: 700,
         letterSpacing: "0.08em",
@@ -760,9 +782,9 @@ export default function Globe({ onSelectPlant, plants, mode = "reactors", select
           position: "absolute",
           left: `clamp(12px, ${tooltip.x + 14}px, calc(100% - 252px))`,
           top: Math.max(12, tooltip.y - 10),
-          background: "rgba(24,19,15,0.96)", color: "#f5f0e8", padding: "12px 16px", borderRadius: 2,
+          background: "rgba(10,14,19,0.94)", color: "#f5f0e8", padding: "12px 16px", borderRadius: 2,
           fontSize: 13, fontFamily: "'DM Sans',sans-serif", pointerEvents: "none", zIndex: 10,
-          border: "1px solid rgba(122,103,76,0.42)", maxWidth: "min(240px, calc(100% - 24px))", lineHeight: 1.4,
+          border: "1px solid rgba(125,139,156,0.14)", maxWidth: "min(240px, calc(100% - 24px))", lineHeight: 1.4,
           backdropFilter: "blur(8px)", boxShadow: "0 8px 28px rgba(0,0,0,0.28)",
         }}>
           <div style={{ fontWeight: 700, fontSize: 15 }}>{hoveredPlant.name}</div>

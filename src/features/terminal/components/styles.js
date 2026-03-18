@@ -43,10 +43,10 @@ function resolveTone(tone = "default") {
     };
   }
   return {
-    border: "rgba(125,139,156,0.2)",
-    borderSoft: "rgba(125,139,156,0.12)",
-    background: "rgba(255,255,255,0.03)",
-    color: TERMINAL_TEXT,
+    border: "rgba(125,139,156,0.16)",
+    borderSoft: "rgba(125,139,156,0.09)",
+    background: "rgba(255,255,255,0.02)",
+    color: "rgba(237,241,245,0.78)",
   };
 }
 
@@ -134,14 +134,27 @@ export function terminalPillStyle(color = TERMINAL_TEXT) {
   return terminalTagStyle({ tone });
 }
 
-export function terminalMetricTileStyle({ accent = "var(--np-terminal-amber)" } = {}) {
+export function terminalMetricTileStyle({ accent = "var(--np-terminal-amber)", emphasis = "default" } = {}) {
+  const border = emphasis === "primary"
+    ? "rgba(125,139,156,0.16)"
+    : emphasis === "secondary"
+      ? "rgba(125,139,156,0.13)"
+      : "rgba(125,139,156,0.1)";
+  const background = emphasis === "primary"
+    ? "linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.024) 100%)"
+    : emphasis === "secondary"
+      ? "linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%)"
+      : "linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.016) 100%)";
+
   return {
     minWidth: 0,
     borderRadius: 16,
-    border: "1px solid rgba(125,139,156,0.12)",
-    background: "linear-gradient(180deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.018) 100%)",
-    padding: "14px 15px",
-    boxShadow: `inset 0 1px 0 rgba(255,255,255,0.03), inset 0 2px 0 ${accent}`,
+    border: `1px solid ${border}`,
+    background,
+    padding: emphasis === "primary" ? "15px 16px" : "14px 15px",
+    boxShadow: emphasis === "primary"
+      ? `inset 0 1px 0 rgba(255,255,255,0.04), inset 0 2px 0 ${accent}, 0 10px 22px rgba(0,0,0,0.12)`
+      : `inset 0 1px 0 rgba(255,255,255,0.03), inset 0 2px 0 ${accent}`,
   };
 }
 
@@ -175,9 +188,9 @@ export function terminalSelectStyle(disabledOrOptions = false) {
     width: "100%",
     minWidth: 0,
     borderRadius: 12,
-    border: `1px solid ${active ? "rgba(125,139,156,0.18)" : "rgba(125,139,156,0.11)"}`,
-    background: disabled ? "rgba(255,255,255,0.015)" : active ? "rgba(255,255,255,0.035)" : "rgba(255,255,255,0.02)",
-    color: disabled ? "rgba(148,160,176,0.44)" : active ? TERMINAL_TEXT : "rgba(237,241,245,0.72)",
+    border: `1px solid ${active ? "rgba(125,139,156,0.16)" : "rgba(125,139,156,0.08)"}`,
+    background: disabled ? "rgba(255,255,255,0.012)" : active ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.014)",
+    color: disabled ? "rgba(148,160,176,0.42)" : active ? "rgba(237,241,245,0.9)" : "rgba(237,241,245,0.62)",
     padding: "10px 12px",
     fontFamily: "'DM Sans',sans-serif",
     fontSize: 12,

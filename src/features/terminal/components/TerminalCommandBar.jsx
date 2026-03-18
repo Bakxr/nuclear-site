@@ -99,16 +99,16 @@ export default function TerminalCommandBar({
             <div style={{ display: "flex", gap: 12, alignItems: "flex-start", minWidth: 0 }}>
               <div
                 style={{
-                  width: 42,
-                  height: 42,
+                  width: 40,
+                  height: 40,
                   display: "grid",
                   placeItems: "center",
                   borderRadius: 14,
-                  border: "1px solid rgba(216,160,74,0.22)",
-                  background: "rgba(216,160,74,0.08)",
-                  color: "var(--np-terminal-amber)",
+                  border: "1px solid rgba(125,139,156,0.1)",
+                  background: "rgba(255,255,255,0.02)",
+                  color: "rgba(216,160,74,0.86)",
                   fontFamily: "'DM Mono',monospace",
-                  fontSize: 12,
+                  fontSize: 11.5,
                   fontWeight: 700,
                   letterSpacing: "0.14em",
                   flexShrink: 0,
@@ -118,19 +118,19 @@ export default function TerminalCommandBar({
               </div>
               <div style={{ minWidth: 0, display: "grid", gap: 4 }}>
                 <div style={terminalLabelStyle("cyan")}>Command</div>
-                <div style={{ fontSize: 19, lineHeight: 1.05, fontWeight: 700, color: "var(--np-terminal-text)" }}>
+                <div style={{ fontSize: 18, lineHeight: 1.05, fontWeight: 650, color: "rgba(237,241,245,0.92)" }}>
                   Operator intelligence
                 </div>
-                <div style={{ fontSize: 11.5, lineHeight: 1.55, ...terminalMutedStyle() }}>
+                <div style={{ fontSize: 11, lineHeight: 1.55, maxWidth: 240, ...terminalMutedStyle() }}>
                   Follow fleet status, source health, filings, and market context from one synchronized workspace.
                 </div>
               </div>
             </div>
 
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-              <span style={terminalTagStyle({ tone: "amber", compact: true })}>{activeDeskLabel}</span>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", opacity: 0.92 }}>
+              <span style={terminalTagStyle({ tone: "default", compact: true })}>{activeDeskLabel}</span>
               <span style={terminalTagStyle({ tone: "default", compact: true })}>Snapshot {formatFreshness(snapshot.generatedAt)}</span>
-              <span style={terminalTagStyle({ tone: selectedEntity ? "warning" : "cyan", compact: true })}>{focusLabel}</span>
+              <span style={terminalTagStyle({ tone: selectedEntity ? "warning" : "default", compact: true })}>{focusLabel}</span>
             </div>
           </div>
 
