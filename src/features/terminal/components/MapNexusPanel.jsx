@@ -7,11 +7,14 @@ import {
   terminalButtonStyle,
   terminalDataRowStyle,
   terminalLabelStyle,
+  terminalMetricDotStyle,
+  terminalMetricEyebrowStyle,
   terminalMetricTileStyle,
   terminalMutedStyle,
   terminalScrollAreaStyle,
   terminalSelectStyle,
   terminalTagStyle,
+  terminalToneColor,
   terminalValueStyle,
 } from "./styles.js";
 
@@ -271,21 +274,18 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
                   <div
                     key={metric.label}
                     style={terminalMetricTileStyle({
-                      accent: metric.tone === "cyan"
-                        ? "var(--np-terminal-cyan)"
-                        : metric.tone === "success"
-                          ? "var(--np-terminal-green)"
-                        : metric.tone === "warning"
-                            ? "var(--np-terminal-yellow)"
-                            : "var(--np-terminal-amber)",
+                      accent: terminalToneColor(metric.tone),
                       emphasis: metric.emphasis,
                     })}
                   >
-                    <div style={terminalLabelStyle(metric.emphasis === "default" ? "default" : metric.tone)}>{metric.label}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 9, minWidth: 0 }}>
+                      <span aria-hidden="true" style={terminalMetricDotStyle(terminalToneColor(metric.tone))} />
+                      <div style={terminalMetricEyebrowStyle()}>{metric.label}</div>
+                    </div>
                     <div style={{ ...terminalValueStyle({ tone: metric.tone, size: metric.valueSize }), marginTop: metric.emphasis === "primary" ? 10 : 8, letterSpacing: metric.emphasis === "primary" ? "-0.02em" : "0" }}>
                       {metric.value}
                     </div>
-                    <div style={{ fontSize: 10.5, lineHeight: 1.5, marginTop: metric.emphasis === "primary" ? 8 : 6, color: metric.emphasis === "primary" ? "rgba(148,160,173,0.9)" : undefined, ...terminalMutedStyle() }}>
+                    <div style={{ fontSize: 10.5, lineHeight: 1.5, marginTop: metric.emphasis === "primary" ? 8 : 6, color: metric.emphasis === "primary" ? "rgba(171,181,191,0.84)" : undefined, ...terminalMutedStyle() }}>
                       {metric.detail}
                     </div>
                   </div>

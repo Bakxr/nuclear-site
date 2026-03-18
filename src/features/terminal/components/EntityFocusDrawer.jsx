@@ -4,9 +4,12 @@ import {
   terminalButtonStyle,
   terminalDataRowStyle,
   terminalLabelStyle,
+  terminalMetricDotStyle,
+  terminalMetricEyebrowStyle,
   terminalMetricTileStyle,
   terminalMutedStyle,
   terminalTagStyle,
+  terminalToneColor,
   terminalValueStyle,
 } from "./styles.js";
 import { useTerminal } from "../context.jsx";
@@ -130,16 +133,15 @@ function buildMetaRows(entity) {
 }
 
 function ContextCell({ label, value, tone }) {
-  const accent = tone === "cyan"
-    ? "var(--np-terminal-cyan)"
-    : tone === "success"
-      ? "var(--np-terminal-green)"
-      : "var(--np-terminal-amber)";
+  const accent = terminalToneColor(tone === "default" ? "amber" : tone);
 
   return (
-    <div style={terminalMetricTileStyle({ accent })}>
-      <div style={terminalLabelStyle(tone)}>{label}</div>
-      <div style={{ ...terminalValueStyle({ tone, size: 18 }), marginTop: 7 }}>{value}</div>
+    <div style={terminalMetricTileStyle({ accent, compact: true })}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+        <span aria-hidden="true" style={terminalMetricDotStyle(accent)} />
+        <div style={terminalMetricEyebrowStyle()}>{label}</div>
+      </div>
+      <div style={{ ...terminalValueStyle({ tone, size: 18 }), marginTop: 9 }}>{value}</div>
     </div>
   );
 }

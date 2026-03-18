@@ -134,27 +134,67 @@ export function terminalPillStyle(color = TERMINAL_TEXT) {
   return terminalTagStyle({ tone });
 }
 
-export function terminalMetricTileStyle({ accent = "var(--np-terminal-amber)", emphasis = "default" } = {}) {
+export function terminalToneColor(tone = "default") {
+  if (tone === "cyan") return "var(--np-terminal-cyan)";
+  if (tone === "success") return "var(--np-terminal-green)";
+  if (tone === "danger") return "var(--np-terminal-red)";
+  if (tone === "warning") return "var(--np-terminal-yellow)";
+  if (tone === "amber") return "var(--np-terminal-amber)";
+  return "rgba(237,241,245,0.78)";
+}
+
+export function terminalMetricEyebrowStyle() {
+  return {
+    ...terminalLabelStyle("default"),
+    color: "rgba(163,174,186,0.74)",
+    letterSpacing: "0.12em",
+  };
+}
+
+export function terminalMetricDotStyle(accent = "var(--np-terminal-amber)") {
+  return {
+    width: 7,
+    height: 7,
+    borderRadius: 999,
+    background: accent,
+    boxShadow: `0 0 0 4px color-mix(in srgb, ${accent} 16%, transparent)`,
+    flexShrink: 0,
+  };
+}
+
+export function terminalMetricTileStyle({ accent = "var(--np-terminal-amber)", emphasis = "default", compact = false } = {}) {
   const border = emphasis === "primary"
-    ? "rgba(125,139,156,0.16)"
+    ? "rgba(255,255,255,0.08)"
     : emphasis === "secondary"
-      ? "rgba(125,139,156,0.13)"
-      : "rgba(125,139,156,0.1)";
-  const background = emphasis === "primary"
-    ? "linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.024) 100%)"
-    : emphasis === "secondary"
-      ? "linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%)"
-      : "linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.016) 100%)";
+      ? "rgba(255,255,255,0.07)"
+      : "rgba(255,255,255,0.055)";
+  const background = [
+    `radial-gradient(circle at 14% 0%, color-mix(in srgb, ${accent} 20%, transparent) 0%, transparent 42%)`,
+    "linear-gradient(180deg, rgba(22,28,36,0.94) 0%, rgba(16,21,29,0.9) 54%, rgba(12,17,24,0.96) 100%)",
+  ].join(", ");
 
   return {
     minWidth: 0,
-    borderRadius: 16,
+    position: "relative",
+    overflow: "hidden",
+    borderRadius: compact ? 14 : 18,
     border: `1px solid ${border}`,
     background,
-    padding: emphasis === "primary" ? "15px 16px" : "14px 15px",
-    boxShadow: emphasis === "primary"
-      ? `inset 0 1px 0 rgba(255,255,255,0.04), inset 0 2px 0 ${accent}, 0 10px 22px rgba(0,0,0,0.12)`
-      : `inset 0 1px 0 rgba(255,255,255,0.03), inset 0 2px 0 ${accent}`,
+    padding: compact
+      ? "11px 13px 12px"
+      : emphasis === "primary"
+        ? "16px 17px 16px"
+        : emphasis === "secondary"
+          ? "15px 16px"
+          : "14px 15px",
+    boxShadow: [
+      "inset 0 1px 0 rgba(255,255,255,0.045)",
+      "inset 0 -22px 38px rgba(255,255,255,0.01)",
+      `0 1px 0 color-mix(in srgb, ${accent} 18%, transparent)`,
+      emphasis === "primary"
+        ? "0 16px 34px rgba(0,0,0,0.2)"
+        : "0 12px 24px rgba(0,0,0,0.16)",
+    ].join(", "),
   };
 }
 

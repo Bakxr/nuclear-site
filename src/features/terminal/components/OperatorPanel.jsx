@@ -5,11 +5,14 @@ import {
   terminalDataRowStyle,
   terminalLabelStyle,
   terminalLinkStyle,
+  terminalMetricDotStyle,
+  terminalMetricEyebrowStyle,
   terminalMetricTileStyle,
   terminalMutedStyle,
   terminalScrollAreaStyle,
   terminalTableHeaderStyle,
   terminalTagStyle,
+  terminalToneColor,
   terminalValueStyle,
 } from "./styles.js";
 
@@ -153,21 +156,16 @@ function sourceStatusTone(status) {
 }
 
 function ContextCell({ label, value, tone }) {
-  const accent = tone === "cyan"
-    ? "var(--np-terminal-cyan)"
-    : tone === "success"
-      ? "var(--np-terminal-green)"
-      : tone === "warning"
-        ? "var(--np-terminal-yellow)"
-        : tone === "danger"
-          ? "var(--np-terminal-red)"
-          : "var(--np-terminal-amber)";
+  const accent = terminalToneColor(tone === "default" ? "amber" : tone);
   const valueText = String(value);
   const isMetricValue = /^[$~]?\d/.test(valueText);
 
   return (
-    <div style={terminalMetricTileStyle({ accent })}>
-      <div style={terminalLabelStyle()}>{label}</div>
+    <div style={terminalMetricTileStyle({ accent, compact: true })}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+        <span aria-hidden="true" style={terminalMetricDotStyle(accent)} />
+        <div style={terminalMetricEyebrowStyle()}>{label}</div>
+      </div>
       <div style={{ ...terminalValueStyle({ tone, size: isMetricValue ? 24 : 16 }), marginTop: 10, letterSpacing: isMetricValue ? "-0.02em" : "0" }}>
         {value}
       </div>
