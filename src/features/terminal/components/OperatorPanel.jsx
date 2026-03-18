@@ -251,7 +251,7 @@ function FocusTab({ isMobileViewport }) {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: isMobileViewport ? "repeat(2, minmax(0,1fr))" : "repeat(4, minmax(0,1fr))",
+          gridTemplateColumns: "repeat(2, minmax(0,1fr))",
           gap: 10,
         }}
       >
