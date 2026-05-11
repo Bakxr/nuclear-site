@@ -6,30 +6,32 @@ import { NUCLEAR_PLANTS } from "./data/plants.js";
 import { SUPPLY_STAGE_COLORS, URANIUM_SUPPLY_SITES } from "./data/supplySites.js";
 import { fetchStockHistory, fetchMultipleQuotes } from "./services/stocksAPI.js";
 import { clearNewsCache, fetchNuclearNews, getInstantNews } from "./services/newsAPI.js";
-import { fetchTerminalSnapshot } from "./services/terminalAPI.js";
 import useDarkMode from "./hooks/useDarkMode.js";
 import Timeline from "./components/Timeline.jsx";
 import StockTicker from "./components/StockTicker.jsx";
 import SearchOverlay from "./components/SearchOverlay.jsx";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
+import LazySectionFallback from "./components/LazySectionFallback.jsx";
 import ReactorDiagram from "./components/reactorDiagrams/index.jsx";
 import useDialog from "./hooks/useDialog.js";
 import { normalizeReactorType } from "./services/plantAPI.js";
 import { groupPlantsByCountry, normalizeCountryName } from "./utils/countries.js";
 import { NAV_ITEMS } from "./data/editorial.js";
 import { inferNewsLocation } from "./utils/news.js";
+import { formatAccessDate, getAccountStatusMeta } from "./features/access/accountStatus.js";
 import { useTerminalAccess } from "./features/access/context.jsx";
+import TerminalRouteView from "./features/terminal/TerminalRouteView.jsx";
+import { mergeTerminalSnapshots } from "./features/terminal/mergeSnapshots.js";
 import { buildPublicTerminalSignals } from "./features/terminal/publicSignals.js";
 import { buildAppPath, getAppViewFromLocation } from "./features/terminal/route.js";
+import { useTerminalSnapshot } from "./features/terminal/useTerminalSnapshot.js";
 import TerminalEditorialStrip from "./components/TerminalEditorialStrip.jsx";
-import TerminalAccessPage from "./features/access/TerminalAccessPage.jsx";
 
 const Globe = lazy(() => import("./components/Globe.jsx"));
 const StockModal = lazy(() => import("./components/StockModal.jsx"));
 const PlantModal = lazy(() => import("./components/PlantModal.jsx"));
 const CountryModal = lazy(() => import("./components/CountryModal.jsx"));
 const Reactor3D = lazy(() => import("./components/reactorDiagrams/Reactor3D.jsx"));
-const NuclearTerminal = lazy(() => import("./components/NuclearTerminal.jsx"));
 
 // ─── SECTION LABEL — animated gold line + uppercase text ──────────────
 function SectionLabel({ children, dark = false }) {
@@ -269,160 +271,6 @@ function CountUp({ target, decimals = 0, prefix = "", suffix = "", active, delay
   const visibleValue = active ? value : 0;
   const display = decimals > 0 ? visibleValue.toFixed(decimals) : Math.round(visibleValue).toString();
   return <>{prefix}{display}{suffix}</>;
-}
-
-function LazySectionFallback({ height = 320 }) {
-  return (
-    <div
-      aria-hidden="true"
-      style={{
-        minHeight: height,
-        borderRadius: 16,
-        background: "var(--np-surface-dim)",
-        border: "1px solid var(--np-border)",
-      }}
-    />
-  );
-}
-
-function mergeTerminalSnapshots(localStocks, remoteSnapshot) {
-  if (!remoteSnapshot?.entities) return null;
-
-  const localMarketIndex = new Map((localStocks || []).map((item) => [item.ticker, item]));
-  const mergedMarketInstruments = remoteSnapshot.entities.marketInstruments.map((item) => {
-    const localItem = localMarketIndex.get(item.ticker);
-    if (!localItem) return item;
-
-    return {
-      ...item,
-      sector: item.sector || localItem.sector,
-      desc: item.desc || localItem.desc,
-      pe: item.pe || localItem.pe,
-      mktCap: item.mktCap || localItem.mktCap,
-      history: Array.isArray(localItem.history) && localItem.history.length ? localItem.history : item.history || [],
-    };
-  });
-
-  return {
-    ...remoteSnapshot,
-    entities: {
-      ...remoteSnapshot.entities,
-      marketInstruments: mergedMarketInstruments,
-    },
-  };
-}
-
-function TerminalGateState({ title, message, actionLabel, onAction, secondaryLabel, onSecondary }) {
-  return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(180deg, #080b11 0%, #0a1018 100%)", color: "#f5f0e8", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-      <div style={{ width: "min(92vw, 560px)", borderRadius: 24, border: "1px solid rgba(212,165,74,0.16)", background: "rgba(10,12,17,0.94)", padding: "30px 24px", boxShadow: "0 28px 90px rgba(0,0,0,0.3)" }}>
-        <div style={{ fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", color: "#d4a54a", fontWeight: 700, marginBottom: 10 }}>
-          Nuclear Terminal
-        </div>
-        <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 34, lineHeight: 1.05, marginBottom: 12 }}>
-          {title}
-        </div>
-        <div style={{ fontSize: 14.5, lineHeight: 1.7, color: "rgba(245,240,232,0.66)" }}>
-          {message}
-        </div>
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 22 }}>
-          {actionLabel ? (
-            <button
-              type="button"
-              onClick={onAction}
-              style={{
-                borderRadius: 999,
-                border: "1px solid rgba(212,165,74,0.35)",
-                background: "#f5f0e8",
-                color: "#14120e",
-                padding: "12px 18px",
-                cursor: "pointer",
-                fontSize: 12,
-                fontWeight: 700,
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-              }}
-            >
-              {actionLabel}
-            </button>
-          ) : null}
-          {secondaryLabel ? (
-            <button
-              type="button"
-              onClick={onSecondary}
-              style={{
-                borderRadius: 999,
-                border: "1px solid rgba(245,240,232,0.12)",
-                background: "rgba(255,255,255,0.04)",
-                color: "#f5f0e8",
-                padding: "12px 18px",
-                cursor: "pointer",
-                fontSize: 12,
-                fontWeight: 700,
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-              }}
-            >
-              {secondaryLabel}
-            </button>
-          ) : null}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function formatAccessDate(value) {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  return date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
-}
-
-function truncateEmail(email, max = 28) {
-  const value = String(email || "").trim();
-  if (!value || value.length <= max) return value;
-  return `${value.slice(0, Math.max(0, max - 3))}...`;
-}
-
-function getAccountStatusMeta({ accessState, isConfigured, membershipLoading, membership, user }) {
-  if (!isConfigured) {
-    return {
-      title: "Account",
-      detail: "Auth offline",
-      accent: "#f87171",
-    };
-  }
-
-  if (accessState === "loading" || membershipLoading) {
-    return {
-      title: user?.email ? truncateEmail(user.email, 22) : "Account",
-      detail: "Checking access",
-      accent: "#7dd3fc",
-    };
-  }
-
-  if (!user) {
-    return {
-      title: "Account",
-      detail: "Sign in",
-      accent: "rgba(212,165,74,0.72)",
-    };
-  }
-
-  if (membership?.terminal_access) {
-    return {
-      title: truncateEmail(user.email, 22),
-      detail: "Terminal active",
-      accent: "#4ade80",
-    };
-  }
-
-  return {
-    title: truncateEmail(user.email, 22),
-    detail: "Signed in",
-    accent: "#d4a54a",
-  };
 }
 
 function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport }) {
@@ -885,9 +733,6 @@ export default function NuclearPulse() {
     if (typeof window === "undefined") return "home";
     return getAppViewFromLocation(window.location);
   });
-  const [remoteTerminalSnapshot, setRemoteTerminalSnapshot] = useState(null);
-  const [terminalLoading, setTerminalLoading] = useState(false);
-  const [terminalError, setTerminalError] = useState("");
 
   // Parallax hero
   const { scrollY } = useScroll();
@@ -900,6 +745,12 @@ export default function NuclearPulse() {
     () => getAccountStatusMeta({ accessState, isConfigured, membershipLoading, membership, user }),
     [accessState, isConfigured, membershipLoading, membership, user],
   );
+  const {
+    remoteTerminalSnapshot,
+    terminalLoading,
+    terminalError,
+    refreshTerminalSnapshot,
+  } = useTerminalSnapshot({ accessState, appView, getAccessToken });
 
   // Quote state — random on each page load, no auto-rotation
   const [quoteIndex, setQuoteIndex] = useState(() => Math.floor(Math.random() * QUOTES.length));
@@ -1240,40 +1091,6 @@ export default function NuclearPulse() {
     }
   }, []);
 
-  useEffect(() => {
-    if (accessState === "active") return;
-    setRemoteTerminalSnapshot(null);
-    setTerminalLoading(false);
-    setTerminalError("");
-  }, [accessState]);
-
-  useEffect(() => {
-    if (appView !== "terminal" || accessState !== "active") return undefined;
-
-    let cancelled = false;
-
-    async function loadRemoteTerminal() {
-      setTerminalLoading(true);
-      setTerminalError("");
-
-      try {
-        const accessToken = await getAccessToken();
-        const snapshot = await fetchTerminalSnapshot(accessToken);
-        if (!cancelled) setRemoteTerminalSnapshot(snapshot);
-      } catch (error) {
-        if (!cancelled) {
-          setRemoteTerminalSnapshot(null);
-          setTerminalError(error?.message || "Could not load the terminal snapshot.");
-        }
-      } finally {
-        if (!cancelled) setTerminalLoading(false);
-      }
-    }
-
-    loadRemoteTerminal();
-    return () => { cancelled = true; };
-  }, [accessState, appView, getAccessToken]);
-
   const filteredNews = useMemo(() => {
     const filtered = newsFilter === "All" ? [...news] : news.filter(n => n.tag === newsFilter);
     if (newsSort === "latest") {
@@ -1324,16 +1141,10 @@ export default function NuclearPulse() {
   }
 
   async function handleTerminalRefresh() {
-    setTerminalLoading(true);
-    setTerminalError("");
     try {
-      const accessToken = await getAccessToken();
-      const snapshot = await fetchTerminalSnapshot(accessToken);
-      setRemoteTerminalSnapshot(snapshot);
-    } catch (error) {
-      setTerminalError(error?.message || "Could not refresh the terminal snapshot.");
-    } finally {
-      setTerminalLoading(false);
+      await refreshTerminalSnapshot();
+    } catch {
+      // The hook already captures the user-facing terminal error state.
     }
   }
 
@@ -1508,52 +1319,21 @@ export default function NuclearPulse() {
   }, [learnFilter]);
 
   if (appView === "terminal") {
-    let terminalContent = null;
-
-    if (accessState === "loading") {
-      terminalContent = (
-        <TerminalGateState
-          title="Checking your access."
-          message="Restoring your account session and terminal permissions."
-          secondaryLabel="Editorial view"
-          onSecondary={() => switchAppView("home")}
-        />
-      );
-    } else if (accessState !== "active") {
-      terminalContent = <TerminalAccessPage isMobileViewport={isMobileViewport} onExitTerminal={() => switchAppView("home")} />;
-    } else if (!terminalSnapshot) {
-      terminalContent = (
-        <TerminalGateState
-          title={terminalLoading ? "Loading the terminal." : "Terminal snapshot unavailable."}
-          message={terminalLoading
-            ? "Secure terminal data is loading for your account."
-            : terminalError || "We could not load the latest secure terminal snapshot for this account."}
-          actionLabel={terminalLoading ? "" : "Retry"}
-          onAction={terminalLoading ? undefined : handleTerminalRefresh}
-          secondaryLabel="Editorial view"
-          onSecondary={() => switchAppView("home")}
-        />
-      );
-    } else {
-      terminalContent = (
-        <Suspense fallback={<LazySectionFallback height={720} />}>
-          <NuclearTerminal
-            GlobeComponent={Globe}
-            isMobileViewport={isMobileViewport}
-            snapshot={terminalSnapshot}
-            onOpenPlant={setSelectedPlant}
-            onOpenStock={setSelectedStock}
-            onExitTerminal={() => switchAppView("home")}
-            onRefreshData={handleTerminalRefresh}
-          />
-        </Suspense>
-      );
-    }
-
     return (
       <MotionConfig reducedMotion="user">
         <div className="np-app-shell" style={{ minHeight: "100vh", background: "var(--np-bg)", fontFamily: "'DM Sans',sans-serif", color: "var(--np-text)" }}>
-          {terminalContent}
+          <TerminalRouteView
+            GlobeComponent={Globe}
+            accessState={accessState}
+            isMobileViewport={isMobileViewport}
+            terminalSnapshot={terminalSnapshot}
+            terminalLoading={terminalLoading}
+            terminalError={terminalError}
+            onExitTerminal={() => switchAppView("home")}
+            onOpenPlant={setSelectedPlant}
+            onOpenStock={setSelectedStock}
+            onRefreshData={handleTerminalRefresh}
+          />
 
           {selectedPlant && (
             <Suspense fallback={null}>
@@ -1790,7 +1570,7 @@ export default function NuclearPulse() {
         justifyContent: "center",
         background: isDark
           ? "radial-gradient(circle at top, rgba(212,165,74,0.12), transparent 30%), linear-gradient(180deg, #17120c 0%, #0e0b08 62%, #090705 100%)"
-          : "radial-gradient(circle at top, rgba(212,165,74,0.14), transparent 34%), linear-gradient(180deg, #f2ebde 0%, #e4dbcb 38%, #0c0907 100%)",
+          : "radial-gradient(circle at top, rgba(212,165,74,0.14), transparent 34%), linear-gradient(180deg, #f2ebde 0%, #e4dbcb 38%, #f5f0e8 100%)",
         overflow: "hidden",
         flex: 1,
       }}>
@@ -1821,59 +1601,6 @@ export default function NuclearPulse() {
           >
             The grid will not be rebuilt with slogans. Track {NUCLEAR_PLANTS.length}+ reactors, uranium-sensitive markets, national buildouts, and the political fight over firm power in one scroll-heavy briefing.
           </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: EASE, delay: 1.02 }}
-            style={{
-              marginTop: 24,
-              maxWidth: 760,
-              marginInline: "auto",
-              padding: isMobileViewport ? "18px 18px 16px" : "22px 22px 18px",
-              borderRadius: 20,
-              border: "1px solid rgba(212,165,74,0.18)",
-              background: isDark ? "rgba(13,11,8,0.72)" : "rgba(20,18,14,0.26)",
-              backdropFilter: "blur(14px)",
-              boxShadow: "0 20px 50px rgba(0,0,0,0.18)",
-            }}
-          >
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#d4a54a" }}>
-              Weekly briefing
-            </div>
-            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(24px,3vw,34px)", lineHeight: 1.08, marginTop: 10, color: "#f5f0e8" }}>
-              Get the weekly atomic briefing.
-            </div>
-            <div style={{ fontSize: 14, color: "rgba(245,240,232,0.74)", maxWidth: 620, margin: "10px auto 0", lineHeight: 1.7 }}>
-              One sharp email each week on reactor buildouts, uranium markets, policy fights, and the moves that actually matter. No spam. Unsubscribe anytime.
-            </div>
-            <div style={{ marginTop: 18 }}>
-              <NewsletterCapture
-                surface="hero"
-                form={newsletterForms.hero}
-                success={isSubscribed}
-                successMessage="You're in. The next briefing lands in your inbox this week."
-                onEmailChange={handleNewsletterEmailChange}
-                onWebsiteChange={handleNewsletterWebsiteChange}
-                onSubmit={handleSubscribe}
-                placeholder="Enter your email for the weekly briefing"
-                buttonLabel="Get briefing"
-                align="center"
-                rowStyle={{ justifyContent: "center" }}
-                inputStyle={{
-                  width: isMobileViewport ? "100%" : 390,
-                  background: isDark ? "rgba(255,255,255,0.06)" : "rgba(20,18,14,0.18)",
-                  color: "#f5f0e8",
-                  borderColor: "rgba(245,240,232,0.14)",
-                }}
-                buttonStyle={{
-                  background: "#f5f0e8",
-                  color: "#14120e",
-                }}
-                note="Readers get the signal behind the week in nuclear, not a flood of headlines."
-              />
-            </div>
-          </motion.div>
-
         </motion.div>
       </section>
 
