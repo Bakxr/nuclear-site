@@ -1,93 +1,88 @@
-# Nuclear Pulse ⚛️
+# Nuclear Pulse
 
-A real-time nuclear energy information hub featuring live stock data, industry news, interactive 3D globe visualization, and comprehensive reactor database.
+Nuclear Pulse is a Vite + React editorial site with a paid `/terminal` product layered on top of it.
 
-## Features
+This repo is not frontend-only. It contains:
 
-- 📊 **Live Stock Data** — Finnhub API integration for 12 nuclear industry stocks
-- 📰 **Industry News** — Curated articles from IAEA, World Nuclear Association
-- 🌍 **Interactive Globe** — Three.js 3D visualization of 223+ nuclear reactors worldwide
-- 📈 **Data Visualizations** — Recharts & D3.js for nuclear share, reactor types
-- ⚡ **Real-time Updates** — 5-minute stock refresh, 15-minute news cache
+- A public editorial experience in [`src`](/d:/Users/Adam%20Baker/Desktop/0%20newks/nuclear-pulse/src)
+- Vercel serverless APIs in [`api`](/d:/Users/Adam%20Baker/Desktop/0%20newks/nuclear-pulse/api)
+- Supabase-backed auth and membership state
+- Stripe subscription billing for paid terminal access
+- A scheduled newsletter sender in [`scripts/send-newsletter.js`](/d:/Users/Adam%20Baker/Desktop/0%20newks/nuclear-pulse/scripts/send-newsletter.js)
 
-## Tech Stack
+## Current Stack
 
-- **React 19** + **Vite 7** — Fast dev server with HMR
-- **Three.js** — 3D globe rendering
-- **D3.js** — Geographic projections
-- **Recharts** — Stock charts and data viz
-- **Finnhub API** — Live stock quotes
+- Frontend: React 19, Vite 7, Framer Motion, Recharts, Three.js, D3
+- Auth and database: Supabase Auth + Postgres
+- Billing: Stripe Checkout, Billing Portal, webhooks
+- Deployment: Vercel SPA + serverless functions
+- Email: Resend for newsletter sending
+- External data: Finnhub, SEC EDGAR, NRC, nuclear RSS feeds
 
-## Setup
+## Main Entry Points
+
+- Frontend boot: [`src/main.jsx`](/d:/Users/Adam%20Baker/Desktop/0%20newks/nuclear-pulse/src/main.jsx)
+- Main app shell: [`src/App.jsx`](/d:/Users/Adam%20Baker/Desktop/0%20newks/nuclear-pulse/src/App.jsx)
+- Access state: [`src/features/access/context.jsx`](/d:/Users/Adam%20Baker/Desktop/0%20newks/nuclear-pulse/src/features/access/context.jsx)
+- Terminal route helpers: [`src/features/terminal/route.js`](/d:/Users/Adam%20Baker/Desktop/0%20newks/nuclear-pulse/src/features/terminal/route.js)
+- OTP provisioning endpoint: [`api/auth/request-otp.js`](/d:/Users/Adam%20Baker/Desktop/0%20newks/nuclear-pulse/api/auth/request-otp.js)
+- Billing entrypoint: [`api/billing/session.js`](/d:/Users/Adam%20Baker/Desktop/0%20newks/nuclear-pulse/api/billing/session.js)
+- Stripe webhook: [`api/stripe/webhook.js`](/d:/Users/Adam%20Baker/Desktop/0%20newks/nuclear-pulse/api/stripe/webhook.js)
+- Protected terminal snapshot: [`api/terminal/snapshot.js`](/d:/Users/Adam%20Baker/Desktop/0%20newks/nuclear-pulse/api/terminal/snapshot.js)
+
+## Repo Layout
+
+```text
+src/                   React app, editorial UI, paid terminal UI, client services
+api/                   Vercel serverless routes and shared server utilities
+docs/                  Operator and billing setup docs
+public/                Static assets and PWA files
+scripts/               One-off operational scripts such as newsletter sending
+supabase/migrations/   Database schema for billing and related server features
+```
+
+## Local Development
 
 ```bash
-# Install dependencies
 npm install
-
-# Add your Finnhub API key
 cp .env.example .env.local
-# Edit .env.local with your key
 
-# Start dev server
+# Public frontend only
 npm run dev
 
-# Build for production
-npm run build
+# Full app with API routes and Stripe webhook compatibility
+npx vercel dev
 ```
 
-## Environment Variables
+Available scripts:
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `VITE_FINNHUB_API_KEY` | Finnhub API key for stock data | Yes |
+- `npm run dev`
+- `npm run build`
+- `npm run lint`
+- `npm run preview`
+- `npm test`
 
-Get your free key at [finnhub.io](https://finnhub.io/)
+## Operator Docs
 
-## Data Sources
+- Full operator runbook: [`docs/operator-runbook.md`](/d:/Users/Adam%20Baker/Desktop/0%20newks/nuclear-pulse/docs/operator-runbook.md)
+- Terminal billing setup: [`docs/terminal-billing-setup.md`](/d:/Users/Adam%20Baker/Desktop/0%20newks/nuclear-pulse/docs/terminal-billing-setup.md)
+- Billing schema migration: [`supabase/migrations/20260315_stripe_terminal_access.sql`](/d:/Users/Adam%20Baker/Desktop/0%20newks/nuclear-pulse/supabase/migrations/20260315_stripe_terminal_access.sql)
 
-- **Nuclear Plants** — IAEA PRIS, World Nuclear Association
-- **Stock Prices** — Finnhub API (live)
-- **News** — Curated from IAEA, World Nuclear News
-- **Nuclear Share** — IAEA 2024 data
+## Core User Flows
 
-## Project Structure
+1. User requests an email OTP from the terminal or account dialog.
+2. The server provisions or normalizes the Supabase user, then the browser sends the OTP email.
+3. After sign-in, the client reads `billing_memberships` to determine access state.
+4. Checkout starts through a protected server route and redirects to Stripe Checkout.
+5. Stripe webhooks sync subscription state back into Supabase.
+6. Protected terminal endpoints verify both the Supabase session and `terminal_access` before returning data.
 
-```
-src/
-├── App.jsx          # Main application (all-in-one for rapid iteration)
-├── data/            # Static data (constants, shares, reactor types)
-├── services/        # API integrations (stocks, news)
-├── index.css        # Global styles
-└── main.jsx         # React entry point
-```
+## Current Constraints
 
-## Architecture Notes
-
-- **Monolithic App.jsx** — All components inline for rapid iteration
-- **Inline styles** — No CSS modules (intentional for speed)
-- **No backend** — Pure client-side React app
-- **Future migration** — Can migrate to Next.js/componentized structure later
-
-## Development
-
-```bash
-# Run dev server (with HMR)
-npm run dev
-
-# Lint code
-npm run lint
-
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
-```
+- [`src/App.jsx`](/d:/Users/Adam%20Baker/Desktop/0%20newks/nuclear-pulse/src/App.jsx) is still large and is being incrementally split by feature.
+- Terminal and market data use in-memory cache fallbacks when shared cache tables are unavailable.
+- Newsletter subscribe/unsubscribe flows assume a `subscribers` table that is not currently created by the migrations in this repo.
 
 ## License
 
-For informational purposes only. Data sourced from IAEA, World Nuclear Association.
-
----
-
-**© 2026 Nuclear Pulse** — Not financial advice.
+For informational purposes only. Data sources include IAEA, World Nuclear Association, NRC, SEC, Finnhub, and public RSS feeds.

@@ -1,87 +1,89 @@
 # Terminal Billing Setup
 
-This project already includes the Stripe + Supabase terminal access code.
-To make it work end to end, finish the external setup below.
+Use this document when you are wiring up terminal access for a fresh environment.
 
-## 1. Local env
+For the wider system map, API inventory, and operator support flow, see [`docs/operator-runbook.md`](/d:/Users/Adam%20Baker/Desktop/0%20newks/nuclear-pulse/docs/operator-runbook.md).
 
-The local `.env.local` file is now prepared with the required keys.
-You still need to fill in these Stripe values:
+## 1. Environment Variables
 
-- `STRIPE_SECRET_KEY`
-- `STRIPE_WEBHOOK_SECRET`
-- `STRIPE_PRICE_MONTHLY`
-- `STRIPE_PRICE_ANNUAL`
+Copy [`.env.example`](/d:/Users/Adam%20Baker/Desktop/0%20newks/nuclear-pulse/.env.example) to `.env.local` and fill in the values for:
 
-## 2. Supabase database
+- Supabase browser auth
+- Supabase server access
+- Stripe secrets and price ids
+- `SITE_URL`
+- `ALLOWED_ORIGINS`
+- `UNSUBSCRIBE_SECRET`
 
-Run this migration in the Supabase SQL editor:
+For local full-stack testing, `SITE_URL` can stay local if you are using `vercel dev`.
 
-- `supabase/migrations/20260315_stripe_terminal_access.sql`
+## 2. Supabase Database
 
-That creates:
+Run these migrations:
+
+- [`supabase/migrations/20260315_stripe_terminal_access.sql`](/d:/Users/Adam%20Baker/Desktop/0%20newks/nuclear-pulse/supabase/migrations/20260315_stripe_terminal_access.sql)
+- [`supabase/migrations/20260318_terminal_cache.sql`](/d:/Users/Adam%20Baker/Desktop/0%20newks/nuclear-pulse/supabase/migrations/20260318_terminal_cache.sql)
+
+This creates:
 
 - `billing_memberships`
 - `stripe_webhook_events`
-- RLS policy for users to read only their own membership row
+- `terminal_cache`
 
-## 3. Supabase auth
+The `terminal_cache` table is recommended for shared snapshot caching across serverless instances. The app still falls back to in-memory cache if the table is missing.
+
+## 3. Supabase Auth
 
 In Supabase:
 
-1. Open `Authentication -> Providers -> Email`.
-2. Enable email sign-in.
-3. Enable OTP / one-time code login.
-4. Make sure the email flow sends a code that the user can paste into the site.
-5. Set the Supabase Auth Site URL and allowed redirect URLs to your real site host in production, not `localhost`.
+1. Enable Email auth.
+2. Enable OTP / one-time code login.
+3. Set the Auth site URL and allowed redirects to the real deployed host for production.
+4. Configure SMTP if you want branded email delivery.
 
-This app now provisions first-time users server-side before requesting OTP, so the intended first email is the login code email, not a "confirm your signup" message.
+This app provisions first-time users server-side before requesting OTP, so the intended first email is the login code email rather than a separate signup-confirmation flow.
 
-Optional:
-
-- Configure SMTP if you want branded emails instead of the default sender.
-
-## 4. Stripe products
-
-In Stripe test mode:
-
-1. Create a product named `Nuclear Terminal`.
-2. Create a recurring monthly price for `$19 USD`.
-3. Create a recurring yearly price for `$190 USD`.
-4. Copy both price IDs into `.env.local` and Vercel env vars.
-
-## 5. Stripe customer portal
+## 4. Stripe Product and Prices
 
 In Stripe:
 
-1. Open `Settings -> Billing -> Customer portal`.
-2. Turn on the portal.
-3. Enable subscription cancellation and payment method updates.
-4. Save the portal configuration.
+1. Create a product for terminal access.
+2. Create a recurring monthly price.
+3. Create a recurring annual price.
+4. Put those ids in:
+   - `STRIPE_PRICE_MONTHLY`
+   - `STRIPE_PRICE_ANNUAL`
 
-## 6. Stripe webhook
+## 5. Stripe Customer Portal
+
+Enable the Stripe Billing Portal and allow:
+
+- Payment method updates
+- Subscription cancellation
+- Subscription management
+
+## 6. Stripe Webhook
 
 Create a webhook endpoint:
 
-- Local with tunneling or Stripe CLI: `http://localhost:3000/api/stripe/webhook`
-- Production: `https://atomic-energy.vercel.app/api/stripe/webhook`
+- Local: `http://localhost:3000/api/stripe/webhook`
+- Production: `https://your-real-site.vercel.app/api/stripe/webhook`
 
-Subscribe to these events:
+Subscribe to:
 
 - `checkout.session.completed`
 - `customer.subscription.created`
 - `customer.subscription.updated`
 - `customer.subscription.deleted`
 
-Copy the webhook signing secret into:
+Store the signing secret in `STRIPE_WEBHOOK_SECRET`.
 
-- `STRIPE_WEBHOOK_SECRET`
+## 7. Vercel Environment Variables
 
-## 7. Vercel env vars
+Add the same values from `.env.local` to Vercel for Preview and Production.
 
-Add the same values from `.env.local` to your Vercel project:
+Minimum set:
 
-- `VITE_FINNHUB_API_KEY`
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY`
 - `SUPABASE_URL`
@@ -91,41 +93,55 @@ Add the same values from `.env.local` to your Vercel project:
 - `STRIPE_WEBHOOK_SECRET`
 - `STRIPE_PRICE_MONTHLY`
 - `STRIPE_PRICE_ANNUAL`
-- `RESEND_API_KEY`
-- `NEWSLETTER_FROM`
 - `SITE_URL`
 - `ALLOWED_ORIGINS`
 - `UNSUBSCRIBE_SECRET`
 
-## 8. Local testing
+Optional but recommended:
+
+- `FINNHUB_API_KEY`
+- `RESEND_API_KEY`
+- `NEWSLETTER_FROM`
+- `SEC_USER_AGENT`
+- `TERMINAL_REVALIDATE_TOKEN`
+
+## 8. Local Testing Modes
 
 For frontend-only work:
 
-- `npm run dev`
+```bash
+npm run dev
+```
 
-For the full app including API routes:
+For auth, billing, and API testing:
 
-- `npx vercel dev`
+```bash
+npx vercel dev
+```
 
-If you want Stripe webhooks locally, forward them to the Vercel dev server.
+If you need local Stripe webhooks, forward them to the Vercel dev server.
 
-## 9. Test flow
+## 9. End-to-End Test Flow
 
 1. Visit `/terminal`.
-2. Request an email code.
-3. Confirm the first email is the OTP/code email and not a signup-confirmation email.
-4. Sign in with the OTP code.
-5. Start a checkout session.
-6. Complete payment with Stripe test card `4242 4242 4242 4242`.
-7. Confirm a row exists in `billing_memberships`.
-8. Confirm `terminal_access` becomes `true`.
-9. Refresh `/terminal` and verify the full terminal loads.
+2. Request an email login code.
+3. Sign in with the OTP code.
+4. Start a checkout session.
+5. Complete checkout with a Stripe test card such as `4242 4242 4242 4242`.
+6. Confirm the `billing_memberships` row exists for the Supabase user.
+7. Confirm `terminal_access` becomes `true`.
+8. Refresh `/terminal` and confirm the protected terminal loads.
+9. Open the Billing Portal and confirm the customer portal works for the same account.
 
-## 10. Production check
+## 10. If a Paid User Does Not Get Access
 
-After deploying:
+Check these first:
 
-1. Reconfirm Vercel env vars.
-2. Reconfirm the production Stripe webhook URL.
-3. Test the full flow on desktop.
-4. Test the full flow on mobile width.
+1. Stripe subscription state
+2. Stripe webhook delivery
+3. `billing_memberships.terminal_access`
+4. `billing_memberships.subscription_status`
+5. `billing_memberships.stripe_customer_id`
+6. Vercel env vars for Stripe and Supabase
+
+Do not ask the user to pay again until you confirm the membership row and webhook delivery state.

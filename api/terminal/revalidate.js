@@ -1,4 +1,4 @@
-import { ensureAllowedOrigin } from "../_lib/http.js";
+import { ensureAllowedOrigin, setNoStore, setRetryAfter } from "../_lib/http.js";
 import { checkRateLimit } from "../_lib/rateLimit.js";
 import { getClientAddress } from "../_lib/http.js";
 import { getTerminalSnapshot } from "../_lib/terminalSnapshot.js";
@@ -6,6 +6,7 @@ import { getTerminalSnapshot } from "../_lib/terminalSnapshot.js";
 export default async function handler(req, res) {
   if (!ensureAllowedOrigin(req, res, ["GET", "OPTIONS"])) return;
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
+  setNoStore(res);
 
   const secret = process.env.TERMINAL_REVALIDATE_TOKEN;
   if (secret && req.query?.token !== secret) {
@@ -14,6 +15,7 @@ export default async function handler(req, res) {
 
   const rateLimitKey = `terminal-revalidate:${getClientAddress(req)}`;
   if (!checkRateLimit(rateLimitKey, { limit: 10, windowMs: 15 * 60 * 1000 })) {
+    setRetryAfter(res, 15 * 60);
     return res.status(429).json({ error: "Too many revalidation attempts." });
   }
 

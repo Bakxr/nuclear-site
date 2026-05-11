@@ -1,5 +1,5 @@
-import { getStripe, recordWebhookEvent, syncMembershipFromSubscription, syncMembershipFromSubscriptionId } from "../_lib/billing.js";
-import { readRawBody } from "../_lib/http.js";
+import { getStripe, hasRecordedWebhookEvent, recordWebhookEvent, syncMembershipFromSubscription, syncMembershipFromSubscriptionId } from "../_lib/billing.js";
+import { readRawBody, setNoStore } from "../_lib/http.js";
 
 export const config = {
   api: {
@@ -9,6 +9,7 @@ export const config = {
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+  setNoStore(res);
 
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET?.trim();
   if (!webhookSecret) {
@@ -20,9 +21,9 @@ export default async function handler(req, res) {
     const signature = req.headers["stripe-signature"];
     const stripe = getStripe();
     const event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
-    const shouldProcess = await recordWebhookEvent(event);
 
-    if (!shouldProcess) {
+    if (await hasRecordedWebhookEvent(event.id)) {
+      console.info("[stripe/webhook] duplicate", event.id, event.type);
       return res.status(200).json({ received: true, duplicate: true });
     }
 
@@ -40,6 +41,14 @@ export default async function handler(req, res) {
     if (event.type === "customer.subscription.created" || event.type === "customer.subscription.updated" || event.type === "customer.subscription.deleted") {
       await syncMembershipFromSubscription(event.data.object);
     }
+
+    const recorded = await recordWebhookEvent(event);
+    if (!recorded) {
+      console.info("[stripe/webhook] duplicate-after-sync", event.id, event.type);
+      return res.status(200).json({ received: true, duplicate: true });
+    }
+
+    console.info("[stripe/webhook] processed", event.id, event.type);
 
     return res.status(200).json({ received: true });
   } catch (error) {

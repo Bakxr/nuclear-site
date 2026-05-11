@@ -1,4 +1,4 @@
-import { ensureAllowedOrigin, getClientAddress } from "../_lib/http.js";
+import { ensureAllowedOrigin, getClientAddress, setNoStore, setRetryAfter } from "../_lib/http.js";
 import { checkRateLimit } from "../_lib/rateLimit.js";
 import { getSupabaseServiceClient, hasSupabaseServiceConfig } from "../_lib/supabase.js";
 
@@ -58,6 +58,7 @@ async function ensureOtpUser(supabase, email) {
 export default async function handler(req, res) {
   if (!ensureAllowedOrigin(req, res, ["POST", "OPTIONS"])) return;
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+  setNoStore(res);
 
   if (!hasSupabaseServiceConfig()) {
     return res.status(500).json({ error: "Server configuration is incomplete." });
@@ -70,6 +71,7 @@ export default async function handler(req, res) {
 
   const rateLimitKey = `auth-request-otp:${getClientAddress(req)}:${normalizedEmail}`;
   if (!checkRateLimit(rateLimitKey, OTP_REQUEST_LIMIT)) {
+    setRetryAfter(res, OTP_REQUEST_LIMIT.windowMs / 1000);
     return res.status(429).json({ error: "Too many attempts. Please try again later." });
   }
 

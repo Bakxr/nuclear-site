@@ -34,6 +34,15 @@ export function applyCors(req, res, methods = DEFAULT_ALLOWED_METHODS) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 }
 
+export function setNoStore(res) {
+  res.setHeader("Cache-Control", "no-store, max-age=0");
+}
+
+export function setRetryAfter(res, seconds) {
+  if (!Number.isFinite(seconds) || seconds <= 0) return;
+  res.setHeader("Retry-After", String(Math.ceil(seconds)));
+}
+
 export function ensureAllowedOrigin(req, res, methods = DEFAULT_ALLOWED_METHODS) {
   applyCors(req, res, methods);
 

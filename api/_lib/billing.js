@@ -118,6 +118,35 @@ export async function recordWebhookEvent(event) {
   return true;
 }
 
+export async function hasRecordedWebhookEvent(eventId) {
+  const client = getSupabaseServiceClient();
+  const { data, error } = await client
+    .from(WEBHOOK_EVENTS_TABLE)
+    .select("event_id")
+    .eq("event_id", eventId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return Boolean(data?.event_id);
+}
+
+async function findActiveSubscriptionForCustomer(customerId) {
+  if (!customerId) return null;
+
+  const stripe = getStripe();
+  const subscriptions = await stripe.subscriptions.list({
+    customer: customerId,
+    status: "all",
+    limit: 10,
+    expand: ["data.customer", "data.items.data.price"],
+  });
+
+  return subscriptions.data.find((subscription) => hasTerminalAccessStatus(subscription.status)) || null;
+}
+
 export async function getOrCreateStripeCustomer({ userId, email }) {
   const stripe = getStripe();
   const membership = await getMembershipForUser(userId);
@@ -183,6 +212,13 @@ export async function createCheckoutSession({ interval, userId, email, siteUrl }
 
   const stripe = getStripe();
   const customerId = await getOrCreateStripeCustomer({ userId, email });
+  const existingActiveSubscription = await findActiveSubscriptionForCustomer(customerId);
+
+  if (existingActiveSubscription) {
+    await syncMembershipFromSubscription(existingActiveSubscription, { userId, email });
+    throw new Error("This account already has an active terminal subscription. Access has been refreshed.");
+  }
+
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
     customer: customerId,

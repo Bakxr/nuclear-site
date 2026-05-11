@@ -16,10 +16,24 @@ async function postJson(url, body, accessToken) {
   return data;
 }
 
+function requireRedirectUrl(payload, actionLabel) {
+  if (!payload?.url || typeof payload.url !== "string") {
+    throw new Error(`${actionLabel} did not return a redirect URL.`);
+  }
+
+  return payload;
+}
+
 export async function createCheckoutSession(interval, accessToken) {
-  return postJson("/api/billing/session", { action: "checkout", interval }, accessToken);
+  return requireRedirectUrl(
+    await postJson("/api/billing/session", { action: "checkout", interval }, accessToken),
+    "Checkout",
+  );
 }
 
 export async function createPortalSession(accessToken) {
-  return postJson("/api/billing/session", { action: "portal" }, accessToken);
+  return requireRedirectUrl(
+    await postJson("/api/billing/session", { action: "portal" }, accessToken),
+    "Billing portal",
+  );
 }

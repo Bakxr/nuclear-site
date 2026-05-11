@@ -1,10 +1,11 @@
-import { ensureAllowedOrigin } from "../_lib/http.js";
+import { ensureAllowedOrigin, setNoStore } from "../_lib/http.js";
 import { requireTerminalAccess } from "../_lib/auth.js";
 import { getTerminalSnapshot } from "../_lib/terminalSnapshot.js";
 
 export default async function handler(req, res) {
   if (!ensureAllowedOrigin(req, res, ["GET", "OPTIONS"])) return;
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
+  setNoStore(res);
   if (!await requireTerminalAccess(req, res)) return;
 
   try {
