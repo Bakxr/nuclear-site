@@ -26,34 +26,14 @@ import { buildPublicTerminalSignals } from "./features/terminal/publicSignals.js
 import { buildAppPath, getAppViewFromLocation } from "./features/terminal/route.js";
 import { useTerminalSnapshot } from "./features/terminal/useTerminalSnapshot.js";
 import TerminalEditorialStrip from "./components/TerminalEditorialStrip.jsx";
+import { EASE, fadeUp, staggerContainer, wordReveal } from "./features/sections/animations.js";
+import { SectionLabel } from "./features/sections/shared.jsx";
 
 const Globe = lazy(() => import("./components/Globe.jsx"));
 const StockModal = lazy(() => import("./components/StockModal.jsx"));
 const PlantModal = lazy(() => import("./components/PlantModal.jsx"));
 const CountryModal = lazy(() => import("./components/CountryModal.jsx"));
 const Reactor3D = lazy(() => import("./components/reactorDiagrams/Reactor3D.jsx"));
-
-// ─── SECTION LABEL — animated gold line + uppercase text ──────────────
-function SectionLabel({ children, dark = false }) {
-  return (
-    <motion.div
-      variants={fadeUp}
-      style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}
-    >
-      <motion.div
-        variants={lineGrow}
-        style={{
-          height: 1, width: 28, background: "#d4a54a",
-          flexShrink: 0, transformOrigin: "left",
-        }}
-      />
-      <span style={{
-        fontSize: 11, textTransform: "uppercase", letterSpacing: "0.14em", fontWeight: 700,
-        color: dark ? "rgba(212,165,74,0.7)" : "#d4a54a",
-      }}>{children}</span>
-    </motion.div>
-  );
-}
 
 const NEWSLETTER_STORAGE_KEY = "np-newsletter-subscribed";
 const NEWSLETTER_POPUP_SHOWN_KEY = "np-newsletter-popup-shown";
@@ -208,32 +188,6 @@ const QUOTES = [
     attr: "Steven Pinker, Harvard University",
   },
 ];
-
-// ─── ANIMATION VARIANTS ───────────────────────────────────────────────
-// Spec-recommended easing: smooth deceleration, no bounce
-const EASE = [0.22, 1, 0.36, 1];
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 40, scale: 0.98 },
-  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.65, ease: EASE } },
-};
-
-const staggerContainer = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.08, delayChildren: 0.04 } },
-};
-
-// Word-by-word stagger (hero heading) — 400–700ms range
-const wordReveal = {
-  hidden: { opacity: 0, y: 28, skewY: 1 },
-  visible: { opacity: 1, y: 0, skewY: 0, transition: { duration: 0.6, ease: EASE } },
-};
-
-// Draws a line left-to-right (section labels) — micro timing 300ms
-const lineGrow = {
-  hidden: { scaleX: 0, originX: 0 },
-  visible: { scaleX: 1, originX: 0, transition: { duration: 0.5, ease: EASE, delay: 0.05 } },
-};
 
 const GLOBAL_STATS = [
   { label: "Operating Reactors", target: 440, decimals: 0, prefix: "", suffix: "", sub: "across 32 countries", source: "IAEA PRIS", sourceUrl: "https://pris.iaea.org/PRIS/WorldStatistics/OperationalReactorsByCountry.aspx" },
