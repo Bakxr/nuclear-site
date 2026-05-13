@@ -26,7 +26,7 @@ export default async function handler(req, res) {
 
   const normalised = email.toLowerCase().trim();
   const rateLimitKey = `subscribe:${getClientAddress(req)}:${normalised}`;
-  if (!checkRateLimit(rateLimitKey, { limit: 4, windowMs: 10 * 60 * 1000 })) {
+  if (!(await checkRateLimit(rateLimitKey, { limit: 4, windowMs: 10 * 60 * 1000 }))) {
     return res.status(429).json({ error: 'Too many attempts. Please try again later.' });
   }
 

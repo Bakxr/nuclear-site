@@ -9,50 +9,27 @@ function normalizeEmail(email) {
   return String(email || "").toLowerCase().trim();
 }
 
-async function findUserByEmail(supabase, email) {
-  let page = 1;
-  const perPage = 200;
-
-  while (page <= 50) {
-    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage });
-    if (error) {
-      throw new Error(error.message || "Could not inspect Supabase users.");
-    }
-
-    const match = (data?.users || []).find((user) => normalizeEmail(user.email) === email);
-    if (match) return match;
-    if (!data?.nextPage || !data?.users?.length) break;
-    page = data.nextPage;
-  }
-
-  return null;
+function isAlreadyRegisteredError(error) {
+  if (!error) return false;
+  if (error.status === 422) return true;
+  const message = String(error.message || error.msg || "").toLowerCase();
+  return (
+    message.includes("already registered") ||
+    message.includes("already exists") ||
+    message.includes("duplicate")
+  );
 }
 
 async function ensureOtpUser(supabase, email) {
-  const existingUser = await findUserByEmail(supabase, email);
-  if (existingUser) {
-    if (!existingUser.email_confirmed_at) {
-      const { error } = await supabase.auth.admin.updateUserById(existingUser.id, {
-        email_confirm: true,
-      });
-      if (error) {
-        throw new Error(error.message || "Could not normalize the Supabase user.");
-      }
-    }
-
-    return existingUser;
-  }
-
-  const { data, error } = await supabase.auth.admin.createUser({
+  const { error } = await supabase.auth.admin.createUser({
     email,
     email_confirm: true,
   });
 
-  if (error || !data?.user) {
-    throw new Error(error?.message || "Could not provision the Supabase user.");
-  }
+  if (!error) return;
+  if (isAlreadyRegisteredError(error)) return;
 
-  return data.user;
+  throw new Error(error.message || "Could not provision the Supabase user.");
 }
 
 export default async function handler(req, res) {
@@ -70,7 +47,7 @@ export default async function handler(req, res) {
   }
 
   const rateLimitKey = `auth-request-otp:${getClientAddress(req)}:${normalizedEmail}`;
-  if (!checkRateLimit(rateLimitKey, OTP_REQUEST_LIMIT)) {
+  if (!(await checkRateLimit(rateLimitKey, OTP_REQUEST_LIMIT))) {
     setRetryAfter(res, OTP_REQUEST_LIMIT.windowMs / 1000);
     return res.status(429).json({ error: "Too many attempts. Please try again later." });
   }
@@ -78,7 +55,7 @@ export default async function handler(req, res) {
   try {
     const supabase = getSupabaseServiceClient();
     await ensureOtpUser(supabase, normalizedEmail);
-    return res.status(200).json({ success: true, email: normalizedEmail });
+    return res.status(200).json({ success: true });
   } catch (error) {
     console.error("[auth/request-otp]", error?.message || error);
     return res.status(500).json({ error: "Could not prepare sign-in for that email." });

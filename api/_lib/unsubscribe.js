@@ -3,7 +3,7 @@ import crypto from "node:crypto";
 const DEFAULT_MAX_AGE_MS = 45 * 24 * 60 * 60 * 1000;
 
 function getSecret() {
-  return process.env.UNSUBSCRIBE_SECRET || process.env.SUPABASE_SERVICE_KEY || "";
+  return process.env.UNSUBSCRIBE_SECRET?.trim() || "";
 }
 
 function base64UrlEncode(value) {
@@ -38,10 +38,16 @@ export function verifyUnsubscribeToken(token, maxAgeMs = DEFAULT_MAX_AGE_MS) {
   }
 
   const expected = signPayload(encoded);
-  const actual = Buffer.from(signature, "utf8");
-  const expectedBuffer = Buffer.from(expected, "utf8");
+  let actual;
+  let expectedBuffer;
+  try {
+    actual = Buffer.from(signature, "hex");
+    expectedBuffer = Buffer.from(expected, "hex");
+  } catch {
+    return { valid: false };
+  }
 
-  if (actual.length !== expectedBuffer.length || !crypto.timingSafeEqual(actual, expectedBuffer)) {
+  if (!actual.length || actual.length !== expectedBuffer.length || !crypto.timingSafeEqual(actual, expectedBuffer)) {
     return { valid: false };
   }
 

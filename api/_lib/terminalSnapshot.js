@@ -9,12 +9,30 @@ import { readTerminalCache, writeTerminalCache } from "./terminalStore.js";
 const SNAPSHOT_KEY = "terminal_snapshot_v1";
 const SNAPSHOT_TTL_MS = 10 * 60 * 1000;
 
+let inFlight = null;
+
 export async function getTerminalSnapshot({ force = false } = {}) {
   const cached = await readTerminalCache(SNAPSHOT_KEY);
   if (!force && cached?.payload && Date.now() - new Date(cached.updatedAt).getTime() < SNAPSHOT_TTL_MS) {
     return cached.payload;
   }
 
+  if (inFlight) {
+    return inFlight;
+  }
+
+  inFlight = (async () => {
+    try {
+      return await buildSnapshot(cached, force);
+    } finally {
+      inFlight = null;
+    }
+  })();
+
+  return inFlight;
+}
+
+async function buildSnapshot(cached, force) {
   const [quotesResult, newsResult, filingsResult, operationsResult] = await Promise.allSettled([
     fetchBatchQuotes(STOCKS_BASE.map((stock) => stock.ticker)),
     getLiveNewsPayload({ force }),

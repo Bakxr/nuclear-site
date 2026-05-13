@@ -281,7 +281,9 @@ export async function syncMembershipFromSubscription(subscription, options = {})
     throw new Error("Stripe subscription is missing the linked Supabase user id.");
   }
 
-  const price = subscription.items?.data?.[0]?.price || null;
+  const firstItem = subscription.items?.data?.[0] || null;
+  const price = firstItem?.price || null;
+  const periodEndUnix = subscription.current_period_end || firstItem?.current_period_end || null;
   return upsertMembership({
     user_id: userId,
     email: email?.toLowerCase().trim() || null,
@@ -291,7 +293,7 @@ export async function syncMembershipFromSubscription(subscription, options = {})
     plan_interval: price?.recurring?.interval || null,
     subscription_status: subscription.status || "inactive",
     terminal_access: hasTerminalAccessStatus(subscription.status),
-    current_period_end: toIsoFromUnix(subscription.current_period_end),
+    current_period_end: toIsoFromUnix(periodEndUnix),
     cancel_at_period_end: Boolean(subscription.cancel_at_period_end),
     ...(options.checkoutSessionId ? { last_checkout_session_id: options.checkoutSessionId } : {}),
   });
