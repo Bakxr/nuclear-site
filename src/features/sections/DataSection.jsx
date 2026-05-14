@@ -245,7 +245,7 @@ export default function DataSection({
                                   inset: 0,
                                   width: `${Math.max(getBarWidth(c), 1.5)}%`,
                                   borderRadius: 999,
-                                  background: "linear-gradient(90deg, #d4a54a 0%, #8b7355 100%)",
+                                  background: "linear-gradient(90deg, #d4a54a 0%, rgba(212,165,74,0.55) 100%)",
                                 }}
                               />
                             </div>
@@ -410,7 +410,7 @@ export default function DataSection({
                                   inset: 0,
                                   width: `${Math.max(row.width, 1.5)}%`,
                                   borderRadius: 999,
-                                  background: isNuclear ? "linear-gradient(90deg, #d4a54a 0%, #c4935a 100%)" : color,
+                                  background: isNuclear ? "linear-gradient(90deg, #d4a54a 0%, rgba(212,165,74,0.6) 100%)" : color,
                                   opacity: isNuclear ? 1 : hoveredSource === row.name ? 0.82 : 0.64,
                                 }}
                               />

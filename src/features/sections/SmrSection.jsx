@@ -75,7 +75,8 @@ export default function SmrSection({ sectionRef }) {
                 <span style={{
                   fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
                   color: SMR_STATUS_COLORS[project.status],
-                  background: SMR_STATUS_COLORS[project.status] + "18",
+                  background: SMR_STATUS_COLORS[project.status] + "26",
+                  border: `1px solid ${SMR_STATUS_COLORS[project.status]}55`,
                   padding: "3px 8px", borderRadius: 20, flexShrink: 0, marginLeft: 8,
                 }}>{project.status}</span>
               </div>

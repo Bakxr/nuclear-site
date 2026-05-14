@@ -268,21 +268,60 @@ function relativeDate(date) {
 // ---------------------------------------------------------------------------
 
 const WHY_IT_MATTERS = {
-  Policy:     "Policy decisions determine which energy technologies get built — and how fast.",
-  Expansion:  "Every new reactor adds around-the-clock zero-carbon electricity to the grid.",
-  Markets:    "Capital flows reveal where smart money is going in the clean energy transition.",
-  Research:   "Today's research milestones become tomorrow's operating power plants.",
-  Safety:     "Transparency about safety events is how the nuclear industry earns public trust.",
-  Innovation: "Next-generation designs could make nuclear faster, cheaper, and safer to deploy.",
-  Industry:   "Industry moves show how the global nuclear fleet is evolving right now.",
+  Policy: [
+    "Regulators set the speed limit on the buildout — and the cost of compliance.",
+    "Every approval and rule change reshapes which reactors get built this decade.",
+    "License timelines decide whether the next fleet starts in 2028 or 2035.",
+  ],
+  Expansion: [
+    "Each plant on the grid is decades of firm, zero-carbon power locked in.",
+    "Buildout pace is the real signal — capacity coming online beats capacity announced.",
+    "First-of-kind milestones de-risk the rest of the pipeline.",
+  ],
+  Markets: [
+    "Capital flow is conviction made visible — follow the money, not the press release.",
+    "Uranium price and equity action lead the news cycle by months.",
+    "Where institutional money lands today shapes the 2030 fleet.",
+  ],
+  Research: [
+    "Today's lab milestone is tomorrow's licensing application.",
+    "Fundamental advances quietly redraw what's feasible at commercial scale.",
+    "The work that gets cited becomes the work that gets built.",
+  ],
+  Safety: [
+    "Transparency on safety is how the industry earns a permission slip to grow.",
+    "Every incident report compounds — or erodes — decades of public trust.",
+    "Operational discipline is the moat. It either holds or it doesn't.",
+  ],
+  Innovation: [
+    "Advanced reactors are the bet that nuclear can be fast, cheap, and modular.",
+    "If next-gen designs work, the cost curve breaks in nuclear's favor.",
+    "Factory-built reactors change the deployment math — and the politics.",
+  ],
+  Industry: [
+    "The fleet is moving — operators, vendors, and supply chains are the leading edge.",
+    "Industry moves telegraph where conviction is hardest right now.",
+    "Watch what builders do, not what advocates say.",
+  ],
 };
+
+function hashKey(str = "") {
+  let h = 5381;
+  for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+function pickWhy(tag, key) {
+  const pool = WHY_IT_MATTERS[tag] || WHY_IT_MATTERS.Industry;
+  return pool[hashKey(key) % pool.length];
+}
 
 function buildMeta(item, tag) {
   const desc = stripHtml(item.description || '');
   const hook = firstSentences(desc, 2) || '';
   return {
     curiosityHook: hook.length > 20 ? hook : null,
-    whyItMatters:  WHY_IT_MATTERS[tag] || WHY_IT_MATTERS.Industry,
+    whyItMatters:  pickWhy(tag, item.link || item.title || ''),
     newsletterCTA: 'Get weekly updates on the nuclear renaissance',
   };
 }
@@ -467,7 +506,7 @@ function buildFallback() {
     relevanceScore:  10,
     engagementScore: 35,
     curiosityHook:   null,
-    whyItMatters:    WHY_IT_MATTERS[item.tag] || WHY_IT_MATTERS.Industry,
+    whyItMatters:    pickWhy(item.tag, item.title || item.tag || ''),
     newsletterCTA:   'Get weekly updates on the nuclear renaissance',
     _feedId:         'curated',
     _isFallback:     true,

@@ -1320,20 +1320,25 @@ export default function NuclearPulse() {
               </span>
             </button>
           ) : null}
-          <button onClick={toggleDarkMode} style={{
-            background: "none", border: "1px solid var(--np-border)", borderRadius: "50%",
-            width: 34, height: 34, cursor: "pointer", display: "flex", alignItems: "center",
-            justifyContent: "center", fontSize: 16, transition: "border-color 0.2s",
-            color: "var(--np-text-muted)", flexShrink: 0,
-          }}
+          <button
+            onClick={toggleDarkMode}
+            aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            style={{
+              background: "none", border: "1px solid var(--np-border)", borderRadius: "50%",
+              width: 34, height: 34, cursor: "pointer", display: "flex", alignItems: "center",
+              justifyContent: "center", fontSize: 16, transition: "border-color 0.2s",
+              color: "var(--np-text-muted)", flexShrink: 0,
+            }}
             onMouseEnter={e => e.currentTarget.style.borderColor = "var(--np-accent)"}
             onMouseLeave={e => e.currentTarget.style.borderColor = "var(--np-border)"}
-          >{isDark ? "☀" : "☾"}</button>
+          ><span aria-hidden="true">{isDark ? "☀" : "☾"}</span></button>
           <div className="np-search-shell" style={{ position: "relative" }}>
             <div className="np-nav-search" style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--np-surface-dim)", borderRadius: 20, padding: "7px 16px", border: "1px solid var(--np-border)", transition: "border-color 0.2s" }}>
-              <span style={{ opacity: 0.3, fontSize: 13 }}>🔍</span>
+              <span aria-hidden="true" style={{ opacity: 0.3, fontSize: 13 }}>🔍</span>
               <input
-                type="text"
+                type="search"
+                aria-label="Search everything"
                 placeholder="Search everything..."
                 value={searchQuery}
                 onChange={e => { setSearchQuery(e.target.value); setShowSearch(true); }}
@@ -1342,7 +1347,7 @@ export default function NuclearPulse() {
                 style={{ background: "none", border: "none", outline: "none", fontSize: 13, fontFamily: "'DM Sans',sans-serif", color: "var(--np-text)", width: 160 }}
               />
               {searchQuery && (
-                <button onClick={() => { setSearchQuery(""); setShowSearch(false); }} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--np-text-muted)", fontSize: 14, padding: 0, lineHeight: 1 }}>✕</button>
+                <button onClick={() => { setSearchQuery(""); setShowSearch(false); }} aria-label="Clear search" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--np-text-muted)", fontSize: 14, padding: 0, lineHeight: 1 }}><span aria-hidden="true">✕</span></button>
               )}
             </div>
             <AnimatePresence>
@@ -1360,7 +1365,7 @@ export default function NuclearPulse() {
               )}
             </AnimatePresence>
           </div>
-          <button className="np-hamburger" onClick={() => setMobileMenuOpen(prev => !prev)}>
+          <button className="np-hamburger" onClick={() => setMobileMenuOpen(prev => !prev)} aria-label={mobileMenuOpen ? "Close menu" : "Open menu"} aria-expanded={mobileMenuOpen}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               {mobileMenuOpen
                 ? <><line x1="6" y1="6" x2="18" y2="18" /><line x1="6" y1="18" x2="18" y2="6" /></>
@@ -1423,7 +1428,7 @@ export default function NuclearPulse() {
             ))}
             <div style={{ padding: "8px 12px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--np-surface-dim)", borderRadius: 12, padding: "8px 12px" }}>
-                <span style={{ opacity: 0.3, fontSize: 13 }}>🔍</span>
+                <span aria-hidden="true" style={{ opacity: 0.3, fontSize: 13 }}>🔍</span>
                 <input type="text" placeholder="Search plants..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
                   style={{ background: "none", border: "none", outline: "none", fontSize: 14, fontFamily: "'DM Sans',sans-serif", color: "var(--np-text)", width: "100%" }} />
               </div>
@@ -1433,6 +1438,7 @@ export default function NuclearPulse() {
       </nav>
       </header>
 
+      <main id="main">
       <HeroSection
         statsRef={statsRef}
         isDark={isDark}
@@ -1725,6 +1731,7 @@ export default function NuclearPulse() {
           </motion.div>
         )}
       </AnimatePresence>
+      </main>
 
       <FooterSection />
 
