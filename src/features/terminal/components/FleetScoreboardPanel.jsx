@@ -9,6 +9,7 @@ import {
   terminalTagStyle,
   terminalValueStyle,
 } from "./styles.js";
+import { starButtonStyle, starGlyph } from "./tokens.js";
 
 export default function FleetScoreboardPanel({ isMobileViewport = false }) {
   const { rankingRows, state, setRankingMetric, selectEntity, toggleWatch, watchedSet } = useTerminal();
@@ -50,8 +51,16 @@ export default function FleetScoreboardPanel({ isMobileViewport = false }) {
               <div style={{ ...terminalValueStyle({ tone: "amber", size: 12 }), fontWeight: 700, textAlign: "right" }}>
                 {state.rankingMetric === "capacity" ? `${country.capacityGw.toFixed(1)} GW` : state.rankingMetric === "reactors" ? `${country.reactors}` : state.rankingMetric === "nuclear" ? `${country.nuclearShare ?? 0}%` : state.rankingMetric === "projects" ? `${country.activeProjects}` : `${country.supplyCount}`}
               </div>
-              <button type="button" onClick={() => toggleWatch(country.id)} className="np-terminal-button" style={terminalButtonStyle(false, { compact: true, tone: "cyan" })}>
-                {watchedSet.has(country.id) ? "Starred" : "Star"}
+              <button
+                type="button"
+                onClick={() => toggleWatch(country.id)}
+                className="np-terminal-button"
+                style={starButtonStyle(watchedSet.has(country.id))}
+                aria-label={watchedSet.has(country.id) ? `Unstar ${country.country}` : `Star ${country.country}`}
+                aria-pressed={watchedSet.has(country.id)}
+                title={watchedSet.has(country.id) ? "Starred" : "Star"}
+              >
+                {starGlyph(watchedSet.has(country.id))}
               </button>
             </div>
           ))}

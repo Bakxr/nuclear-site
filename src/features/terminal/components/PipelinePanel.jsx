@@ -1,13 +1,13 @@
 import { useTerminal } from "../context.jsx";
 import TerminalPanel from "./TerminalPanel.jsx";
 import {
-  terminalButtonStyle,
   terminalDataRowStyle,
   terminalLabelStyle,
   terminalMutedStyle,
   terminalScrollAreaStyle,
   terminalTagStyle,
 } from "./styles.js";
+import { starButtonStyle, starGlyph } from "./tokens.js";
 
 export default function PipelinePanel({ isMobileViewport = false }) {
   const { pipelineRows, snapshot, selectEntity, toggleWatch, watchedSet } = useTerminal();
@@ -39,8 +39,16 @@ export default function PipelinePanel({ isMobileViewport = false }) {
                   </div>
                   <div style={{ fontSize: 10.5, lineHeight: 1.45, marginTop: 5, ...terminalMutedStyle() }}>{project.summary}</div>
                 </button>
-                <button type="button" onClick={() => toggleWatch(project.id)} className="np-terminal-button" style={terminalButtonStyle(false, { compact: true, tone: "cyan" })}>
-                  {watchedSet.has(project.id) ? "Starred" : "Star"}
+                <button
+                  type="button"
+                  onClick={() => toggleWatch(project.id)}
+                  className="np-terminal-button"
+                  style={starButtonStyle(watchedSet.has(project.id))}
+                  aria-label={watchedSet.has(project.id) ? `Unstar ${project.name}` : `Star ${project.name}`}
+                  aria-pressed={watchedSet.has(project.id)}
+                  title={watchedSet.has(project.id) ? "Starred" : "Star"}
+                >
+                  {starGlyph(watchedSet.has(project.id))}
                 </button>
               </div>
             ))}

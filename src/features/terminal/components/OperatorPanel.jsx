@@ -15,6 +15,7 @@ import {
   terminalToneColor,
   terminalValueStyle,
 } from "./styles.js";
+import { starGlyph } from "./tokens.js";
 
 function renderEntityBody(entity, snapshot) {
   if (!entity) {
@@ -285,8 +286,14 @@ function FocusTab({ isMobileViewport }) {
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
         {canCompare ? <button type="button" onClick={() => toggleCompare(selectedEntity.id)} className="np-terminal-button" style={terminalButtonStyle(false)}>Add compare</button> : null}
         {selectedEntity ? (
-          <button type="button" onClick={() => toggleWatch(selectedEntity.id)} className="np-terminal-button" style={terminalButtonStyle(false, { tone: "cyan" })}>
-            {watchedSet.has(selectedEntity.id) ? "Starred" : "Star"}
+          <button
+            type="button"
+            onClick={() => toggleWatch(selectedEntity.id)}
+            className="np-terminal-button"
+            style={terminalButtonStyle(false, { tone: watchedSet.has(selectedEntity.id) ? "amber" : "default" })}
+            aria-pressed={watchedSet.has(selectedEntity.id)}
+          >
+            {starGlyph(watchedSet.has(selectedEntity.id))} {watchedSet.has(selectedEntity.id) ? "Starred" : "Star"}
           </button>
         ) : null}
         {selectedEntity?.url ? (

@@ -11,6 +11,7 @@ import {
   terminalTableHeaderStyle,
   terminalValueStyle,
 } from "./styles.js";
+import { starButtonStyle, starGlyph } from "./tokens.js";
 
 function MarketsView({ onOpenStock, isMobileViewport }) {
   const { marketRows, state, setMarketSort, selectEntity, toggleWatch, watchedSet } = useTerminal();
@@ -53,8 +54,6 @@ function MarketsView({ onOpenStock, isMobileViewport }) {
         {marketRows.slice(0, 12).map((stock) => {
           const mini = stock.history?.slice(-16) || [];
           const targetId = stock.company?.id || stock.id;
-          const moveTone = stock.change >= 0 ? "success" : "danger";
-
           return (
             <div
               key={stock.id}
@@ -94,8 +93,16 @@ function MarketsView({ onOpenStock, isMobileViewport }) {
                 </div>
               </div>
 
-              <button type="button" onClick={() => toggleWatch(targetId)} className="np-terminal-button" style={terminalButtonStyle(false, { compact: true, tone: moveTone === "success" ? "cyan" : "default" })}>
-                {watchedSet.has(targetId) ? "Starred" : "Star"}
+              <button
+                type="button"
+                onClick={() => toggleWatch(targetId)}
+                className="np-terminal-button"
+                style={starButtonStyle(watchedSet.has(targetId))}
+                aria-label={watchedSet.has(targetId) ? `Unstar ${stock.ticker}` : `Star ${stock.ticker}`}
+                aria-pressed={watchedSet.has(targetId)}
+                title={watchedSet.has(targetId) ? "Starred" : "Star"}
+              >
+                {starGlyph(watchedSet.has(targetId))}
               </button>
             </div>
           );
@@ -137,8 +144,16 @@ function PipelineView({ isMobileViewport }) {
                     </div>
                     <div style={{ fontSize: 10.5, lineHeight: 1.5, marginTop: 5, ...terminalMutedStyle() }}>{project.summary}</div>
                   </button>
-                  <button type="button" onClick={() => toggleWatch(project.id)} className="np-terminal-button" style={terminalButtonStyle(false, { compact: true, tone: "cyan" })}>
-                    {watchedSet.has(project.id) ? "Starred" : "Star"}
+                  <button
+                    type="button"
+                    onClick={() => toggleWatch(project.id)}
+                    className="np-terminal-button"
+                    style={starButtonStyle(watchedSet.has(project.id))}
+                    aria-label={watchedSet.has(project.id) ? `Unstar ${project.name}` : `Star ${project.name}`}
+                    aria-pressed={watchedSet.has(project.id)}
+                    title={watchedSet.has(project.id) ? "Starred" : "Star"}
+                  >
+                    {starGlyph(watchedSet.has(project.id))}
                   </button>
                 </div>
               ))}

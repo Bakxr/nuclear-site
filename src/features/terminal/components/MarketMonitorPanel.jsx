@@ -10,6 +10,7 @@ import {
   terminalTagStyle,
   terminalValueStyle,
 } from "./styles.js";
+import { starButtonStyle, starGlyph } from "./tokens.js";
 
 export default function MarketMonitorPanel({ onOpenStock, isMobileViewport = false }) {
   const { marketRows, state, setMarketSort, selectEntity, toggleWatch, watchedSet } = useTerminal();
@@ -46,7 +47,7 @@ export default function MarketMonitorPanel({ onOpenStock, isMobileViewport = fal
           {marketRows.slice(0, 12).map((stock) => {
             const mini = stock.history?.slice(-16) || [];
             const targetId = stock.company?.id || stock.id;
-            const moveTone = stock.change >= 0 ? "success" : "danger";
+            const isStarred = watchedSet.has(targetId);
 
             return (
               <div
@@ -87,8 +88,16 @@ export default function MarketMonitorPanel({ onOpenStock, isMobileViewport = fal
                   </div>
                 </div>
 
-                <button type="button" onClick={() => toggleWatch(targetId)} className="np-terminal-button" style={terminalButtonStyle(false, { compact: true, tone: moveTone === "success" ? "cyan" : "default" })}>
-                  {watchedSet.has(targetId) ? "Starred" : "Star"}
+                <button
+                  type="button"
+                  onClick={() => toggleWatch(targetId)}
+                  className="np-terminal-button"
+                  style={starButtonStyle(isStarred)}
+                  aria-label={isStarred ? `Unstar ${stock.ticker}` : `Star ${stock.ticker}`}
+                  aria-pressed={isStarred}
+                  title={isStarred ? "Starred" : "Star"}
+                >
+                  {starGlyph(isStarred)}
                 </button>
               </div>
             );
