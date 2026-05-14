@@ -89,7 +89,7 @@ function LeftRail({ activeDesk, onActivateDesk }) {
                     alignItems: "center",
                     width: "100%",
                     border: `1px solid ${active ? "rgba(216,160,74,0.28)" : "transparent"}`,
-                    borderRadius: 14,
+                    borderRadius: 4,
                     background: active ? "rgba(216,160,74,0.08)" : "transparent",
                     color: "var(--np-terminal-text)",
                     padding: "8px 10px",
