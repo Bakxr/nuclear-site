@@ -1,208 +1,188 @@
-const TERMINAL_TEXT = "var(--np-terminal-text)";
-const TERMINAL_MUTED = "var(--np-terminal-muted)";
+// Shared terminal-scoped style helpers.
+//
+// These intentionally keep their old function signatures so panels do not need
+// to be rewritten one-by-one. The visual output, however, has been reset to
+// the "instrument" baseline: hairline borders, 0-4px corner radius, no drop
+// shadows, mono numerics, cool slate palette, and color-coded deltas.
+//
+// See `./tokens.js` for the source-of-truth design tokens.
+
+import {
+  borderHairline,
+  cellPad,
+  color,
+  fontMono,
+  fontSans,
+  radius,
+  rowPad,
+  styles as base,
+  toneColor,
+} from "./tokens.js";
+
+const TERMINAL_TEXT = color.text;
+const TERMINAL_MUTED = color.textMuted;
 
 function resolveTone(tone = "default") {
-  if (tone === "amber") {
+  // Legacy palette object — kept so callers that destructure it keep working.
+  if (tone === "amber" || tone === "accent") {
     return {
-      border: "rgba(216,160,74,0.28)",
-      borderSoft: "rgba(216,160,74,0.14)",
+      border: color.accent,
+      borderSoft: "rgba(216,160,74,0.32)",
       background: "rgba(216,160,74,0.08)",
-      color: "var(--np-terminal-amber)",
+      color: color.accent,
     };
   }
-  if (tone === "cyan") {
+  if (tone === "cyan" || tone === "info") {
     return {
-      border: "rgba(126,168,192,0.26)",
-      borderSoft: "rgba(126,168,192,0.13)",
-      background: "rgba(126,168,192,0.08)",
-      color: "var(--np-terminal-cyan)",
+      border: color.info,
+      borderSoft: "rgba(126,168,192,0.32)",
+      background: "rgba(126,168,192,0.06)",
+      color: color.info,
     };
   }
-  if (tone === "success") {
+  if (tone === "success" || tone === "positive") {
     return {
-      border: "rgba(124,185,138,0.26)",
-      borderSoft: "rgba(124,185,138,0.13)",
-      background: "rgba(124,185,138,0.08)",
-      color: "var(--np-terminal-green)",
+      border: color.positive,
+      borderSoft: "rgba(124,185,138,0.32)",
+      background: "rgba(124,185,138,0.06)",
+      color: color.positive,
     };
   }
-  if (tone === "danger") {
+  if (tone === "danger" || tone === "negative") {
     return {
-      border: "rgba(215,132,119,0.28)",
-      borderSoft: "rgba(215,132,119,0.14)",
-      background: "rgba(215,132,119,0.08)",
-      color: "var(--np-terminal-red)",
+      border: color.negative,
+      borderSoft: "rgba(215,132,119,0.32)",
+      background: "rgba(215,132,119,0.06)",
+      color: color.negative,
     };
   }
   if (tone === "warning") {
     return {
-      border: "rgba(215,181,103,0.28)",
-      borderSoft: "rgba(215,181,103,0.14)",
-      background: "rgba(215,181,103,0.08)",
-      color: "var(--np-terminal-yellow)",
+      border: color.warning,
+      borderSoft: "rgba(215,181,103,0.32)",
+      background: "rgba(215,181,103,0.06)",
+      color: color.warning,
     };
   }
   return {
-    border: "rgba(125,139,156,0.16)",
-    borderSoft: "rgba(125,139,156,0.09)",
-    background: "rgba(255,255,255,0.02)",
-    color: "rgba(237,241,245,0.78)",
+    border: color.border,
+    borderSoft: color.border,
+    background: "transparent",
+    color: color.textMuted,
   };
 }
 
-export function terminalPanelStyle({ alt = false, emphasis = "default" } = {}) {
-  return {
-    position: "relative",
-    minWidth: 0,
-    border: `1px solid ${emphasis === "hero" ? "rgba(125,139,156,0.16)" : alt ? "rgba(138,150,168,0.15)" : "rgba(125,139,156,0.12)"}`,
-    borderRadius: 18,
-    overflow: "hidden",
-    background: emphasis === "hero"
-      ? "rgba(16,21,28,0.9)"
-      : alt
-        ? "rgba(15,20,27,0.8)"
-        : "rgba(13,18,24,0.76)",
-    boxShadow: emphasis === "hero"
-      ? "0 24px 54px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.03)"
-      : "0 14px 30px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.02)",
-    backdropFilter: "blur(18px)",
-  };
+export function terminalPanelStyle({ emphasis = "default" } = {}) {
+  return emphasis === "hero" ? { ...base.panelHero } : { ...base.panel };
 }
 
+// Compact instrument-style action button. No pill radius, no shadow.
 export function terminalButtonStyle(active = false, { compact = false, tone = "default" } = {}) {
   const palette = resolveTone(tone);
-
   return {
     appearance: "none",
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    minHeight: compact ? 30 : 36,
-    border: `1px solid ${active ? "rgba(216,160,74,0.32)" : palette.borderSoft}`,
-    background: active ? "rgba(216,160,74,0.92)" : "rgba(255,255,255,0.025)",
-    color: active ? "#11161d" : palette.color,
-    borderRadius: 999,
-    padding: compact ? "5px 10px" : "8px 12px",
-    fontSize: compact ? 10.5 : 11,
-    fontWeight: 700,
-    letterSpacing: "0.08em",
+    minHeight: compact ? 22 : 26,
+    border: `1px solid ${active ? color.accent : color.border}`,
+    background: active ? "rgba(216,160,74,0.14)" : "transparent",
+    color: active ? color.accent : palette.color,
+    borderRadius: radius.md,
+    padding: compact ? "3px 7px" : "4px 9px",
+    fontSize: compact ? 10 : 11,
+    fontWeight: 600,
+    letterSpacing: "0.06em",
     textTransform: "uppercase",
     cursor: "pointer",
-    fontFamily: "'DM Mono',monospace",
+    fontFamily: fontMono,
     lineHeight: 1.05,
     whiteSpace: "nowrap",
-    boxShadow: active ? "0 8px 18px rgba(216,160,74,0.16)" : "none",
+    boxShadow: "none",
   };
 }
 
+// Tag / status pill. No rounded pill, no fill — hairline chip.
 export function terminalTagStyle({ tone = "default", compact = false } = {}) {
   const palette = resolveTone(tone);
-
   return {
     display: "inline-flex",
     alignItems: "center",
-    gap: 6,
+    gap: 5,
     minWidth: 0,
-    borderRadius: 999,
+    borderRadius: radius.sm,
     border: `1px solid ${palette.borderSoft}`,
-    background: palette.background,
-    padding: compact ? "4px 8px" : "6px 10px",
+    background: "transparent",
+    padding: compact ? "1px 5px" : "2px 6px",
     fontSize: compact ? 9.5 : 10,
-    fontWeight: 700,
-    letterSpacing: "0.08em",
+    fontWeight: 600,
+    letterSpacing: "0.06em",
     textTransform: "uppercase",
     color: palette.color,
-    fontFamily: "'DM Mono',monospace",
-    lineHeight: 1.05,
+    fontFamily: fontMono,
+    lineHeight: 1.1,
   };
 }
 
-export function terminalPillStyle(color = TERMINAL_TEXT) {
-  const tone = color === "var(--np-terminal-cyan)"
+export function terminalPillStyle(c = TERMINAL_TEXT) {
+  const tone = c === color.info
     ? "cyan"
-    : color === "var(--np-terminal-green)"
+    : c === color.positive
       ? "success"
-      : color === "var(--np-terminal-red)"
+      : c === color.negative
         ? "danger"
-        : color === "var(--np-terminal-amber)"
+        : c === color.accent
           ? "amber"
-          : color === "var(--np-terminal-yellow)"
+          : c === color.warning
             ? "warning"
             : "default";
-
   return terminalTagStyle({ tone });
 }
 
 export function terminalToneColor(tone = "default") {
-  if (tone === "cyan") return "var(--np-terminal-cyan)";
-  if (tone === "success") return "var(--np-terminal-green)";
-  if (tone === "danger") return "var(--np-terminal-red)";
-  if (tone === "warning") return "var(--np-terminal-yellow)";
-  if (tone === "amber") return "var(--np-terminal-amber)";
-  return "rgba(237,241,245,0.78)";
+  return toneColor(tone);
 }
 
 export function terminalMetricEyebrowStyle() {
   return {
     ...terminalLabelStyle("default"),
-    color: "rgba(163,174,186,0.74)",
-    letterSpacing: "0.12em",
+    color: color.textMuted,
+    letterSpacing: "0.1em",
   };
 }
 
-export function terminalMetricDotStyle(accent = "var(--np-terminal-amber)") {
+export function terminalMetricDotStyle(accent = color.accent) {
   return {
-    width: 7,
-    height: 7,
-    borderRadius: 999,
+    width: 6,
+    height: 6,
+    borderRadius: 0,
     background: accent,
-    boxShadow: `0 0 0 4px color-mix(in srgb, ${accent} 16%, transparent)`,
     flexShrink: 0,
   };
 }
 
-export function terminalMetricTileStyle({ accent = "var(--np-terminal-amber)", emphasis = "default", compact = false } = {}) {
-  const border = emphasis === "primary"
-    ? "rgba(255,255,255,0.08)"
-    : emphasis === "secondary"
-      ? "rgba(255,255,255,0.07)"
-      : "rgba(255,255,255,0.055)";
-  const background = [
-    `radial-gradient(circle at 14% 0%, color-mix(in srgb, ${accent} 20%, transparent) 0%, transparent 42%)`,
-    "linear-gradient(180deg, rgba(22,28,36,0.94) 0%, rgba(16,21,29,0.9) 54%, rgba(12,17,24,0.96) 100%)",
-  ].join(", ");
-
+// Compressed metric tile — no rounded card, no gradient, no shadow.
+// Just a hairline cell with a label above a mono value.
+export function terminalMetricTileStyle({ compact = false } = {}) {
   return {
     minWidth: 0,
     position: "relative",
     overflow: "hidden",
-    borderRadius: compact ? 14 : 18,
-    border: `1px solid ${border}`,
-    background,
-    padding: compact
-      ? "11px 13px 12px"
-      : emphasis === "primary"
-        ? "16px 17px 16px"
-        : emphasis === "secondary"
-          ? "15px 16px"
-          : "14px 15px",
-    boxShadow: [
-      "inset 0 1px 0 rgba(255,255,255,0.045)",
-      "inset 0 -22px 38px rgba(255,255,255,0.01)",
-      `0 1px 0 color-mix(in srgb, ${accent} 18%, transparent)`,
-      emphasis === "primary"
-        ? "0 16px 34px rgba(0,0,0,0.2)"
-        : "0 12px 24px rgba(0,0,0,0.16)",
-    ].join(", "),
+    borderRadius: 0,
+    border: "none",
+    borderRight: borderHairline,
+    background: "transparent",
+    padding: compact ? "4px 10px 6px" : "6px 12px 8px",
+    boxShadow: "none",
   };
 }
 
 export function terminalDataRowStyle() {
   return {
     minWidth: 0,
-    borderTop: "1px solid rgba(125,139,156,0.11)",
-    padding: "11px 0",
+    borderTop: borderHairline,
+    padding: `${rowPad}px 0`,
   };
 }
 
@@ -212,7 +192,7 @@ export function terminalScrollAreaStyle(maxHeight = 360) {
     gap: 0,
     maxHeight,
     overflowY: "auto",
-    paddingRight: 4,
+    paddingRight: 2,
     minWidth: 0,
   };
 }
@@ -227,14 +207,14 @@ export function terminalSelectStyle(disabledOrOptions = false) {
     appearance: "none",
     width: "100%",
     minWidth: 0,
-    borderRadius: 12,
-    border: `1px solid ${active ? "rgba(125,139,156,0.16)" : "rgba(125,139,156,0.08)"}`,
-    background: disabled ? "rgba(255,255,255,0.012)" : active ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.014)",
-    color: disabled ? "rgba(148,160,176,0.42)" : active ? "rgba(237,241,245,0.9)" : "rgba(237,241,245,0.62)",
-    padding: "10px 12px",
-    fontFamily: "'DM Sans',sans-serif",
-    fontSize: 12,
-    fontWeight: active ? 600 : 500,
+    borderRadius: radius.md,
+    border: `1px solid ${active ? color.borderStrong : color.border}`,
+    background: "transparent",
+    color: disabled ? color.textFaint : active ? color.text : color.textMuted,
+    padding: "4px 8px",
+    fontFamily: fontMono,
+    fontSize: 11,
+    fontWeight: 500,
     colorScheme: "dark",
     outline: "none",
   };
@@ -244,13 +224,13 @@ export function terminalInputShellStyle() {
   return {
     display: "flex",
     alignItems: "center",
-    gap: 10,
+    gap: 8,
     minWidth: 0,
-    borderRadius: 14,
-    border: "1px solid rgba(125,139,156,0.18)",
-    background: "linear-gradient(180deg, rgba(8,12,17,0.84) 0%, rgba(12,17,24,0.72) 100%)",
-    padding: "11px 12px",
-    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)",
+    borderRadius: radius.md,
+    border: borderHairline,
+    background: "rgba(0,0,0,0.25)",
+    padding: "4px 8px",
+    boxShadow: "none",
   };
 }
 
@@ -262,78 +242,58 @@ export function terminalInputStyle() {
     border: "none",
     outline: "none",
     color: TERMINAL_TEXT,
-    fontSize: 13,
-    fontFamily: "'DM Sans',sans-serif",
+    fontSize: 12,
+    fontFamily: fontMono,
   };
 }
 
-export function terminalLabelStyle(tone = "amber") {
-  const color = tone === "cyan"
-    ? "var(--np-terminal-cyan)"
-    : tone === "success"
-      ? "var(--np-terminal-green)"
-      : tone === "danger"
-        ? "var(--np-terminal-red)"
-        : tone === "warning"
-          ? "var(--np-terminal-yellow)"
-          : tone === "amber"
-            ? "var(--np-terminal-amber)"
-            : "rgba(148,160,173,0.72)";
-
+export function terminalLabelStyle(tone = "default") {
   return {
     fontSize: 10,
     textTransform: "uppercase",
-    letterSpacing: "0.14em",
-    color,
-    fontWeight: 700,
-    fontFamily: "'DM Mono',monospace",
+    letterSpacing: "0.1em",
+    color: toneColor(tone === "default" ? "muted" : tone),
+    fontWeight: 600,
+    fontFamily: fontMono,
     lineHeight: 1.2,
   };
 }
 
-export function terminalTableHeaderStyle(align = "left", tone = "cyan") {
+export function terminalTableHeaderStyle(align = "left", tone = "default") {
   return {
     ...terminalLabelStyle(tone),
     textAlign: align,
+    padding: cellPad,
   };
 }
 
 export function terminalMutedStyle() {
   return {
     color: TERMINAL_MUTED,
+    fontFamily: fontSans,
   };
 }
 
-export function terminalValueStyle({ tone = "default", size = 16 } = {}) {
-  const color = tone === "cyan"
-    ? "var(--np-terminal-cyan)"
-    : tone === "success"
-      ? "var(--np-terminal-green)"
-      : tone === "danger"
-        ? "var(--np-terminal-red)"
-        : tone === "warning"
-          ? "var(--np-terminal-yellow)"
-          : tone === "amber"
-            ? "var(--np-terminal-amber)"
-            : TERMINAL_TEXT;
-
+// Numeric value — always mono, tabular nums, color-coded by tone.
+export function terminalValueStyle({ tone = "default", size = 13 } = {}) {
   return {
-    fontFamily: "'DM Mono',monospace",
+    fontFamily: fontMono,
+    fontVariantNumeric: "tabular-nums",
     fontSize: size,
-    color,
-    lineHeight: 1.08,
-    fontWeight: 700,
+    color: toneColor(tone),
+    lineHeight: 1.1,
+    fontWeight: 600,
   };
 }
 
-export function terminalLinkStyle(tone = "amber") {
+export function terminalLinkStyle(tone = "info") {
   return {
-    color: tone === "cyan" ? "var(--np-terminal-cyan)" : "var(--np-terminal-amber)",
+    color: toneColor(tone === "amber" ? "accent" : tone),
     fontSize: 10,
-    fontWeight: 700,
-    letterSpacing: "0.08em",
+    fontWeight: 600,
+    letterSpacing: "0.06em",
     textTransform: "uppercase",
     textDecoration: "none",
-    fontFamily: "'DM Mono',monospace",
+    fontFamily: fontMono,
   };
 }
