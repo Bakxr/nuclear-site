@@ -47,6 +47,8 @@ export default function TerminalCommandBar({
     setQuery,
     selectEntity,
     resetWorkspace,
+    openPalette,
+    openHelp,
   } = useTerminal();
   const [now, setNow] = useState(() => new Date());
 
@@ -102,22 +104,37 @@ export default function TerminalCommandBar({
                   type="text"
                   value={state.query}
                   onChange={(event) => setQuery(event.target.value)}
+                  onFocus={() => openPalette?.()}
+                  onClick={() => openPalette?.()}
                   placeholder="Search plant, country, ticker, filing, project, story"
                   autoComplete="off"
                   autoCorrect="off"
                   autoCapitalize="off"
                   spellCheck={false}
                   aria-label="Terminal command search"
-                  style={{ ...terminalInputStyle(), fontSize: 12.5, fontWeight: 500 }}
+                  style={{ ...terminalInputStyle(), fontSize: 12.5, fontWeight: 500, cursor: "pointer" }}
                 />
                 <span
                   className="np-terminal-command-input-shortcut"
                   style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
                 >
-                  <kbd style={kbdStyle()}>⌘K</kbd>
+                  <button
+                    type="button"
+                    onClick={() => openPalette?.()}
+                    title="Open command palette"
+                    style={{ background: "transparent", border: "none", padding: 0, cursor: "pointer" }}
+                  >
+                    <kbd style={kbdStyle()}>⌘K</kbd>
+                  </button>
                   <kbd style={kbdStyle()}>/</kbd>
-                  {/* TODO: wire `?` to a keyboard shortcut help modal — separate phase. */}
-                  <kbd style={kbdStyle()} title="Shortcuts (coming soon)">?</kbd>
+                  <button
+                    type="button"
+                    onClick={() => openHelp?.()}
+                    title="Keyboard shortcuts"
+                    style={{ background: "transparent", border: "none", padding: 0, cursor: "pointer" }}
+                  >
+                    <kbd style={kbdStyle()}>?</kbd>
+                  </button>
                 </span>
               </div>
 

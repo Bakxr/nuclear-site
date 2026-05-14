@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { useTerminal } from "../context.jsx";
 import TerminalPanel from "./TerminalPanel.jsx";
 import {
+  terminalButtonStyle,
   terminalDataRowStyle,
   terminalLinkStyle,
   terminalMutedStyle,
@@ -18,7 +20,11 @@ function formatFiledLabel(value) {
 }
 
 export default function FilingRadarPanel() {
-  const { filingRows, selectEntity } = useTerminal();
+  const { filingRows, selectEntity, watchedSet } = useTerminal();
+  const [watchingOnly, setWatchingOnly] = useState(false);
+  const filteredFilings = watchingOnly
+    ? filingRows.filter((filing) => watchedSet.has(filing.id) || (filing.companyId && watchedSet.has(filing.companyId)))
+    : filingRows;
 
   return (
     <TerminalPanel
@@ -26,8 +32,18 @@ export default function FilingRadarPanel() {
       title="Filing radar"
       subtitle="Latest SEC disclosures across the tracked nuclear equity set."
       actions={[
+        <button
+          key="watching"
+          type="button"
+          onClick={() => setWatchingOnly((value) => !value)}
+          className="np-terminal-button"
+          style={terminalButtonStyle(watchingOnly, { compact: true, tone: "amber" })}
+          aria-pressed={watchingOnly}
+        >
+          Watching only
+        </button>,
         <span key="count" style={terminalTagStyle({ tone: "amber", compact: true })}>
-          {filingRows.length} filings
+          {filteredFilings.length} filings
         </span>,
       ]}
     >
@@ -39,7 +55,12 @@ export default function FilingRadarPanel() {
         </div>
 
         <div className="np-terminal-scroll" style={{ ...terminalScrollAreaStyle(300), padding: "0 10px" }}>
-          {filingRows.slice(0, 12).map((filing) => (
+          {watchingOnly && filteredFilings.length === 0 ? (
+            <div style={{ padding: "16px 0", fontSize: 11.5, ...terminalMutedStyle() }}>
+              No items match your watchlist.
+            </div>
+          ) : null}
+          {filteredFilings.slice(0, 12).map((filing) => (
             <div key={filing.id} className="np-terminal-row np-terminal-row--interactive" style={{ ...terminalDataRowStyle(), display: "grid", gridTemplateColumns: "56px minmax(0,1fr) auto", gap: 10, alignItems: "start" }}>
               <button
                 type="button"

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useTerminal } from "../context.jsx";
 import TerminalPanel from "./TerminalPanel.jsx";
 import {
@@ -14,7 +15,11 @@ import {
 const NEWS_TAGS = ["All", "Policy", "Expansion", "Markets", "Innovation", "Safety", "Research"];
 
 export default function CatalystWirePanel({ onRefreshData, isMobileViewport = false }) {
-  const { newsRows, officialRows, state, setNewsTag, selectEntity } = useTerminal();
+  const { newsRows, officialRows, state, setNewsTag, selectEntity, watchedSet } = useTerminal();
+  const [watchingOnly, setWatchingOnly] = useState(false);
+  const filteredRows = watchingOnly
+    ? newsRows.filter((item) => watchedSet.has(item.id))
+    : newsRows;
 
   return (
     <TerminalPanel
@@ -27,6 +32,16 @@ export default function CatalystWirePanel({ onRefreshData, isMobileViewport = fa
             {tag}
           </button>
         )),
+        <button
+          key="watching"
+          type="button"
+          onClick={() => setWatchingOnly((value) => !value)}
+          className="np-terminal-button"
+          style={terminalButtonStyle(watchingOnly, { compact: true, tone: "amber" })}
+          aria-pressed={watchingOnly}
+        >
+          Watching only
+        </button>,
         <button key="refresh" type="button" onClick={onRefreshData} className="np-terminal-button" style={terminalButtonStyle(false, { compact: true, tone: "cyan" })}>
           Refresh
         </button>,
@@ -42,7 +57,12 @@ export default function CatalystWirePanel({ onRefreshData, isMobileViewport = fa
         ) : null}
 
         <div className="np-terminal-scroll" style={{ ...terminalScrollAreaStyle(360), padding: "0 14px" }}>
-          {newsRows.slice(0, 10).map((item) => (
+          {watchingOnly && filteredRows.length === 0 ? (
+            <div style={{ padding: "16px 0", fontSize: 11.5, ...terminalMutedStyle() }}>
+              No items match your watchlist.
+            </div>
+          ) : null}
+          {filteredRows.slice(0, 10).map((item) => (
             <div
               key={item.id}
               className="np-terminal-row np-terminal-row--interactive"

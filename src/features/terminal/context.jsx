@@ -1,5 +1,12 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useCallback, useContext, useEffect, useMemo, useReducer } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { getBrowserSupabaseClient } from "../../lib/supabaseClient.js";
+import {
+  addWatchEntry,
+  bulkAddWatchEntries,
+  loadWatchlist,
+  removeWatchEntry,
+} from "./services/watchlist.js";
 import {
   buildEntityIndex,
   filterMapItems,
@@ -16,8 +23,16 @@ import {
 } from "./selectors.js";
 
 const WATCHLIST_KEY = "np-terminal-watchlist";
+const WATCHLIST_MIGRATED_KEY = "np-terminal-watchlist-migrated";
 const COMPARE_KEY = "np-terminal-compare";
 const MAX_COMPARE = 4;
+
+function describeEntityForWatch(entity) {
+  if (!entity) return { entity_type: "unknown", entity_label: "" };
+  const type = entity.entityType || "unknown";
+  const label = entity.name || entity.title || entity.ticker || entity.country || entity.id || "";
+  return { entity_type: type, entity_label: String(label).slice(0, 200) };
+}
 
 const TerminalContext = createContext(null);
 
@@ -46,6 +61,8 @@ function createInitialState(isMobileViewport) {
     compareIds: readStoredArray(COMPARE_KEY),
     watchedIds: readStoredArray(WATCHLIST_KEY),
     mapCollapsed: Boolean(isMobileViewport),
+    paletteOpen: false,
+    helpOpen: false,
   };
 }
 
@@ -77,6 +94,10 @@ function reducer(state, action) {
       return { ...state, watchedIds: action.value };
     case "setMapCollapsed":
       return { ...state, mapCollapsed: action.value };
+    case "setPaletteOpen":
+      return { ...state, paletteOpen: action.value };
+    case "setHelpOpen":
+      return { ...state, helpOpen: action.value };
     case "patch":
       return { ...state, ...action.value };
     case "reset":
@@ -147,6 +168,89 @@ export function TerminalProvider({ snapshot, isMobileViewport, children }) {
     if (typeof window !== "undefined") window.localStorage.setItem(WATCHLIST_KEY, JSON.stringify(state.watchedIds));
   }, [state.watchedIds]);
 
+  // Supabase-backed cross-device watchlist. We keep `state.watchedIds` as the
+  // source of truth and mirror it to the `terminal_watchlist` table whenever
+  // the user is authenticated. For unauthenticated users the localStorage
+  // cache above is the only persistence layer — everything below is additive.
+  const supabase = useMemo(() => {
+    try {
+      return getBrowserSupabaseClient() || null;
+    } catch {
+      return null;
+    }
+  }, []);
+  const [watchlistEntries, setWatchlistEntries] = useState([]);
+  const watchlistEntriesRef = useRef([]);
+  const watchedIdsRef = useRef(state.watchedIds);
+  useEffect(() => {
+    watchlistEntriesRef.current = watchlistEntries;
+  }, [watchlistEntries]);
+  useEffect(() => {
+    watchedIdsRef.current = state.watchedIds;
+  }, [state.watchedIds]);
+
+  useEffect(() => {
+    if (!supabase) return undefined;
+
+    let cancelled = false;
+
+    async function hydrate() {
+      const cloud = await loadWatchlist(supabase);
+      if (cancelled) return;
+
+      const cloudIds = cloud.map((row) => row.entity_id);
+      const localIds = watchedIdsRef.current || [];
+
+      // One-time migration: push any localStorage-only IDs to the cloud.
+      const migratedFlag = typeof window !== "undefined"
+        ? window.localStorage.getItem(WATCHLIST_MIGRATED_KEY)
+        : "1";
+      const missingFromCloud = localIds.filter((id) => !cloudIds.includes(id));
+      if (!migratedFlag && missingFromCloud.length > 0) {
+        const entries = missingFromCloud.map((id) => {
+          const entity = entityIndex.get(id);
+          const { entity_type, entity_label } = describeEntityForWatch(entity);
+          return { entity_id: id, entity_type, entity_label };
+        });
+        await bulkAddWatchEntries(supabase, entries);
+      }
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(WATCHLIST_MIGRATED_KEY, "1");
+      }
+
+      // Refresh after any migration writes so created_at ordering is right.
+      const finalRows = missingFromCloud.length > 0 ? await loadWatchlist(supabase) : cloud;
+      if (cancelled) return;
+
+      setWatchlistEntries(finalRows);
+
+      const finalIds = finalRows.map((row) => row.entity_id);
+      const mergedIds = Array.from(new Set([...finalIds, ...localIds]));
+      const sameLength = mergedIds.length === localIds.length;
+      const sameSet = sameLength && mergedIds.every((id) => localIds.includes(id));
+      if (!sameSet) {
+        dispatch({ type: "setWatchedIds", value: mergedIds });
+      }
+    }
+
+    hydrate().catch((err) => console.warn("[terminal-watchlist] hydrate failed", err));
+
+    // Re-hydrate on auth state changes (sign-in/out).
+    const { data: authSub } = supabase.auth.onAuthStateChange((event) => {
+      if (cancelled) return;
+      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        hydrate().catch(() => {});
+      } else if (event === "SIGNED_OUT") {
+        setWatchlistEntries([]);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      authSub?.subscription?.unsubscribe?.();
+    };
+  }, [entityIndex, supabase]);
+
   const setQuery = useCallback((value) => dispatch({ type: "setQuery", value }), []);
   const setLayer = useCallback((value) => dispatch({ type: "setLayer", value }), []);
   const setCountryFilter = useCallback((value) => dispatch({ type: "setCountryFilter", value }), []);
@@ -157,6 +261,13 @@ export function TerminalProvider({ snapshot, isMobileViewport, children }) {
   const setNewsTag = useCallback((value) => dispatch({ type: "setNewsTag", value }), []);
   const setMapCollapsed = useCallback((value) => dispatch({ type: "setMapCollapsed", value }), []);
   const resetWorkspace = useCallback(() => dispatch({ type: "reset" }), []);
+  const setPaletteOpen = useCallback((value) => dispatch({ type: "setPaletteOpen", value }), []);
+  const setHelpOpen = useCallback((value) => dispatch({ type: "setHelpOpen", value }), []);
+  const openPalette = useCallback(() => dispatch({ type: "setPaletteOpen", value: true }), []);
+  const closePalette = useCallback(() => dispatch({ type: "setPaletteOpen", value: false }), []);
+  const openHelp = useCallback(() => dispatch({ type: "setHelpOpen", value: true }), []);
+  const closeHelp = useCallback(() => dispatch({ type: "setHelpOpen", value: false }), []);
+  const toggleHelp = useCallback(() => dispatch({ type: "patch", value: { helpOpen: !state.helpOpen } }), [state.helpOpen]);
 
   const selectEntity = useCallback((entityOrId) => {
     const entity = typeof entityOrId === "string" ? entityIndex.get(entityOrId) : entityOrId;
@@ -176,13 +287,42 @@ export function TerminalProvider({ snapshot, isMobileViewport, children }) {
   }, [entityIndex, state.compareIds]);
 
   const toggleWatch = useCallback((entityId) => {
-    dispatch({
-      type: "setWatchedIds",
-      value: state.watchedIds.includes(entityId)
-        ? state.watchedIds.filter((id) => id !== entityId)
-        : [...state.watchedIds, entityId],
+    if (!entityId) return;
+    const isWatched = state.watchedIds.includes(entityId);
+    const prevIds = state.watchedIds;
+    const prevEntries = watchlistEntriesRef.current;
+    const nextIds = isWatched
+      ? state.watchedIds.filter((id) => id !== entityId)
+      : [...state.watchedIds, entityId];
+    dispatch({ type: "setWatchedIds", value: nextIds });
+
+    const entity = entityIndex.get(entityId);
+    const { entity_type, entity_label } = describeEntityForWatch(entity);
+
+    if (isWatched) {
+      setWatchlistEntries((rows) => rows.filter((row) => row.entity_id !== entityId));
+    } else {
+      const exists = prevEntries.some((row) => row.entity_id === entityId);
+      if (!exists) {
+        setWatchlistEntries((rows) => [
+          { entity_id: entityId, entity_type, entity_label, created_at: new Date().toISOString() },
+          ...rows,
+        ]);
+      }
+    }
+
+    if (!supabase) return;
+
+    const op = isWatched
+      ? removeWatchEntry(supabase, entityId)
+      : addWatchEntry(supabase, { entity_id: entityId, entity_type, entity_label });
+
+    op.catch((err) => {
+      console.warn("[terminal-watchlist] toggleWatch failed, rolling back", err);
+      dispatch({ type: "setWatchedIds", value: prevIds });
+      setWatchlistEntries(prevEntries);
     });
-  }, [state.watchedIds]);
+  }, [state.watchedIds, entityIndex, supabase]);
 
   const value = useMemo(() => ({
     snapshot,
@@ -203,6 +343,7 @@ export function TerminalProvider({ snapshot, isMobileViewport, children }) {
     availableReactorTypes,
     availableStatuses,
     watchedSet,
+    watchlistEntries,
     setQuery,
     setLayer,
     setCountryFilter,
@@ -216,6 +357,13 @@ export function TerminalProvider({ snapshot, isMobileViewport, children }) {
     selectEntity,
     toggleCompare,
     toggleWatch,
+    setPaletteOpen,
+    setHelpOpen,
+    openPalette,
+    closePalette,
+    openHelp,
+    closeHelp,
+    toggleHelp,
     getEntityById: (entityId) => getEntityById(snapshot, entityId),
   }), [
     snapshot,
@@ -236,6 +384,7 @@ export function TerminalProvider({ snapshot, isMobileViewport, children }) {
     availableReactorTypes,
     availableStatuses,
     watchedSet,
+    watchlistEntries,
     setQuery,
     setLayer,
     setCountryFilter,
@@ -249,6 +398,13 @@ export function TerminalProvider({ snapshot, isMobileViewport, children }) {
     selectEntity,
     toggleCompare,
     toggleWatch,
+    setPaletteOpen,
+    setHelpOpen,
+    openPalette,
+    closePalette,
+    openHelp,
+    closeHelp,
+    toggleHelp,
   ]);
 
   return <TerminalContext.Provider value={value}>{children}</TerminalContext.Provider>;

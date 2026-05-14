@@ -6,8 +6,11 @@ import FleetScoreboardPanel from "../features/terminal/components/FleetScoreboar
 import CatalystWirePanel from "../features/terminal/components/CatalystWirePanel.jsx";
 import OperatorPanel from "../features/terminal/components/OperatorPanel.jsx";
 import IntelligenceDeckPanel from "../features/terminal/components/IntelligenceDeckPanel.jsx";
+import CommandPalette from "../features/terminal/components/CommandPalette.jsx";
+import ShortcutsHelp from "../features/terminal/components/ShortcutsHelp.jsx";
+import WatchlistPanel from "../features/terminal/components/WatchlistPanel.jsx";
+import useTerminalShortcuts from "../features/terminal/hooks/useTerminalShortcuts.js";
 import {
-  terminalDataRowStyle,
   terminalLabelStyle,
   terminalMutedStyle,
   terminalTagStyle,
@@ -27,15 +30,9 @@ function LeftRail({ activeDesk, onActivateDesk }) {
   const {
     snapshot,
     selectedEntity,
-    watchedSet,
-    getEntityById,
     sourceRows,
   } = useTerminal();
 
-  const watchEntities = useMemo(
-    () => Array.from(watchedSet).map((id) => getEntityById(id)).filter(Boolean).slice(0, 5),
-    [getEntityById, watchedSet],
-  );
   const liveSources = sourceRows.filter((item) => item.status === "Live").length;
   const operatingPlants = snapshot.entities.plants.filter((plant) => plant.status === "Operating").length;
   const desks = [
@@ -112,30 +109,9 @@ function LeftRail({ activeDesk, onActivateDesk }) {
           </nav>
         </div>
 
-        {watchEntities.length ? (
-          <div style={{ display: "grid", gap: 8, paddingTop: 14, borderTop: "1px solid rgba(125,139,156,0.1)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
-              <div style={terminalLabelStyle("amber")}>Watchlist</div>
-              <span style={terminalTagStyle({ tone: "amber", compact: true })}>{watchEntities.length}</span>
-            </div>
-            <div style={{ display: "grid", gap: 0 }}>
-              {watchEntities.map((entity, index) => (
-                <div
-                  key={entity.id}
-                  style={{
-                    ...terminalDataRowStyle(),
-                    borderTop: index === 0 ? "none" : terminalDataRowStyle().borderTop,
-                  }}
-                >
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "var(--np-terminal-text)" }}>{entity.name || entity.title || entity.country}</div>
-                  <div style={{ fontSize: 10.5, marginTop: 4, ...terminalMutedStyle() }}>
-                    {entity.entityType}{entity.country ? ` | ${entity.country}` : ""}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
+        <div style={{ paddingTop: 14, borderTop: "1px solid rgba(125,139,156,0.1)" }}>
+          <WatchlistPanel />
+        </div>
       </div>
     </aside>
   );
@@ -279,36 +255,18 @@ function TerminalWorkspaceShell({
     }
   }, [resetWorkspace, setLayer]);
 
+  // Global keyboard shortcuts: ⌘K/Ctrl+K (palette), / (palette), ? (help),
+  // Esc (close modals), 1-6 (desk hotkeys — dispatched as np-terminal-desk
+  // CustomEvent which we listen for below).
+  useTerminalShortcuts();
+
   useEffect(() => {
-    const onKeyDown = (event) => {
-      const target = event.target;
-      const tagName = target?.tagName;
-      const isTypingSurface = tagName === "INPUT" || tagName === "TEXTAREA" || tagName === "SELECT" || target?.isContentEditable;
-      if (isTypingSurface) return;
-
-      if (event.key === "/") {
-        event.preventDefault();
-        document.getElementById("np-terminal-command-input")?.focus();
-        return;
-      }
-
-      const hotkeyMap = {
-        "1": "overview",
-        "2": "map",
-        "3": "fuel",
-        "4": "markets",
-        "5": "pipeline",
-        "6": "filings",
-      };
-      const nextDesk = hotkeyMap[event.key];
-      if (nextDesk) {
-        event.preventDefault();
-        activateDesk(nextDesk);
-      }
+    const onDeskEvent = (event) => {
+      const deskId = event.detail?.deskId;
+      if (deskId) activateDesk(deskId);
     };
-
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    window.addEventListener("np-terminal-desk", onDeskEvent);
+    return () => window.removeEventListener("np-terminal-desk", onDeskEvent);
   }, [activateDesk]);
 
   return (
@@ -356,6 +314,9 @@ function TerminalWorkspaceShell({
       </div>
 
       <FooterStrip onOpenStock={onOpenStock} />
+
+      <CommandPalette />
+      <ShortcutsHelp />
     </div>
   );
 }

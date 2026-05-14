@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Line, LineChart, ResponsiveContainer } from "recharts";
 import { useTerminal } from "../context.jsx";
 import TerminalPanel from "./TerminalPanel.jsx";
@@ -14,23 +15,39 @@ import { starButtonStyle, starGlyph } from "./tokens.js";
 
 export default function MarketMonitorPanel({ onOpenStock, isMobileViewport = false }) {
   const { marketRows, state, setMarketSort, selectEntity, toggleWatch, watchedSet } = useTerminal();
+  const [watchingOnly, setWatchingOnly] = useState(false);
   const actions = [
     { key: "pct", label: "% move" },
     { key: "price", label: "Price" },
     { key: "theme", label: "Theme" },
     { key: "name", label: "Name" },
   ];
+  const filteredMarketRows = watchingOnly
+    ? marketRows.filter((row) => watchedSet.has(row.company?.id || row.id))
+    : marketRows;
 
   return (
     <TerminalPanel
       panelId="terminal-panel-market"
       title="Market monitor"
       subtitle="Delayed nuclear watchlist linked to fleets, fuel-cycle exposures, and live catalyst focus."
-      actions={actions.map((sort) => (
-        <button key={sort.key} type="button" onClick={() => setMarketSort(sort.key)} className="np-terminal-button" style={terminalButtonStyle(state.marketSort === sort.key, { compact: true })}>
-          {sort.label}
-        </button>
-      ))}
+      actions={[
+        ...actions.map((sort) => (
+          <button key={sort.key} type="button" onClick={() => setMarketSort(sort.key)} className="np-terminal-button" style={terminalButtonStyle(state.marketSort === sort.key, { compact: true })}>
+            {sort.label}
+          </button>
+        )),
+        <button
+          key="watching"
+          type="button"
+          onClick={() => setWatchingOnly((value) => !value)}
+          className="np-terminal-button"
+          style={terminalButtonStyle(watchingOnly, { compact: true, tone: "amber" })}
+          aria-pressed={watchingOnly}
+        >
+          Watching only
+        </button>,
+      ]}
     >
       <div style={{ display: "grid", gap: 6 }}>
         {!isMobileViewport ? (
@@ -44,7 +61,12 @@ export default function MarketMonitorPanel({ onOpenStock, isMobileViewport = fal
         ) : null}
 
         <div className="np-terminal-scroll" style={{ ...terminalScrollAreaStyle(320), padding: "0 10px" }}>
-          {marketRows.slice(0, 12).map((stock) => {
+          {watchingOnly && filteredMarketRows.length === 0 ? (
+            <div style={{ padding: "16px 0", fontSize: 11.5, ...terminalMutedStyle() }}>
+              No items match your watchlist.
+            </div>
+          ) : null}
+          {filteredMarketRows.slice(0, 12).map((stock) => {
             const mini = stock.history?.slice(-16) || [];
             const targetId = stock.company?.id || stock.id;
             const isStarred = watchedSet.has(targetId);
@@ -108,7 +130,7 @@ export default function MarketMonitorPanel({ onOpenStock, isMobileViewport = fal
           <div style={{ fontSize: 10.5, ...terminalMutedStyle() }}>
             Sort locked to {state.marketSort}. Data remains tied to the selected terminal context.
           </div>
-          <span style={terminalTagStyle({ tone: "cyan", compact: true })}>{marketRows.length} tracked</span>
+          <span style={terminalTagStyle({ tone: "cyan", compact: true })}>{filteredMarketRows.length} tracked</span>
         </div>
       </div>
     </TerminalPanel>
