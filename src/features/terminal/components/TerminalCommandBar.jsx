@@ -5,6 +5,7 @@ import {
   terminalMutedStyle,
   terminalTagStyle,
 } from "./styles.js";
+import { kbdStyle } from "./tokens.js";
 
 function formatFreshness(value) {
   if (!value) return "--:--";
@@ -107,9 +108,17 @@ export default function TerminalCommandBar({
                   autoCapitalize="off"
                   spellCheck={false}
                   aria-label="Terminal command search"
-                  style={{ ...terminalInputStyle(), fontSize: 13.5, fontWeight: 500 }}
+                  style={{ ...terminalInputStyle(), fontSize: 12.5, fontWeight: 500 }}
                 />
-                <span className="np-terminal-command-input-shortcut">/ focus</span>
+                <span
+                  className="np-terminal-command-input-shortcut"
+                  style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
+                >
+                  <kbd style={kbdStyle()}>⌘K</kbd>
+                  <kbd style={kbdStyle()}>/</kbd>
+                  {/* TODO: wire `?` to a keyboard shortcut help modal — separate phase. */}
+                  <kbd style={kbdStyle()} title="Shortcuts (coming soon)">?</kbd>
+                </span>
               </div>
 
               {state.query.trim() && searchResults.length > 0 ? (
