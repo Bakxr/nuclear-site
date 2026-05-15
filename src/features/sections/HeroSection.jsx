@@ -50,9 +50,9 @@ function useUraniumPrice() {
   useEffect(() => {
     let cancelled = false;
     const controller = new AbortController();
-    fetch("/api/market/uranium", { signal: controller.signal })
+    fetch("/api/news", { signal: controller.signal })
       .then((res) => (res.ok ? res.json() : null))
-      .then((payload) => { if (!cancelled && payload) setData(payload); })
+      .then((payload) => { if (!cancelled && payload?.uranium) setData(payload.uranium); })
       .catch(() => {});
     return () => { cancelled = true; controller.abort(); };
   }, []);
