@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useTerminal } from "../context.jsx";
 
 // Global keyboard shortcuts for the /terminal route.
 //
@@ -36,15 +37,17 @@ const DESK_BY_DIGIT = {
   6: "filings",
 };
 
-export default function useTerminalShortcuts({
-  paletteOpen,
-  helpOpen,
-  openPalette,
-  closePalette,
-  openHelp,
-  closeHelp,
-  toggleHelp,
-}) {
+export default function useTerminalShortcuts() {
+  const {
+    state,
+    openPalette,
+    closePalette,
+    closeHelp,
+    toggleHelp,
+  } = useTerminal();
+  const paletteOpen = state?.paletteOpen;
+  const helpOpen = state?.helpOpen;
+
   useEffect(() => {
     function onKeyDown(event) {
       // ⌘K / Ctrl+K is global — works even inside inputs.
@@ -95,5 +98,5 @@ export default function useTerminalShortcuts({
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [paletteOpen, helpOpen, openPalette, closePalette, openHelp, closeHelp, toggleHelp]);
+  }, [paletteOpen, helpOpen, openPalette, closePalette, closeHelp, toggleHelp]);
 }
