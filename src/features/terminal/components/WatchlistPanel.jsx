@@ -1,4 +1,5 @@
 import { useTerminal } from "../context.jsx";
+import AlertsPanel from "./AlertsPanel.jsx";
 import TerminalPanel from "./TerminalPanel.jsx";
 import {
   terminalMutedStyle,
@@ -49,6 +50,7 @@ export default function WatchlistPanel() {
   const rows = [...watchlistEntries, ...supplemental].sort(compareCreatedDesc);
 
   return (
+    <div style={{ display: "grid", gap: 10 }}>
     <TerminalPanel
       panelId="terminal-panel-watchlist"
       title="Watchlist"
@@ -131,5 +133,7 @@ export default function WatchlistPanel() {
         )}
       </div>
     </TerminalPanel>
+    <AlertsPanel />
+    </div>
   );
 }

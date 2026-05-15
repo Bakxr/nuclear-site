@@ -8,6 +8,11 @@ import {
   removeWatchEntry,
 } from "./services/watchlist.js";
 import {
+  createAlert as createAlertRemote,
+  deleteAlert as deleteAlertRemote,
+  listAlerts as listAlertsRemote,
+} from "./services/alerts.js";
+import {
   buildEntityIndex,
   filterMapItems,
   getEntityById,
@@ -324,6 +329,45 @@ export function TerminalProvider({ snapshot, isMobileViewport, children }) {
     });
   }, [state.watchedIds, entityIndex, supabase]);
 
+  // Alerts: additive layer over the watchlist. We hydrate from /api/alerts
+  // when the user is authenticated; unauth users see an empty list.
+  const [alerts, setAlerts] = useState([]);
+  const [alertsLoading, setAlertsLoading] = useState(false);
+  const [alertsError, setAlertsError] = useState(null);
+
+  const refreshAlerts = useCallback(async () => {
+    if (!supabase) return;
+    setAlertsLoading(true);
+    setAlertsError(null);
+    try {
+      const rows = await listAlertsRemote(supabase);
+      setAlerts(Array.isArray(rows) ? rows : []);
+    } catch (err) {
+      setAlertsError(err?.message || "Failed to load alerts.");
+    } finally {
+      setAlertsLoading(false);
+    }
+  }, [supabase]);
+
+  const createAlert = useCallback(async (payload) => {
+    if (!supabase) throw new Error("Sign in to create alerts.");
+    const created = await createAlertRemote(supabase, payload);
+    if (created) setAlerts((rows) => [created, ...rows]);
+    return created;
+  }, [supabase]);
+
+  const deleteAlert = useCallback(async (id) => {
+    if (!supabase) return;
+    const prev = alerts;
+    setAlerts((rows) => rows.filter((row) => row.id !== id));
+    try {
+      await deleteAlertRemote(supabase, id);
+    } catch (err) {
+      console.warn("[terminal-alerts] delete failed", err);
+      setAlerts(prev);
+    }
+  }, [supabase, alerts]);
+
   const value = useMemo(() => ({
     snapshot,
     state,
@@ -344,6 +388,12 @@ export function TerminalProvider({ snapshot, isMobileViewport, children }) {
     availableStatuses,
     watchedSet,
     watchlistEntries,
+    alerts,
+    alertsLoading,
+    alertsError,
+    refreshAlerts,
+    createAlert,
+    deleteAlert,
     setQuery,
     setLayer,
     setCountryFilter,
@@ -385,6 +435,12 @@ export function TerminalProvider({ snapshot, isMobileViewport, children }) {
     availableStatuses,
     watchedSet,
     watchlistEntries,
+    alerts,
+    alertsLoading,
+    alertsError,
+    refreshAlerts,
+    createAlert,
+    deleteAlert,
     setQuery,
     setLayer,
     setCountryFilter,

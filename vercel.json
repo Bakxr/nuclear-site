@@ -6,5 +6,9 @@
     { "source": "/terminal", "destination": "/" },
     { "source": "/api/terminal/entity/:id", "destination": "/api/terminal/entity?id=:id" },
     { "source": "/api/terminal/panel/:key", "destination": "/api/terminal/panel?key=:key" }
+  ],
+  "crons": [
+    { "path": "/api/cron/dispatch?job=daily", "schedule": "30 10 * * *" },
+    { "path": "/api/cron/dispatch?job=weekly", "schedule": "0 22 * * 0" }
   ]
 }
