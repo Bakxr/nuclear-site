@@ -1,10 +1,13 @@
 import { STOCKS_BASE } from "../../src/data/constants.js";
 import { buildTerminalSnapshot } from "../../src/features/terminal/data.js";
+import { fetchIaeaReactorSummary } from "./iaea.js";
 import { fetchBatchQuotes } from "./market.js";
 import { getLiveNewsPayload } from "./newsFeed.js";
 import { fetchNrcPlantStatus } from "./nrc.js";
 import { fetchLatestCompanyFilings } from "./sec.js";
+import { fetchInsiderForm4 } from "./secInsider.js";
 import { readTerminalCache, writeTerminalCache } from "./terminalStore.js";
+import { fetchUraniumPrice } from "./uranium.js";
 
 const SNAPSHOT_KEY = "terminal_snapshot_v1";
 const SNAPSHOT_TTL_MS = 10 * 60 * 1000;
@@ -33,11 +36,22 @@ export async function getTerminalSnapshot({ force = false } = {}) {
 }
 
 async function buildSnapshot(cached, force) {
-  const [quotesResult, newsResult, filingsResult, operationsResult] = await Promise.allSettled([
+  const [
+    quotesResult,
+    newsResult,
+    filingsResult,
+    operationsResult,
+    uraniumResult,
+    iaeaResult,
+    insiderResult,
+  ] = await Promise.allSettled([
     fetchBatchQuotes(STOCKS_BASE.map((stock) => stock.ticker)),
     getLiveNewsPayload({ force }),
     fetchLatestCompanyFilings(STOCKS_BASE),
     fetchNrcPlantStatus(),
+    fetchUraniumPrice({ force }),
+    fetchIaeaReactorSummary({ force }),
+    fetchInsiderForm4(STOCKS_BASE),
   ]);
 
   const quotes = quotesResult.status === "fulfilled" ? quotesResult.value : {};
@@ -86,6 +100,50 @@ async function buildSnapshot(cached, force) {
   snapshot.freshness.news.stale = Boolean(newsPayload.stale);
   snapshot.freshness.filings.stale = filingsResult.status !== "fulfilled" && !companyFilings.length;
   snapshot.freshness.operations.stale = operationsResult.status !== "fulfilled" && !operationsSignals.length;
+
+  // Uranium spot proxy (Sprott SPUT NAV) — falls back to previous cached value if every provider fails.
+  const uranium = uraniumResult.status === "fulfilled" && uraniumResult.value
+    ? uraniumResult.value
+    : (cached?.payload?.entities?.uranium || null);
+  const uraniumStale = !uranium || uranium.stale === true || uraniumResult.status !== "fulfilled";
+  snapshot.entities.uranium = uranium;
+  snapshot.freshness.uranium = {
+    label: "Uranium",
+    updatedAt: uranium?.fetchedAt || uranium?.asOf || now,
+    stale: uraniumStale,
+    sourceName: uranium?.source || "Sprott Physical Uranium Trust NAV",
+    sourceUrl: uranium?.sourceUrl || "https://sprott.com/investment-strategies/exchange-listed-products/physical-commodity-funds/uranium/",
+    public: true,
+  };
+
+  // IAEA PRIS reactor counts — falls back to cached payload, then null.
+  const iaea = iaeaResult.status === "fulfilled" && iaeaResult.value
+    ? iaeaResult.value
+    : (cached?.payload?.entities?.iaeaReactors || null);
+  snapshot.entities.iaeaReactors = iaea;
+  snapshot.freshness.iaea = {
+    label: "Reactor Fleet",
+    updatedAt: iaea?.fetchedAt || (iaea?.asOf ? `${iaea.asOf}T00:00:00.000Z` : now),
+    stale: !iaea || iaea.stale === true || iaeaResult.status !== "fulfilled",
+    sourceName: iaea?.source || "IAEA PRIS",
+    sourceUrl: iaea?.sourceUrl || "https://pris.iaea.org/PRIS/",
+    public: true,
+  };
+
+  // SEC Form 4 insider trades.
+  const insiderTrades = insiderResult.status === "fulfilled" && Array.isArray(insiderResult.value)
+    ? insiderResult.value
+    : (cached?.payload?.entities?.insiderTrades || []);
+  snapshot.entities.insiderTrades = insiderTrades;
+  snapshot.freshness.insider = {
+    label: "Insider",
+    updatedAt: now,
+    stale: insiderResult.status !== "fulfilled" && !insiderTrades.length,
+    sourceName: "SEC EDGAR Form 4",
+    sourceUrl: "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&type=4",
+    public: true,
+  };
+
   await writeTerminalCache(SNAPSHOT_KEY, snapshot);
   return snapshot;
 }

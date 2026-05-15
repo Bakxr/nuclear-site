@@ -1,16 +1,63 @@
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 import { NUCLEAR_PLANTS } from "../../data/plants.js";
 import { EASE, wordReveal } from "./animations.js";
 import CountUp from "./CountUp.jsx";
 
-const GLOBAL_STATS = [
+// Fallback values used until the live fetch returns (or if every provider fails).
+const URANIUM_FALLBACK = {
+  target: 110,
+  sub: "per lb U₃O₈",
+  source: "UxC / Trading Economics",
+  sourceUrl: "https://tradingeconomics.com/commodity/uranium",
+};
+
+const STATIC_GLOBAL_STATS = [
   { label: "Operating Reactors", target: 440, decimals: 0, prefix: "", suffix: "", sub: "across 32 countries", source: "IAEA PRIS", sourceUrl: "https://pris.iaea.org/PRIS/WorldStatistics/OperationalReactorsByCountry.aspx" },
   { label: "Under Construction", target: 63, decimals: 0, prefix: "", suffix: "", sub: "in 16 countries", source: "IAEA PRIS", sourceUrl: "https://pris.iaea.org/PRIS/WorldStatistics/UnderConstructionReactorsByCountry.aspx" },
   { label: "Global Electricity", target: 10, decimals: 0, prefix: "~", suffix: "%", sub: "2,818 TWh in 2024", source: "World Nuclear Association", sourceUrl: "https://world-nuclear.org/nuclear-essentials/how-much-of-the-world-s-electricity-comes-from-nuclear" },
   { label: "CO₂ Avoided", target: 2, decimals: 0, prefix: "", suffix: " Gt", sub: "per year vs. fossil fuels", source: "IAEA Climate Report", sourceUrl: "https://www.iaea.org/topics/nuclear-power-and-climate-change" },
   { label: "Capacity Factor", target: 92.5, decimals: 1, prefix: "", suffix: "%", sub: "highest of any source", source: "US EIA, 2024", sourceUrl: "https://www.eia.gov/electricity/monthly/" },
-  { label: "Uranium Price", target: 110, decimals: 0, prefix: "$", suffix: "", sub: "per lb U₃O₈", source: "UxC / Trading Economics", sourceUrl: "https://tradingeconomics.com/commodity/uranium" },
 ];
+
+function buildUraniumStat(live) {
+  if (live && Number.isFinite(live.pricePerLb)) {
+    return {
+      label: "Uranium Price",
+      target: live.pricePerLb,
+      decimals: live.pricePerLb >= 100 ? 0 : 2,
+      prefix: "$",
+      suffix: "",
+      sub: URANIUM_FALLBACK.sub,
+      source: live.source || URANIUM_FALLBACK.source,
+      sourceUrl: live.sourceUrl || URANIUM_FALLBACK.sourceUrl,
+    };
+  }
+  return {
+    label: "Uranium Price",
+    target: URANIUM_FALLBACK.target,
+    decimals: 0,
+    prefix: "$",
+    suffix: "",
+    sub: URANIUM_FALLBACK.sub,
+    source: URANIUM_FALLBACK.source,
+    sourceUrl: URANIUM_FALLBACK.sourceUrl,
+  };
+}
+
+function useUraniumPrice() {
+  const [data, setData] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    const controller = new AbortController();
+    fetch("/api/market/uranium", { signal: controller.signal })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((payload) => { if (!cancelled && payload) setData(payload); })
+      .catch(() => {});
+    return () => { cancelled = true; controller.abort(); };
+  }, []);
+  return data;
+}
 
 export default function HeroSection({
   statsRef,
@@ -20,6 +67,8 @@ export default function HeroSection({
   heroOpacity,
   showStats,
 }) {
+  const uranium = useUraniumPrice();
+  const GLOBAL_STATS = [...STATIC_GLOBAL_STATS, buildUraniumStat(uranium)];
   return (
     <div
       className="np-first-fold"
