@@ -17,13 +17,20 @@ import {
   filterMapItems,
   getEntityById,
   searchTerminalSnapshot,
+  selectContractRows,
   selectCountryRanking,
+  selectEarningsRows,
   selectFilingRows,
+  selectInsiderRows,
+  selectLobbyingRows,
   selectMarketRows,
+  selectMaterialEventRows,
   selectNewsRows,
+  selectNrcDocketRows,
   selectOfficialWireRows,
   selectOperationsRows,
   selectPipelineRows,
+  selectPredictionMarketRows,
   selectSourceRows,
 } from "./selectors.js";
 
@@ -158,6 +165,13 @@ export function TerminalProvider({ snapshot, isMobileViewport, children }) {
   const filingRows = useMemo(() => selectFilingRows(snapshot, { selectedEntity }), [snapshot, selectedEntity]);
   const operationsRows = useMemo(() => selectOperationsRows(snapshot, { selectedEntity }), [snapshot, selectedEntity]);
   const sourceRows = useMemo(() => selectSourceRows(snapshot), [snapshot]);
+  const insiderRows = useMemo(() => selectInsiderRows(snapshot, { selectedEntity }), [snapshot, selectedEntity]);
+  const contractRows = useMemo(() => selectContractRows(snapshot), [snapshot]);
+  const lobbyingRows = useMemo(() => selectLobbyingRows(snapshot), [snapshot]);
+  const earningsRows = useMemo(() => selectEarningsRows(snapshot, { selectedEntity }), [snapshot, selectedEntity]);
+  const materialEventRows = useMemo(() => selectMaterialEventRows(snapshot, { selectedEntity }), [snapshot, selectedEntity]);
+  const nrcDocketRows = useMemo(() => selectNrcDocketRows(snapshot, { selectedEntity }), [snapshot, selectedEntity]);
+  const predictionMarketRows = useMemo(() => selectPredictionMarketRows(snapshot), [snapshot]);
   const searchResults = useMemo(() => searchTerminalSnapshot(snapshot, state.query), [snapshot, state.query]);
   const compareEntities = useMemo(() => state.compareIds.map((id) => entityIndex.get(id)).filter(Boolean), [entityIndex, state.compareIds]);
   const watchedSet = useMemo(() => new Set(state.watchedIds), [state.watchedIds]);
@@ -381,6 +395,13 @@ export function TerminalProvider({ snapshot, isMobileViewport, children }) {
     filingRows,
     operationsRows,
     sourceRows,
+    insiderRows,
+    contractRows,
+    lobbyingRows,
+    earningsRows,
+    materialEventRows,
+    nrcDocketRows,
+    predictionMarketRows,
     searchResults,
     compareEntities,
     availableCountries,
@@ -428,6 +449,13 @@ export function TerminalProvider({ snapshot, isMobileViewport, children }) {
     filingRows,
     operationsRows,
     sourceRows,
+    insiderRows,
+    contractRows,
+    lobbyingRows,
+    earningsRows,
+    materialEventRows,
+    nrcDocketRows,
+    predictionMarketRows,
     searchResults,
     compareEntities,
     availableCountries,

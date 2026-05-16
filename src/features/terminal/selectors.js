@@ -180,6 +180,68 @@ export function selectSourceRows(snapshot) {
   });
 }
 
+function safeArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+export function selectInsiderRows(snapshot, { selectedEntity } = {}) {
+  let rows = safeArray(snapshot.entities.insiderTrades);
+  if (selectedEntity?.entityType === "company" && selectedEntity.ticker) {
+    rows = rows.filter((row) => row.ticker === selectedEntity.ticker);
+  }
+  if (selectedEntity?.entityType === "filing" && selectedEntity.ticker) {
+    rows = rows.filter((row) => row.ticker === selectedEntity.ticker);
+  }
+  return [...rows].sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
+}
+
+export function selectContractRows(snapshot) {
+  return [...safeArray(snapshot.entities.govContracts)].sort(
+    (a, b) => new Date(b.postedDate || 0).getTime() - new Date(a.postedDate || 0).getTime(),
+  );
+}
+
+export function selectLobbyingRows(snapshot) {
+  return [...safeArray(snapshot.entities.lobbying)].sort(
+    (a, b) => new Date(b.postedDate || 0).getTime() - new Date(a.postedDate || 0).getTime(),
+  );
+}
+
+export function selectEarningsRows(snapshot, { selectedEntity } = {}) {
+  let rows = safeArray(snapshot.entities.earningsCalendar);
+  if (selectedEntity?.entityType === "company" && selectedEntity.ticker) {
+    rows = rows.filter((row) => row.ticker === selectedEntity.ticker);
+  }
+  return [...rows].sort((a, b) => {
+    const aN = a.estimatedNext ? new Date(a.estimatedNext).getTime() : Infinity;
+    const bN = b.estimatedNext ? new Date(b.estimatedNext).getTime() : Infinity;
+    return aN - bN;
+  });
+}
+
+export function selectMaterialEventRows(snapshot, { selectedEntity } = {}) {
+  let rows = safeArray(snapshot.entities.materialEvents);
+  if (selectedEntity?.entityType === "company" && selectedEntity.ticker) {
+    rows = rows.filter((row) => row.ticker === selectedEntity.ticker);
+  }
+  return [...rows].sort((a, b) => new Date(b.filedAt || 0).getTime() - new Date(a.filedAt || 0).getTime());
+}
+
+export function selectNrcDocketRows(snapshot, { selectedEntity } = {}) {
+  let rows = safeArray(snapshot.entities.nrcDockets);
+  if (selectedEntity?.entityType === "plant" && selectedEntity.name) {
+    const n = normalize(selectedEntity.name);
+    rows = rows.filter((row) => normalize(row.plant || "").includes(n) || normalize(row.title || "").includes(n));
+  }
+  return [...rows].sort((a, b) => new Date(b.filedAt || 0).getTime() - new Date(a.filedAt || 0).getTime());
+}
+
+export function selectPredictionMarketRows(snapshot) {
+  return [...safeArray(snapshot.entities.predictionMarkets)].sort(
+    (a, b) => (b.volume || 0) - (a.volume || 0),
+  );
+}
+
 export function selectOfficialWireRows(snapshot, { selectedEntity } = {}) {
   const rows = selectNewsRows(snapshot, { selectedEntity, newsTag: "All" });
   return rows.filter((item) => item.isOfficial || item.sourceTier === "Official");

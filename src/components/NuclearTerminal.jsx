@@ -9,6 +9,12 @@ import IntelligenceDeckPanel from "../features/terminal/components/IntelligenceD
 import CommandPalette from "../features/terminal/components/CommandPalette.jsx";
 import ShortcutsHelp from "../features/terminal/components/ShortcutsHelp.jsx";
 import WatchlistPanel from "../features/terminal/components/WatchlistPanel.jsx";
+import InsiderTradesPanel from "../features/terminal/components/InsiderTradesPanel.jsx";
+import GovContractsPanel from "../features/terminal/components/GovContractsPanel.jsx";
+import LobbyingPanel from "../features/terminal/components/LobbyingPanel.jsx";
+import EarningsCalendarPanel from "../features/terminal/components/EarningsCalendarPanel.jsx";
+import NrcDocketsPanel from "../features/terminal/components/NrcDocketsPanel.jsx";
+import PredictionMarketsPanel from "../features/terminal/components/PredictionMarketsPanel.jsx";
 import useTerminalShortcuts from "../features/terminal/hooks/useTerminalShortcuts.js";
 import {
   terminalLabelStyle,
@@ -301,6 +307,18 @@ function TerminalWorkspaceShell({
               onOpenStock={onOpenStock}
               isMobileViewport={isMobileViewport}
             />
+            <div className="np-terminal-pair-grid">
+              <InsiderTradesPanel />
+              <EarningsCalendarPanel />
+            </div>
+            <div className="np-terminal-pair-grid">
+              <GovContractsPanel />
+              <LobbyingPanel />
+            </div>
+            <div className="np-terminal-pair-grid">
+              <PredictionMarketsPanel />
+              <NrcDocketsPanel />
+            </div>
           </div>
         </main>
 

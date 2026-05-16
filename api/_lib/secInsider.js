@@ -1,15 +1,17 @@
 import { readTerminalCache, writeTerminalCache } from "./terminalStore.js";
 
-const CACHE_KEY = "sec_insider_form4_v1";
+const CACHE_KEY = "sec_insider_form4_v2";
 const CACHE_TTL_MS = 4 * 60 * 60 * 1000;
+const FILING_CACHE_KEY = "sec_insider_form4_doc_v1";
+const FILING_TTL_MS = 4 * 60 * 60 * 1000;
 const FETCH_TIMEOUT_MS = 10_000;
 
 const COMPANY_TICKERS_URL = "https://www.sec.gov/files/company_tickers.json";
 const SUBMISSIONS_URL = "https://data.sec.gov/submissions";
-const MAX_PER_TICKER = 5;
-const MAX_TOTAL = 30;
+const MAX_PER_TICKER = 10;
+const MAX_TOTAL = 50;
 
-const inMemory = globalThis.__npSecInsiderCache ?? { tickerMap: null, tickerMapAt: 0 };
+const inMemory = globalThis.__npSecInsiderCache ?? { tickerMap: null, tickerMapAt: 0, docs: new Map() };
 globalThis.__npSecInsiderCache = inMemory;
 const TICKER_MAP_TTL = 24 * 60 * 60 * 1000;
 
@@ -25,20 +27,20 @@ function normalizeTicker(value = "") {
   return String(value || "").trim().toUpperCase();
 }
 
-async function fetchWithTimeout(url) {
+async function fetchWithTimeout(url, { accept = "application/json" } = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
     const res = await fetch(url, {
       signal: controller.signal,
       headers: {
-        accept: "application/json",
+        accept,
         "accept-encoding": "gzip, deflate",
         "user-agent": getUserAgent(),
       },
     });
     if (!res.ok) throw new Error(`sec:${res.status}`);
-    return res.json();
+    return accept.includes("json") ? res.json() : res.text();
   } finally {
     clearTimeout(timer);
   }
@@ -65,37 +67,98 @@ function buildDocUrl(cik, accession, primaryDoc) {
   return `https://www.sec.gov/Archives/edgar/data/${Number(cik)}/${accession.replace(/-/g, "")}/${primaryDoc}`;
 }
 
-function collectForm4(submissions, ticker, companyName) {
-  const recent = submissions?.filings?.recent;
-  if (!recent?.form || !Array.isArray(recent.form)) return [];
+function pickText(xml, tag) {
+  const re = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i");
+  const m = xml.match(re);
+  return m ? m[1].replace(/<[^>]+>/g, "").trim() : "";
+}
 
-  const forms = recent.form;
+function pickValue(xml, tag) {
+  // Many Form 4 fields wrap the value in <value>...</value>
+  const re = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i");
+  const m = xml.match(re);
+  if (!m) return "";
+  const inner = m[1];
+  const v = inner.match(/<value[^>]*>([\s\S]*?)<\/value>/i);
+  return (v ? v[1] : inner).replace(/<[^>]+>/g, "").trim();
+}
+
+/**
+ * Parse a Form 4 XML document for non-derivative transactions.
+ * Exported for testing.
+ */
+export function parseForm4Xml(xml, { ticker, url } = {}) {
+  if (typeof xml !== "string" || !xml.length) return [];
+  const filer = pickText(xml, "rptOwnerName");
+  const isDirector = /<isDirector>\s*(?:<value>)?\s*(?:1|true)\s*(?:<\/value>)?/i.test(xml);
+  const isOfficer = /<isOfficer>\s*(?:<value>)?\s*(?:1|true)\s*(?:<\/value>)?/i.test(xml);
+  const isTenPct = /<isTenPercentOwner>\s*(?:<value>)?\s*(?:1|true)\s*(?:<\/value>)?/i.test(xml);
+  const officerTitle = pickText(xml, "officerTitle");
+  const title = officerTitle || (isDirector ? "Director" : isOfficer ? "Officer" : isTenPct ? "10% Owner" : "Insider");
+
+  const txBlockRe = /<nonDerivativeTransaction>([\s\S]*?)<\/nonDerivativeTransaction>/gi;
   const out = [];
-  for (let i = 0; i < forms.length && out.length < MAX_PER_TICKER; i += 1) {
-    if (forms[i] !== "4" && forms[i] !== "4/A") continue;
-    const accession = recent.accessionNumber?.[i] || null;
-    const date = recent.filingDate?.[i] || null;
-    const primaryDoc = recent.primaryDocument?.[i] || null;
-    const filer = recent.reportingOwner?.[i] || null;
+  let m;
+  while ((m = txBlockRe.exec(xml)) !== null) {
+    const block = m[1];
+    const date = pickValue(block, "transactionDate");
+    const shares = Number(pickValue(block, "transactionShares")) || 0;
+    const price = Number(pickValue(block, "transactionPricePerShare")) || 0;
+    const code = pickValue(block, "transactionAcquiredDisposedCode").toUpperCase();
+    if (!date || !shares) continue;
     out.push({
       ticker,
-      companyName,
-      form: forms[i],
       filer,
-      transactionType: null,
-      shares: null,
-      value: null,
+      title,
+      transactionType: code === "A" ? "buy" : code === "D" ? "sell" : "other",
+      shares,
+      pricePerShare: price || null,
+      totalValue: price ? Math.round(shares * price * 100) / 100 : null,
       date,
-      accessionNumber: accession,
+      url,
+    });
+  }
+  return out;
+}
+
+function collectForm4Filings(submissions, ticker) {
+  const recent = submissions?.filings?.recent;
+  if (!recent?.form || !Array.isArray(recent.form)) return [];
+  const out = [];
+  for (let i = 0; i < recent.form.length && out.length < MAX_PER_TICKER; i += 1) {
+    if (recent.form[i] !== "4" && recent.form[i] !== "4/A") continue;
+    const accession = recent.accessionNumber?.[i] || null;
+    const primaryDoc = recent.primaryDocument?.[i] || null;
+    const date = recent.filingDate?.[i] || null;
+    if (!accession || !primaryDoc) continue;
+    out.push({
+      ticker,
+      accession,
+      filingDate: date,
       url: buildDocUrl(submissions?.cik, accession, primaryDoc),
     });
   }
   return out;
 }
 
+async function fetchAndParseDoc(filing) {
+  // per-doc cache (memory only — docs are immutable)
+  const cached = inMemory.docs.get(filing.url);
+  if (cached && Date.now() - cached.at < FILING_TTL_MS) return cached.rows;
+  try {
+    const xml = await fetchWithTimeout(filing.url, { accept: "application/xml,text/xml,*/*" });
+    const rows = parseForm4Xml(xml, { ticker: filing.ticker, url: filing.url });
+    inMemory.docs.set(filing.url, { rows, at: Date.now() });
+    return rows;
+  } catch (error) {
+    console.warn(`[sec/insider] doc fetch failed for ${filing.url}:`, error?.message || error);
+    return [];
+  }
+}
+
 /**
- * Fetch recent Form 4 insider transactions for tracked tickers.
- * Returns an array of { ticker, companyName, filer, transactionType, shares, value, date, url }.
+ * Fetch recent Form 4 insider transactions across tracked tickers, parsing XML
+ * for transaction-level detail. Returns an array (newest first), capped at MAX_TOTAL.
  */
 export async function fetchInsiderForm4(stocks = []) {
   const cached = await readTerminalCache(CACHE_KEY);
@@ -111,25 +174,44 @@ export async function fetchInsiderForm4(stocks = []) {
     return cached?.payload || [];
   }
 
-  const all = [];
+  // First pass: collect filing pointers across all tickers (cheap).
+  const filings = [];
   for (const stock of stocks) {
     const ticker = normalizeTicker(stock.ticker);
     const company = tickerMap.get(ticker);
     if (!company?.cik) continue;
     try {
       const submissions = await fetchWithTimeout(`${SUBMISSIONS_URL}/CIK${company.cik}.json`);
-      all.push(...collectForm4(submissions, ticker, stock.name || company.name));
+      filings.push(...collectForm4Filings(submissions, ticker));
     } catch (error) {
-      console.warn(`[sec/insider] ${ticker} failed:`, error?.message || error);
+      console.warn(`[sec/insider] submissions ${ticker}:`, error?.message || error);
     }
-    await new Promise((resolve) => setTimeout(resolve, 140));
+    await new Promise((r) => setTimeout(r, 140));
+  }
+
+  filings.sort((a, b) => new Date(b.filingDate || 0).getTime() - new Date(a.filingDate || 0).getTime());
+
+  // Second pass: fetch XML & parse, stopping once we hit MAX_TOTAL transactions.
+  const all = [];
+  for (const filing of filings) {
+    if (all.length >= MAX_TOTAL) break;
+    const rows = await fetchAndParseDoc(filing);
+    all.push(...rows);
+    await new Promise((r) => setTimeout(r, 90));
   }
 
   const sorted = all
     .filter((row) => row.date)
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, MAX_TOTAL);
+    .slice(0, MAX_TOTAL)
+    .map((row, index) => ({
+      id: `insider:${row.ticker}-${row.date}-${index}`,
+      entityType: "insiderTrade",
+      ...row,
+    }));
 
+  // Tag cache key (keyed v2 so stale shape gets replaced)
+  void FILING_CACHE_KEY;
   await writeTerminalCache(CACHE_KEY, sorted);
   return sorted;
 }
