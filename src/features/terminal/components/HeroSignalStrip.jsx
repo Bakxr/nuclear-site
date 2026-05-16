@@ -75,7 +75,7 @@ function HeroRow({ onClick, children }) {
 }
 
 export default function HeroSignalStrip() {
-  const { snapshot, selectEntity } = useTerminal();
+  const { snapshot, selectEntity, openMarket } = useTerminal();
 
   const movers = useMemo(() => selectHeroMovers(snapshot), [snapshot]);
   const markets = useMemo(() => selectHeroPredictionMarkets(snapshot), [snapshot]);
@@ -161,11 +161,7 @@ export default function HeroSignalStrip() {
             {markets.map((market) => {
               const sourceBadge = market.source === "polymarket" ? "pm" : market.source === "kalshi" ? "kx" : (market.source || "—");
               const tone = market.source === "polymarket" ? "cyan" : "amber";
-              const handleClick = () => {
-                if (market.url && typeof window !== "undefined") {
-                  window.open(market.url, "_blank", "noopener,noreferrer");
-                }
-              };
+              const handleClick = () => openMarket(market);
               return (
                 <HeroRow key={market.id} onClick={handleClick}>
                   <div style={{ display: "grid", gap: 4, minWidth: 0 }}>

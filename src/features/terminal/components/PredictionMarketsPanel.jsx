@@ -30,7 +30,7 @@ function fmtDate(value) {
 }
 
 export default function PredictionMarketsPanel() {
-  const { predictionMarketRows } = useTerminal();
+  const { predictionMarketRows, openMarket } = useTerminal();
   return (
     <TerminalPanel
       panelId="terminal-panel-prediction"
@@ -56,16 +56,25 @@ export default function PredictionMarketsPanel() {
             <div style={{ padding: "16px 0", fontSize: 11.5, ...terminalMutedStyle() }}>No active markets matching nuclear keywords.</div>
           ) : null}
           {predictionMarketRows.map((row) => (
-            <div key={row.id} className="np-terminal-row" style={{ ...terminalDataRowStyle(), display: "grid", gridTemplateColumns: "70px minmax(0,1fr) 60px 70px 70px 50px", gap: 8, alignItems: "center" }}>
+            <button
+              key={row.id}
+              type="button"
+              onClick={() => openMarket(row)}
+              className="np-terminal-row np-terminal-row--interactive np-terminal-button"
+              style={{ ...terminalDataRowStyle(), display: "grid", gridTemplateColumns: "70px minmax(0,1fr) 60px 70px 70px 50px", gap: 8, alignItems: "center", textAlign: "left", background: "transparent", cursor: "pointer", color: "var(--np-terminal-text)" }}
+            >
               <span style={{ ...terminalTagStyle({ tone: row.source === "polymarket" ? "cyan" : "amber", compact: true }) }}>{row.source}</span>
-              <div style={{ fontSize: 12, color: "var(--np-terminal-text)", lineHeight: 1.35 }}>{row.question}</div>
+              <div style={{ fontSize: 12, color: "var(--np-terminal-text)", lineHeight: 1.35 }}>
+                {row.question}
+                {row.anchor ? <span style={{ fontSize: 10, marginLeft: 6, color: "var(--np-terminal-amber)", fontFamily: "'DM Mono',monospace" }}>· {row.anchor.anchorLabel}</span> : null}
+              </div>
               <div style={{ ...terminalValueStyle({ tone: (row.yesPrice ?? 0) >= 0.5 ? "positive" : "default", size: 12 }), textAlign: "right" }}>{fmtPct(row.yesPrice)}</div>
               <div style={{ fontSize: 10.5, textAlign: "right", fontFamily: "'DM Mono',monospace", ...terminalMutedStyle() }}>{fmtVolume(row.volume)}</div>
               <div style={{ fontSize: 10.5, textAlign: "right", ...terminalMutedStyle() }}>{fmtDate(row.endDate)}</div>
               {row.url ? (
-                <a href={row.url} target="_blank" rel="noopener noreferrer" className="np-terminal-link" style={terminalLinkStyle("cyan")}>Open</a>
+                <a href={row.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="np-terminal-link" style={terminalLinkStyle("cyan")}>Open</a>
               ) : <span />}
-            </div>
+            </button>
           ))}
         </div>
       </div>

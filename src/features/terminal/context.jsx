@@ -70,6 +70,7 @@ function createInitialState(isMobileViewport) {
     marketSort: "pct",
     newsTag: "All",
     selectedEntityId: null,
+    selectedMarketId: null,
     compareIds: readStoredArray(COMPARE_KEY),
     watchedIds: readStoredArray(WATCHLIST_KEY),
     mapCollapsed: Boolean(isMobileViewport),
@@ -286,6 +287,18 @@ export function TerminalProvider({ snapshot, isMobileViewport, children }) {
   const closePalette = useCallback(() => dispatch({ type: "setPaletteOpen", value: false }), []);
   const openHelp = useCallback(() => dispatch({ type: "setHelpOpen", value: true }), []);
   const closeHelp = useCallback(() => dispatch({ type: "setHelpOpen", value: false }), []);
+  const openMarket = useCallback((market) => {
+    if (!market) return;
+    const id = typeof market === "string" ? market : market.id;
+    if (!id) return;
+    dispatch({ type: "patch", value: { selectedMarketId: id } });
+  }, []);
+  const closeMarket = useCallback(() => dispatch({ type: "patch", value: { selectedMarketId: null } }), []);
+  const selectedMarket = useMemo(() => {
+    if (!state.selectedMarketId) return null;
+    const rows = snapshot?.entities?.predictionMarkets || [];
+    return rows.find((row) => row.id === state.selectedMarketId) || null;
+  }, [snapshot, state.selectedMarketId]);
   const toggleHelp = useCallback(() => dispatch({ type: "patch", value: { helpOpen: !state.helpOpen } }), [state.helpOpen]);
 
   const selectEntity = useCallback((entityOrId) => {
@@ -435,6 +448,9 @@ export function TerminalProvider({ snapshot, isMobileViewport, children }) {
     openHelp,
     closeHelp,
     toggleHelp,
+    selectedMarket,
+    openMarket,
+    closeMarket,
     getEntityById: (entityId) => getEntityById(snapshot, entityId),
   }), [
     snapshot,
@@ -489,6 +505,9 @@ export function TerminalProvider({ snapshot, isMobileViewport, children }) {
     openHelp,
     closeHelp,
     toggleHelp,
+    selectedMarket,
+    openMarket,
+    closeMarket,
   ]);
 
   return <TerminalContext.Provider value={value}>{children}</TerminalContext.Provider>;

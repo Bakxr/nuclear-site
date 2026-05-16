@@ -15,6 +15,7 @@ import LobbyingPanel from "../features/terminal/components/LobbyingPanel.jsx";
 import EarningsCalendarPanel from "../features/terminal/components/EarningsCalendarPanel.jsx";
 import NrcDocketsPanel from "../features/terminal/components/NrcDocketsPanel.jsx";
 import PredictionMarketsPanel from "../features/terminal/components/PredictionMarketsPanel.jsx";
+import MarketFocusDrawer from "../features/terminal/components/MarketFocusDrawer.jsx";
 import HeroSignalStrip from "../features/terminal/components/HeroSignalStrip.jsx";
 import useTerminalShortcuts from "../features/terminal/hooks/useTerminalShortcuts.js";
 import {
@@ -337,6 +338,7 @@ function TerminalWorkspaceShell({
 
       <CommandPalette />
       <ShortcutsHelp />
+      <MarketFocusDrawer />
     </div>
   );
 }
