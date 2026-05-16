@@ -18,19 +18,35 @@ describe("fetchPredictionMarkets", () => {
   });
 
   it("filters by nuclear keywords and combines sources", async () => {
-    const poly = [
-      { id: "p1", question: "Will a new nuclear reactor open in 2026?", slug: "nuclear-2026", lastTradePrice: 0.42, volume: 50000, endDate: "2026-12-31" },
-      { id: "p2", question: "Will the Lakers win the title?", slug: "nba", lastTradePrice: 0.3, volume: 90000 },
-    ];
+    // Polymarket /events endpoint returns events with nested markets[].
+    // The fetcher hits 3 tag slugs in parallel (nuclear, uranium, energy);
+    // only the `nuclear` tag returns a result here, the others return [].
+    const polyEvents = (tagSlug) => {
+      if (tagSlug !== "nuclear") return [];
+      return [{
+        id: "evt1",
+        title: "Will a new nuclear reactor open in 2026?",
+        slug: "nuclear-2026",
+        markets: [
+          { id: "p1", question: "Will a new nuclear reactor open in 2026?", lastTradePrice: 0.42, volume: 50000, endDate: "2026-12-31" },
+        ],
+      }];
+    };
     const kalshi = { markets: [
       { ticker: "URAN-26", title: "Uranium spot above $90 in 2026", yes_bid: 35, no_bid: 65, volume: 10000, close_time: "2026-12-31" },
       { ticker: "WX-RAIN", title: "Will it rain Tuesday", yes_bid: 50, no_bid: 50 },
     ]};
-    globalThis.fetch = vi.fn(async (url) => ({
-      ok: true,
-      status: 200,
-      json: async () => (String(url).includes("polymarket") ? poly : kalshi),
-    }));
+    globalThis.fetch = vi.fn(async (url) => {
+      const u = String(url);
+      let body;
+      if (u.includes("polymarket")) {
+        const tag = new URL(u).searchParams.get("tag_slug") || "";
+        body = polyEvents(tag);
+      } else {
+        body = kalshi;
+      }
+      return { ok: true, status: 200, json: async () => body };
+    });
 
     const result = await fetchPredictionMarkets({ force: true });
     expect(result.length).toBe(2);
