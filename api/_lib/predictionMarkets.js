@@ -40,6 +40,27 @@ function matchesKeywords(text = "") {
   return KEYWORDS.some((kw) => lower.includes(kw));
 }
 
+function extractClobTokenId(market) {
+  // Polymarket exposes clobTokenIds as a JSON-encoded array string OR an array,
+  // depending on payload version. The YES token is conventionally first.
+  const raw = market.clobTokenIds ?? market.clob_token_ids ?? null;
+  if (Array.isArray(raw)) return raw[0] || null;
+  if (typeof raw === "string") {
+    try {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) return arr[0] || null;
+    } catch {
+      // Some payloads ship comma-separated.
+      const parts = raw.split(",").map((s) => s.trim()).filter(Boolean);
+      if (parts.length) return parts[0];
+    }
+  }
+  if (Array.isArray(market.tokens) && market.tokens.length) {
+    return market.tokens[0]?.token_id || market.tokens[0]?.id || null;
+  }
+  return null;
+}
+
 function normalizePolymarketMarket(market, event) {
   const question = market.question || event.title || market.slug || "";
   const yesPrice = Number(market.lastTradePrice ?? market.bestBid ?? market.outcomePrices?.[0]) || null;
@@ -49,12 +70,14 @@ function normalizePolymarketMarket(market, event) {
     entityType: "predictionMarket",
     source: "polymarket",
     question,
+    description: market.description || event.description || "",
     currentPrice: yesPrice,
     yesPrice,
     noPrice,
     volume: market.volume ? Number(market.volume) : (event.volume ? Number(event.volume) : null),
     endDate: market.endDate || event.endDate || null,
     url: event.slug ? `https://polymarket.com/event/${event.slug}` : "",
+    marketTokenId: extractClobTokenId(market),
   };
 }
 

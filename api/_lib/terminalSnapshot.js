@@ -8,6 +8,8 @@ import { getLiveNewsPayload } from "./newsFeed.js";
 import { fetchNrcPlantStatus } from "./nrc.js";
 import { fetchNrcDockets } from "./nrcDockets.js";
 import { fetchPredictionMarkets } from "./predictionMarkets.js";
+import { fetchMarketHistory } from "./polymarketHistory.js";
+import { inferMarketAnchor } from "../../src/features/terminal/marketAnchor.js";
 import { fetchGovContracts } from "./samGov.js";
 import { fetchLatestCompanyFilings } from "./sec.js";
 import { fetchInsiderForm4 } from "./secInsider.js";
@@ -225,7 +227,35 @@ async function buildSnapshot(cached, force) {
   };
 
   // Prediction markets (Polymarket + Kalshi).
-  const predictionMarkets = settled(predictionResult, cached?.payload?.entities?.predictionMarkets || []);
+  const predictionMarketsRaw = settled(predictionResult, cached?.payload?.entities?.predictionMarkets || []);
+  // Anchor each market to a geographic entity using the now-populated snapshot.
+  const anchorCtx = {
+    plants: snapshot.entities.plants || [],
+    countries: snapshot.entities.countries || [],
+    companies: snapshot.entities.companies || [],
+  };
+  const anchoredMarkets = predictionMarketsRaw.map((market) => {
+    const anchor = inferMarketAnchor(market, anchorCtx);
+    return anchor ? { ...market, anchor } : market;
+  });
+  // Pre-fetch price history for the top 8 polymarket rows so the drawer has
+  // chart data inline. Kalshi has no equivalent public history endpoint.
+  const topForHistory = [...anchoredMarkets]
+    .filter((m) => m.source === "polymarket" && m.marketTokenId)
+    .sort((a, b) => (b.volume || 0) - (a.volume || 0))
+    .slice(0, 8);
+  const historyResults = await Promise.allSettled(
+    topForHistory.map((m) => fetchMarketHistory(m.marketTokenId)),
+  );
+  const historyByToken = new Map();
+  topForHistory.forEach((m, i) => {
+    const r = historyResults[i];
+    if (r.status === "fulfilled" && r.value) historyByToken.set(m.marketTokenId, r.value);
+  });
+  const predictionMarkets = anchoredMarkets.map((market) => {
+    const h = market.marketTokenId ? historyByToken.get(market.marketTokenId) : null;
+    return h ? { ...market, history: h.history } : market;
+  });
   snapshot.entities.predictionMarkets = predictionMarkets;
   snapshot.freshness.predictionMarkets = {
     label: "Prediction Markets",
