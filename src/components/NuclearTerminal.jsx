@@ -167,7 +167,7 @@ function FooterStrip({ onOpenStock }) {
 
   return (
     <footer className="np-terminal-footer-strip">
-      <div className="np-terminal-content" style={{ maxWidth: 1840, margin: "0 auto", padding: "0 14px 14px" }}>
+      <div className="np-terminal-content" style={{ maxWidth: "min(2240px, calc(100vw - 32px))", margin: "0 auto", padding: "0 24px 14px" }}>
         <div className="np-terminal-footer-track">
           <div className="np-terminal-footer-title">
             <span style={terminalLabelStyle("amber")}>Live tape</span>
