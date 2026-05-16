@@ -15,6 +15,7 @@ import LobbyingPanel from "../features/terminal/components/LobbyingPanel.jsx";
 import EarningsCalendarPanel from "../features/terminal/components/EarningsCalendarPanel.jsx";
 import NrcDocketsPanel from "../features/terminal/components/NrcDocketsPanel.jsx";
 import PredictionMarketsPanel from "../features/terminal/components/PredictionMarketsPanel.jsx";
+import HeroSignalStrip from "../features/terminal/components/HeroSignalStrip.jsx";
 import useTerminalShortcuts from "../features/terminal/hooks/useTerminalShortcuts.js";
 import {
   terminalLabelStyle,
@@ -292,14 +293,10 @@ function TerminalWorkspaceShell({
 
         <main className="np-terminal-workspace">
           <div className="np-terminal-workspace-stack">
-            <MapNexusPanel
-              GlobeComponent={GlobeComponent}
-              isMobileViewport={isMobileViewport}
-              onOpenPlant={onOpenPlant}
-            />
+            <HeroSignalStrip />
             <div className="np-terminal-pair-grid">
               <CatalystWirePanel onRefreshData={onRefreshData} isMobileViewport={isMobileViewport} />
-              <FleetScoreboardPanel isMobileViewport={isMobileViewport} />
+              <PredictionMarketsPanel />
             </div>
             <IntelligenceDeckPanel
               activeTab={intelligenceTab}
@@ -311,13 +308,18 @@ function TerminalWorkspaceShell({
               <InsiderTradesPanel />
               <EarningsCalendarPanel />
             </div>
+            <MapNexusPanel
+              GlobeComponent={GlobeComponent}
+              isMobileViewport={isMobileViewport}
+              onOpenPlant={onOpenPlant}
+            />
             <div className="np-terminal-pair-grid">
               <GovContractsPanel />
               <LobbyingPanel />
             </div>
             <div className="np-terminal-pair-grid">
-              <PredictionMarketsPanel />
               <NrcDocketsPanel />
+              <FleetScoreboardPanel isMobileViewport={isMobileViewport} />
             </div>
           </div>
         </main>
