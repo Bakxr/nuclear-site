@@ -1,4 +1,15 @@
 import { normalizeCountryName } from "../../utils/countries.js";
+import { categorizeMarket, computeMarketDelta, DELTA_WINDOW_24H, DELTA_WINDOW_7D } from "./marketCategory.js";
+
+function decorateMarket(row) {
+  if (!row) return row;
+  return {
+    ...row,
+    category: row.category || categorizeMarket(row),
+    delta24h: computeMarketDelta(row.history, { window: DELTA_WINDOW_24H }),
+    delta7d: computeMarketDelta(row.history, { window: DELTA_WINDOW_7D }),
+  };
+}
 
 function normalize(value = "") {
   return String(value || "").toLowerCase();
@@ -237,9 +248,9 @@ export function selectNrcDocketRows(snapshot, { selectedEntity } = {}) {
 }
 
 export function selectPredictionMarketRows(snapshot) {
-  return [...safeArray(snapshot.entities.predictionMarkets)].sort(
-    (a, b) => (b.volume || 0) - (a.volume || 0),
-  );
+  return [...safeArray(snapshot.entities.predictionMarkets)]
+    .map(decorateMarket)
+    .sort((a, b) => (b.volume || 0) - (a.volume || 0));
 }
 
 export function selectHeroMovers(snapshot) {
@@ -255,6 +266,7 @@ export function selectHeroMovers(snapshot) {
 
 export function selectHeroPredictionMarkets(snapshot) {
   return [...safeArray(snapshot?.entities?.predictionMarkets)]
+    .map(decorateMarket)
     .sort((a, b) => (b.volume || 0) - (a.volume || 0))
     .slice(0, 3);
 }

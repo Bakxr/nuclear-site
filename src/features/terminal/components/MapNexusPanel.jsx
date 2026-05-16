@@ -3,6 +3,7 @@ import { STATUS_COLORS } from "../../../data/constants.js";
 import { SUPPLY_STAGE_COLORS } from "../../../data/supplySites.js";
 import { useTerminal } from "../context.jsx";
 import TerminalPanel from "./TerminalPanel.jsx";
+import MarketSparkline from "./MarketSparkline.jsx";
 import {
   terminalButtonStyle,
   terminalDataRowStyle,
@@ -359,8 +360,8 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
                           ...terminalDataRowStyle(),
                           borderTop: index === 0 ? "none" : terminalDataRowStyle().borderTop,
                           display: "grid",
-                          gridTemplateColumns: "34px minmax(0,1fr) auto",
-                          gap: 12,
+                          gridTemplateColumns: "26px minmax(0,1fr) 60px auto",
+                          gap: 10,
                           alignItems: "center",
                           textAlign: "left",
                           color: "var(--np-terminal-text)",
@@ -375,12 +376,23 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
                         <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 10.5, color: "var(--np-terminal-subtle)" }}>{String(index + 1).padStart(2, "0")}</div>
                         <div style={{ minWidth: 0 }}>
                           <div style={{ fontWeight: 700, fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{market.question}</div>
-                          <div style={{ fontSize: 10.5, marginTop: 4, ...terminalMutedStyle() }}>
-                            {market.anchor?.anchorLabel} · {(market.source || "").toUpperCase()}
+                          <div style={{ fontSize: 10.5, marginTop: 4, display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+                            {market.category ? (
+                              <span style={terminalTagStyle({ tone: market.category.tone || "default", compact: true })}>{market.category.label}</span>
+                            ) : null}
+                            <span style={terminalMutedStyle()}>{market.anchor?.anchorLabel} · {(market.source || "").toUpperCase()}</span>
                           </div>
                         </div>
-                        <div style={{ ...terminalValueStyle({ tone: (market.yesPrice ?? 0) >= 0.5 ? "positive" : "default", size: 13 }), textAlign: "right", fontFamily: "'DM Mono',monospace" }}>
-                          {Number.isFinite(market.yesPrice) ? `${Math.round(market.yesPrice * 100)}%` : "—"}
+                        <MarketSparkline history={market.history} width={60} height={20} fill />
+                        <div style={{ display: "grid", justifyItems: "end", gap: 2 }}>
+                          <div style={{ ...terminalValueStyle({ tone: (market.yesPrice ?? 0) >= 0.5 ? "positive" : "default", size: 13 }), fontFamily: "'DM Mono',monospace" }}>
+                            {Number.isFinite(market.yesPrice) ? `${Math.round(market.yesPrice * 100)}%` : "—"}
+                          </div>
+                          {Number.isFinite(market.delta24h) && market.delta24h !== 0 ? (
+                            <div style={{ fontSize: 10, fontFamily: "'DM Mono',monospace", color: market.delta24h > 0 ? "var(--np-terminal-success, #4caf72)" : "var(--np-terminal-danger, #e25960)" }}>
+                              {market.delta24h > 0 ? "+" : ""}{Math.round(market.delta24h * 100)}pp
+                            </div>
+                          ) : null}
                         </div>
                       </button>
                     ))
