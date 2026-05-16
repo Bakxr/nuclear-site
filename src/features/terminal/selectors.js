@@ -242,6 +242,29 @@ export function selectPredictionMarketRows(snapshot) {
   );
 }
 
+export function selectHeroMovers(snapshot) {
+  const companyByTicker = buildCompanyByTicker(snapshot.entities.companies);
+  const rows = safeArray(snapshot?.entities?.marketInstruments).map((instrument) => ({
+    ...instrument,
+    company: companyByTicker.get(instrument.ticker),
+  }));
+  return [...rows]
+    .sort((a, b) => Math.abs(b.pct || 0) - Math.abs(a.pct || 0))
+    .slice(0, 3);
+}
+
+export function selectHeroPredictionMarkets(snapshot) {
+  return [...safeArray(snapshot?.entities?.predictionMarkets)]
+    .sort((a, b) => (b.volume || 0) - (a.volume || 0))
+    .slice(0, 3);
+}
+
+export function selectHeroHeadlines(snapshot) {
+  return [...safeArray(snapshot?.entities?.newsArticles)]
+    .sort((a, b) => (b.engagementScore || 0) - (a.engagementScore || 0))
+    .slice(0, 3);
+}
+
 export function selectOfficialWireRows(snapshot, { selectedEntity } = {}) {
   const rows = selectNewsRows(snapshot, { selectedEntity, newsTag: "All" });
   return rows.filter((item) => item.isOfficial || item.sourceTier === "Official");
