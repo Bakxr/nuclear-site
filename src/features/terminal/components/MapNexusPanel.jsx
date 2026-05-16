@@ -61,16 +61,28 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
     availableReactorTypes,
     availableStatuses,
     rankingRows,
+    predictionMarketRows,
     setLayer,
     setCountryFilter,
     setReactorTypeFilter,
     setStatusFilter,
     setMapCollapsed,
     selectEntity,
+    openMarket,
   } = useTerminal();
   const [companionView, setCompanionView] = useState("assets");
   const [hoveredMapItemId, setHoveredMapItemId] = useState(null);
   const [hoveredGlobeItemId, setHoveredGlobeItemId] = useState(null);
+  // Local "markets" overlay — when active, the globe shows market markers instead
+  // of reactor/uranium markers. Reactors/Fuel-cycle keep their existing model
+  // through the shared `state.layer`.
+  const [marketsLayer, setMarketsLayer] = useState(false);
+  const effectiveMode = marketsLayer ? "markets" : state.layer;
+  const anchoredMarkets = (predictionMarketRows || []).filter((m) => m?.anchor).map((m) => ({
+    ...m,
+    lat: m.anchor.lat,
+    lng: m.anchor.lng,
+  }));
 
   const GlobeView = GlobeComponent;
   const assetTone = state.layer === "reactors" ? "amber" : "cyan";
@@ -93,11 +105,14 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
 
   const actions = (
     <>
-      <button type="button" onClick={() => setLayer("reactors")} className="np-terminal-button" style={terminalButtonStyle(state.layer === "reactors", { compact: true })}>
+      <button type="button" onClick={() => { setMarketsLayer(false); setLayer("reactors"); }} className="np-terminal-button" style={terminalButtonStyle(!marketsLayer && state.layer === "reactors", { compact: true })}>
         Reactors
       </button>
-      <button type="button" onClick={() => setLayer("uranium")} className="np-terminal-button" style={terminalButtonStyle(state.layer === "uranium", { compact: true, tone: "cyan" })}>
+      <button type="button" onClick={() => { setMarketsLayer(false); setLayer("uranium"); }} className="np-terminal-button" style={terminalButtonStyle(!marketsLayer && state.layer === "uranium", { compact: true, tone: "cyan" })}>
         Fuel cycle
+      </button>
+      <button type="button" onClick={() => setMarketsLayer(true)} className="np-terminal-button" style={terminalButtonStyle(marketsLayer, { compact: true, tone: "amber" })}>
+        Markets
       </button>
       {isMobileViewport ? (
         <button type="button" onClick={() => setMapCollapsed(!state.mapCollapsed)} className="np-terminal-button" style={terminalButtonStyle(false, { compact: true })}>
@@ -111,8 +126,8 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
     <TerminalPanel
       panelId="terminal-panel-map"
       emphasis="hero"
-      title="Global reactor map"
-      subtitle="Start with the map, then move into the country, asset, or signal that matters next."
+      title={marketsLayer ? "Markets on Earth" : "Reactors on Earth"}
+      subtitle={marketsLayer ? "Prediction markets, geo-anchored. Click a glyph to open the market drawer." : "Start with the map, then move into the country, asset, or signal that matters next."}
       actions={actions}
       bodyStyle={{ padding: 0 }}
     >
@@ -244,8 +259,11 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
                         if (item?.entityType === "plant") onOpenPlant?.(item);
                       }}
                       onHoverPlant={(item) => setHoveredGlobeItemId(item?.id ?? null)}
-                      plants={mapItems}
-                      mode={state.layer}
+                      onSelectMarket={(market) => { if (market) openMarket(market); }}
+                      onHoverMarket={(market) => setHoveredGlobeItemId(market?.id ?? null)}
+                      plants={marketsLayer ? [] : mapItems}
+                      markets={marketsLayer ? anchoredMarkets : []}
+                      mode={effectiveMode}
                       selectedEntity={selectedEntity}
                       highlightedEntityId={activeMapFocusId}
                     />
@@ -294,22 +312,26 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
                   <div style={{ minWidth: 0 }}>
                     <div style={terminalLabelStyle()}>List view</div>
                     <div style={{ fontSize: 15, fontWeight: 700, color: "var(--np-terminal-text)", marginTop: 4 }}>
-                      {companionView === "assets" ? "Assets in view" : "Countries in scope"}
+                      {marketsLayer ? "Anchored markets" : companionView === "assets" ? "Assets in view" : "Countries in scope"}
                     </div>
                     <div style={{ fontSize: 11, lineHeight: 1.55, marginTop: 5, ...terminalMutedStyle() }}>
-                      {companionView === "assets"
+                      {marketsLayer
+                        ? "Markets sorted by volume. Click a row to open the focus drawer."
+                        : companionView === "assets"
                         ? "Use the companion list to pivot from the globe into the exact plant or supply node you need."
                         : "Read the leading countries in the current scope before moving into a specific asset."}
                     </div>
                   </div>
-                  <div className="np-terminal-tab-row">
-                    <button type="button" onClick={() => setCompanionView("assets")} className="np-terminal-button" style={terminalButtonStyle(companionView === "assets", { compact: true })}>
-                      Assets
-                    </button>
-                    <button type="button" onClick={() => setCompanionView("countries")} className="np-terminal-button" style={terminalButtonStyle(companionView === "countries", { compact: true, tone: "cyan" })}>
-                      Countries
-                    </button>
-                  </div>
+                  {!marketsLayer ? (
+                    <div className="np-terminal-tab-row">
+                      <button type="button" onClick={() => setCompanionView("assets")} className="np-terminal-button" style={terminalButtonStyle(companionView === "assets", { compact: true })}>
+                        Assets
+                      </button>
+                      <button type="button" onClick={() => setCompanionView("countries")} className="np-terminal-button" style={terminalButtonStyle(companionView === "countries", { compact: true, tone: "cyan" })}>
+                        Countries
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
               </div>
 
@@ -322,7 +344,47 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
                 }}
               >
                 <div className="np-terminal-scroll np-terminal-companion-list" style={{ ...terminalScrollAreaStyle(isMobileViewport ? 260 : 474), padding: 0 }}>
-                  {companionView === "assets" ? mapItems.slice(0, isMobileViewport ? 9 : 12).map((item, index) => {
+                  {marketsLayer ? (
+                    anchoredMarkets.length === 0 ? (
+                      <div style={{ padding: "16px 0", fontSize: 11.5, ...terminalMutedStyle() }}>No anchored markets — try again after the next snapshot refresh.</div>
+                    ) : anchoredMarkets.sort((a, b) => (b.volume || 0) - (a.volume || 0)).slice(0, isMobileViewport ? 8 : 12).map((market, index) => (
+                      <button
+                        key={market.id}
+                        type="button"
+                        onClick={() => openMarket(market)}
+                        onMouseEnter={() => setHoveredMapItemId(market.id)}
+                        onMouseLeave={() => setHoveredMapItemId(null)}
+                        className="np-terminal-row np-terminal-row--interactive np-terminal-button"
+                        style={{
+                          ...terminalDataRowStyle(),
+                          borderTop: index === 0 ? "none" : terminalDataRowStyle().borderTop,
+                          display: "grid",
+                          gridTemplateColumns: "34px minmax(0,1fr) auto",
+                          gap: 12,
+                          alignItems: "center",
+                          textAlign: "left",
+                          color: "var(--np-terminal-text)",
+                          background: "transparent",
+                          borderLeft: "none",
+                          borderRight: "none",
+                          borderBottom: "none",
+                          cursor: "pointer",
+                          paddingInline: 0,
+                        }}
+                      >
+                        <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 10.5, color: "var(--np-terminal-subtle)" }}>{String(index + 1).padStart(2, "0")}</div>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontWeight: 700, fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{market.question}</div>
+                          <div style={{ fontSize: 10.5, marginTop: 4, ...terminalMutedStyle() }}>
+                            {market.anchor?.anchorLabel} · {(market.source || "").toUpperCase()}
+                          </div>
+                        </div>
+                        <div style={{ ...terminalValueStyle({ tone: (market.yesPrice ?? 0) >= 0.5 ? "positive" : "default", size: 13 }), textAlign: "right", fontFamily: "'DM Mono',monospace" }}>
+                          {Number.isFinite(market.yesPrice) ? `${Math.round(market.yesPrice * 100)}%` : "—"}
+                        </div>
+                      </button>
+                    ))
+                  ) : companionView === "assets" ? mapItems.slice(0, isMobileViewport ? 9 : 12).map((item, index) => {
                     const isActive = selectedEntity?.id === item.id;
                     const isLinked = !isActive && activeMapFocusId === item.id;
                     return (

@@ -120,10 +120,32 @@ function fetchLand() {
   return landFetchPromise;
 }
 
+// Cluster markets that share roughly the same anchor (within ~4° lat/lng).
+function clusterMarkets(markets) {
+  const clusters = [];
+  for (const m of markets) {
+    if (!Number.isFinite(m.lat) || !Number.isFinite(m.lng)) continue;
+    let placed = false;
+    for (const c of clusters) {
+      if (Math.abs(c.lat - m.lat) < 4 && Math.abs(c.lng - m.lng) < 4) {
+        c.markets.push(m);
+        c.totalVolume += m.volume || 0;
+        placed = true;
+        break;
+      }
+    }
+    if (!placed) clusters.push({ lat: m.lat, lng: m.lng, markets: [m], totalVolume: m.volume || 0 });
+  }
+  return clusters;
+}
+
 export default function Globe({
   onSelectPlant,
   onHoverPlant,
+  onSelectMarket,
+  onHoverMarket,
   plants,
+  markets,
   mode = "reactors",
   selectedEntity = null,
   highlightedEntityId = null,
@@ -144,6 +166,8 @@ export default function Globe({
   const autoRotateTimer = useRef(null);
   const onSelectPlantRef = useRef(onSelectPlant);
   const onHoverPlantRef = useRef(onHoverPlant);
+  const onSelectMarketRef = useRef(onSelectMarket);
+  const onHoverMarketRef = useRef(onHoverMarket);
   const modeRef = useRef(mode);
   const selectedEntityRef = useRef(selectedEntity);
   const hoveredPlantRef = useRef(hoveredPlant);
@@ -161,6 +185,14 @@ export default function Globe({
   useEffect(() => {
     onHoverPlantRef.current = onHoverPlant;
   }, [onHoverPlant]);
+
+  useEffect(() => {
+    onSelectMarketRef.current = onSelectMarket;
+  }, [onSelectMarket]);
+
+  useEffect(() => {
+    onHoverMarketRef.current = onHoverMarket;
+  }, [onHoverMarket]);
 
   useEffect(() => {
     modeRef.current = mode;
@@ -345,6 +377,13 @@ export default function Globe({
 
       const t = Date.now() * 0.003;
       pivotGroup.children.forEach(ch => {
+        if (ch.userData?.isMarker && ch.userData?.isPulse) {
+          const phase = ch.userData.phase || 0;
+          const pulse = 0.5 + 0.5 * Math.sin(t + phase);
+          const baseScale = ch.userData.baseScale || 1;
+          const s = baseScale * (0.92 + 0.18 * pulse);
+          ch.scale.set(s, s, s);
+        }
         if (ch.userData?.isRing) {
           const pulseStrength = ch.userData.pulseStrength || 0;
           const pulseOpacity = ch.userData.pulseOpacity || 0;
@@ -382,13 +421,19 @@ export default function Globe({
       raycaster.setFromCamera(mouse, camera);
       const hits = raycaster.intersectObjects(markersRef.current);
       if (hits.length > 0) {
-        setHoveredPlant(hits[0].object.userData.plant);
-        onHoverPlantRef.current?.(hits[0].object.userData.plant);
+        const ud = hits[0].object.userData || {};
+        setHoveredPlant(ud.plant || ud.market || null);
+        if (modeRef.current === "markets") {
+          onHoverMarketRef.current?.(ud.market || null);
+        } else {
+          onHoverPlantRef.current?.(ud.plant || null);
+        }
         setTooltip({ visible: true, x: e.clientX - rect.left, y: e.clientY - rect.top });
         mount.style.cursor = "pointer";
       } else {
         setHoveredPlant(null);
         onHoverPlantRef.current?.(null);
+        onHoverMarketRef.current?.(null);
         setTooltip(prev => ({ ...prev, visible: false }));
         mount.style.cursor = isDragging.current ? "grabbing" : "grab";
       }
@@ -404,7 +449,11 @@ export default function Globe({
       mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
       raycaster.setFromCamera(mouse, camera);
       const hits = raycaster.intersectObjects(markersRef.current);
-      if (hits.length > 0 && modeRef.current === "reactors") onSelectPlantRef.current?.(hits[0].object.userData.plant);
+      if (hits.length > 0) {
+        const ud = hits[0].object.userData || {};
+        if (modeRef.current === "markets") onSelectMarketRef.current?.(ud.market || null);
+        else if (modeRef.current === "reactors") onSelectPlantRef.current?.(ud.plant || null);
+      }
     };
 
     // ── Touch handlers (mobile) ──────────────────────────────────────────
@@ -441,7 +490,11 @@ export default function Globe({
         mouse.y = -((t.clientY - rect.top) / rect.height) * 2 + 1;
         raycaster.setFromCamera(mouse, camera);
         const hits = raycaster.intersectObjects(markersRef.current);
-        if (hits.length > 0 && modeRef.current === "reactors") onSelectPlantRef.current?.(hits[0].object.userData.plant);
+        if (hits.length > 0) {
+          const ud = hits[0].object.userData || {};
+          if (modeRef.current === "markets") onSelectMarketRef.current?.(ud.market || null);
+          else if (modeRef.current === "reactors") onSelectPlantRef.current?.(ud.plant || null);
+        }
       }
     };
 
@@ -520,6 +573,72 @@ export default function Globe({
     // Add new markers
     const markers = [];
     const rings = [];
+
+    if (mode === "markets") {
+      const clusters = clusterMarkets(markets || []);
+      clusters.forEach((cluster, i) => {
+        const pos = latLngToVector3(cluster.lat, cluster.lng, 1.018);
+        // Volume-based size, log scaled, clamped to [0.6, 1.8].
+        const vol = Math.max(1, cluster.totalVolume);
+        const sizeScalar = Math.min(1.8, Math.max(0.6, 0.5 + Math.log10(vol) * 0.18));
+        // Color: if cluster has any polymarket → gold; else cyan.
+        const hasPoly = cluster.markets.some((m) => m.source === "polymarket");
+        const color = hasPoly ? 0xd8a04a : 0x7ea8c0;
+        const baseGeomSize = 0.013 * sizeScalar;
+        const markerGeom = new THREE.SphereGeometry(baseGeomSize, 14, 14);
+        const markerMat = new THREE.MeshPhongMaterial({
+          color,
+          emissive: new THREE.Color(color).multiplyScalar(0.35),
+          shininess: 36,
+          transparent: true,
+          opacity: 0.88,
+        });
+        const marker = new THREE.Mesh(markerGeom, markerMat);
+        marker.position.copy(pos);
+        // Use the first (highest-volume) market as the canonical target; cluster info in userData.
+        const sorted = [...cluster.markets].sort((a, b) => (b.volume || 0) - (a.volume || 0));
+        marker.userData = {
+          market: sorted[0],
+          cluster: sorted,
+          index: i,
+          isMarker: true,
+          isPulse: true,
+          baseScale: 1,
+          phase: Math.random() * 6.28,
+        };
+        markers.push(marker);
+        pivotGroup.add(marker);
+
+        const ringGeom = new THREE.RingGeometry(baseGeomSize * 1.4, baseGeomSize * 2.2, 26);
+        const ringMat = new THREE.MeshBasicMaterial({
+          color,
+          transparent: true,
+          opacity: 0.12,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+        });
+        const ring = new THREE.Mesh(ringGeom, ringMat);
+        ring.position.copy(pos);
+        ring.lookAt(new THREE.Vector3(0, 0, 0));
+        ring.userData = {
+          isRing: true,
+          phase: marker.userData.phase,
+          baseScale: 1,
+          baseOpacity: 0.12,
+          pulseStrength: 0.08,
+          pulseOpacity: 0.08,
+        };
+        rings.push(ring);
+        pivotGroup.add(ring);
+      });
+      markersRef.current = markers;
+      ringsRef.current = rings;
+      return () => {
+        markers.forEach((m) => { m.geometry?.dispose(); m.material?.dispose(); });
+        rings.forEach((r) => { r.geometry?.dispose(); r.material?.dispose(); });
+      };
+    }
+
     plants.forEach((plant, i) => {
       const pos = latLngToVector3(plant.lat, plant.lng, 1.015);
       const color = mode === "reactors"
@@ -581,7 +700,7 @@ export default function Globe({
         ring.material?.dispose();
       });
     };
-  }, [plants, mode]);
+  }, [plants, markets, mode]);
 
   useEffect(() => {
     markersRef.current.forEach((marker, index) => {
@@ -787,8 +906,19 @@ export default function Globe({
           border: "1px solid rgba(125,139,156,0.14)", maxWidth: "min(240px, calc(100% - 24px))", lineHeight: 1.4,
           backdropFilter: "blur(8px)", boxShadow: "0 8px 28px rgba(0,0,0,0.28)",
         }}>
-          <div style={{ fontWeight: 700, fontSize: 15 }}>{hoveredPlant.name}</div>
-          {mode === "reactors" ? (
+          <div style={{ fontWeight: 700, fontSize: 15 }}>{hoveredPlant.name || hoveredPlant.question || "—"}</div>
+          {mode === "markets" ? (
+            <>
+              <div style={{ opacity: 0.6, marginTop: 2 }}>{hoveredPlant.anchor?.anchorLabel || "Market"}</div>
+              <div style={{ color: hoveredPlant.source === "polymarket" ? "#d8a04a" : "#7ea8c0", marginTop: 6, fontFamily: "'DM Mono',monospace", fontSize: 14 }}>
+                {Number.isFinite(hoveredPlant.yesPrice) ? `${Math.round(hoveredPlant.yesPrice * 100)}% YES` : "—"}
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4, fontSize: 11, opacity: 0.7 }}>
+                <span>{(hoveredPlant.source || "").toUpperCase()}</span>
+                <span>{Number.isFinite(hoveredPlant.volume) ? `$${(hoveredPlant.volume / 1000).toFixed(0)}K vol` : ""}</span>
+              </div>
+            </>
+          ) : mode === "reactors" ? (
             <>
               <div style={{ opacity: 0.6, marginTop: 2 }}>{hoveredPlant.country}</div>
               <div style={{ color: "#d4a54a", marginTop: 6, fontFamily: "'DM Mono',monospace", fontSize: 14 }}>{hoveredPlant.capacity.toLocaleString()} MW</div>

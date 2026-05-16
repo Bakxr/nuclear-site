@@ -295,25 +295,27 @@ function TerminalWorkspaceShell({
         <main className="np-terminal-workspace">
           <div className="np-terminal-workspace-stack">
             <HeroSignalStrip />
-            <div className="np-terminal-pair-grid">
-              <CatalystWirePanel onRefreshData={onRefreshData} isMobileViewport={isMobileViewport} />
+            <div className="np-terminal-pair-grid np-terminal-pair-grid--map" style={{ gridTemplateColumns: isMobileViewport ? "1fr" : "minmax(0,1.5fr) minmax(0,1fr)" }}>
+              <MapNexusPanel
+                GlobeComponent={GlobeComponent}
+                isMobileViewport={isMobileViewport}
+                onOpenPlant={onOpenPlant}
+              />
               <PredictionMarketsPanel />
             </div>
-            <IntelligenceDeckPanel
-              activeTab={intelligenceTab}
-              onTabChange={handleIntelligenceTabChange}
-              onOpenStock={onOpenStock}
-              isMobileViewport={isMobileViewport}
-            />
+            <div className="np-terminal-pair-grid">
+              <CatalystWirePanel onRefreshData={onRefreshData} isMobileViewport={isMobileViewport} />
+              <IntelligenceDeckPanel
+                activeTab={intelligenceTab}
+                onTabChange={handleIntelligenceTabChange}
+                onOpenStock={onOpenStock}
+                isMobileViewport={isMobileViewport}
+              />
+            </div>
             <div className="np-terminal-pair-grid">
               <InsiderTradesPanel />
               <EarningsCalendarPanel />
             </div>
-            <MapNexusPanel
-              GlobeComponent={GlobeComponent}
-              isMobileViewport={isMobileViewport}
-              onOpenPlant={onOpenPlant}
-            />
             <div className="np-terminal-pair-grid">
               <GovContractsPanel />
               <LobbyingPanel />
