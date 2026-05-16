@@ -5,13 +5,10 @@ import MarketSparkline from "./MarketSparkline.jsx";
 import { MARKET_CATEGORY_OPTIONS } from "../marketCategory.js";
 import {
   terminalButtonStyle,
-  terminalDataRowStyle,
   terminalLinkStyle,
   terminalMutedStyle,
   terminalScrollAreaStyle,
-  terminalTableHeaderStyle,
   terminalTagStyle,
-  terminalValueStyle,
 } from "./styles.js";
 
 function fmtPct(n) {
@@ -20,10 +17,10 @@ function fmtPct(n) {
 }
 
 function fmtDelta(n) {
-  if (!Number.isFinite(n)) return "—";
+  if (!Number.isFinite(n) || n === 0) return null;
   const pp = Math.round(n * 100);
-  if (pp === 0) return "0";
-  return `${pp > 0 ? "+" : ""}${pp}`;
+  if (pp === 0) return null;
+  return `${pp > 0 ? "+" : ""}${pp}pp`;
 }
 
 function deltaColor(n) {
@@ -38,14 +35,12 @@ function fmtVolume(n) {
   return `$${n.toFixed(0)}`;
 }
 
-function fmtDate(value) {
-  if (!value) return "—";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+function daysUntil(date) {
+  if (!date) return null;
+  const t = new Date(date).getTime();
+  if (Number.isNaN(t)) return null;
+  return Math.max(0, Math.round((t - Date.now()) / 86_400_000));
 }
-
-const GRID = "60px minmax(0,1fr) 80px 80px 56px 64px 60px 44px";
 
 export default function PredictionMarketsPanel() {
   const { predictionMarketRows, openMarket } = useTerminal();
@@ -65,15 +60,15 @@ export default function PredictionMarketsPanel() {
     <TerminalPanel
       panelId="terminal-panel-prediction"
       title="Prediction markets"
-      subtitle="Polymarket + Kalshi, categorized and price-tracked. Click a row to open the full chart and linked intel."
+      subtitle="Polymarket + Kalshi. Click a row for the full chart and linked intel."
       actions={[
         <span key="count" style={terminalTagStyle({ tone: "amber", compact: true })}>
           {filteredRows.length} / {predictionMarketRows.length}
         </span>,
       ]}
     >
-      <div style={{ display: "grid", gap: 8 }}>
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", padding: "0 10px 4px" }}>
+      <div style={{ display: "grid", gap: 10 }}>
+        <div style={{ display: "flex", gap: 5, flexWrap: "wrap", padding: "0 10px" }}>
           {visibleCategories.map((opt) => {
             const active = activeCategory === opt.id;
             return (
@@ -90,17 +85,7 @@ export default function PredictionMarketsPanel() {
           })}
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: GRID, gap: 8, padding: "0 10px 6px", borderBottom: "1px solid rgba(51,66,86,0.92)" }}>
-          <div style={terminalTableHeaderStyle("left", "cyan")}>Source</div>
-          <div style={terminalTableHeaderStyle("left", "cyan")}>Question</div>
-          <div style={terminalTableHeaderStyle("left", "cyan")}>Category</div>
-          <div style={terminalTableHeaderStyle("right", "cyan")}>7d</div>
-          <div style={terminalTableHeaderStyle("right", "cyan")}>Δ24h</div>
-          <div style={terminalTableHeaderStyle("right", "cyan")}>Yes</div>
-          <div style={terminalTableHeaderStyle("right", "cyan")}>Vol</div>
-          <div style={terminalTableHeaderStyle("right", "cyan")}>Open</div>
-        </div>
-        <div className="np-terminal-scroll" style={{ ...terminalScrollAreaStyle(420), padding: "0 10px" }}>
+        <div className="np-terminal-scroll" style={{ ...terminalScrollAreaStyle(460), padding: "0 10px", display: "grid", gap: 6 }}>
           {filteredRows.length === 0 ? (
             <div style={{ padding: "16px 0", fontSize: 11.5, ...terminalMutedStyle() }}>
               {predictionMarketRows.length === 0
@@ -111,57 +96,74 @@ export default function PredictionMarketsPanel() {
           {filteredRows.map((row) => {
             const cat = row.category;
             const delta = row.delta24h;
+            const deltaLabel = fmtDelta(delta);
+            const yes = Number.isFinite(row.yesPrice) ? row.yesPrice : null;
+            const days = daysUntil(row.endDate);
             return (
               <button
                 key={row.id}
                 type="button"
                 onClick={() => openMarket(row)}
-                className="np-terminal-row np-terminal-row--interactive np-terminal-button"
+                className="np-terminal-button"
                 style={{
-                  ...terminalDataRowStyle(),
                   display: "grid",
-                  gridTemplateColumns: GRID,
                   gap: 8,
-                  alignItems: "center",
                   textAlign: "left",
-                  background: "transparent",
+                  background: "rgba(255,255,255,0.015)",
+                  border: "1px solid rgba(125,139,156,0.10)",
+                  borderRadius: 6,
+                  padding: "10px 12px",
                   cursor: "pointer",
                   color: "var(--np-terminal-text)",
                 }}
               >
-                <span style={terminalTagStyle({ tone: row.source === "polymarket" ? "cyan" : "amber", compact: true })}>{row.source}</span>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 12, color: "var(--np-terminal-text)", lineHeight: 1.35, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {row.question}
-                  </div>
+                <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+                  <span style={terminalTagStyle({ tone: row.source === "polymarket" ? "cyan" : "amber", compact: true })}>
+                    {row.source === "polymarket" ? "PM" : row.source === "kalshi" ? "KX" : row.source}
+                  </span>
+                  {cat ? <span style={terminalTagStyle({ tone: cat.tone || "default", compact: true })}>{cat.label}</span> : null}
                   {row.anchor ? (
-                    <div style={{ fontSize: 10, marginTop: 2, color: "var(--np-terminal-amber)", fontFamily: "'DM Mono',monospace" }}>
+                    <span style={{ fontSize: 10, fontFamily: "'DM Mono',monospace", color: "var(--np-terminal-amber)" }}>
                       ◉ {row.anchor.anchorLabel}
-                    </div>
+                    </span>
+                  ) : null}
+                  {row.url ? (
+                    <a
+                      href={row.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="np-terminal-link"
+                      style={{ ...terminalLinkStyle("cyan"), marginLeft: "auto", fontSize: 10 }}
+                    >
+                      ↗
+                    </a>
                   ) : null}
                 </div>
-                <div>
-                  {cat ? <span style={terminalTagStyle({ tone: cat.tone || "default", compact: true })}>{cat.label}</span> : null}
+
+                <div style={{ fontSize: 12.5, fontWeight: 600, lineHeight: 1.4, color: "var(--np-terminal-text)" }}>
+                  {row.question}
                 </div>
-                <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                  <MarketSparkline history={row.history} width={72} height={22} fill />
+
+                <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) auto", gap: 10, alignItems: "center" }}>
+                  <MarketSparkline history={row.history} width={120} height={26} fill />
+                  <div style={{ display: "flex", gap: 10, alignItems: "baseline", fontFamily: "'DM Mono',monospace" }}>
+                    {deltaLabel ? (
+                      <span style={{ fontSize: 10.5, fontWeight: 700, color: deltaColor(delta) }}>{deltaLabel}</span>
+                    ) : null}
+                    <span style={{ fontSize: 15, fontWeight: 700, color: yes != null && yes >= 0.5 ? "var(--np-terminal-success, #4caf72)" : "var(--np-terminal-text)" }}>
+                      {fmtPct(yes)}
+                    </span>
+                  </div>
                 </div>
-                <div style={{ textAlign: "right", fontFamily: "'DM Mono',monospace", fontSize: 11, fontWeight: 700, color: deltaColor(delta) }}>
-                  {fmtDelta(delta)}
+
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 10, fontFamily: "'DM Mono',monospace", ...terminalMutedStyle() }}>
+                  <span>VOL {fmtVolume(row.volume)}</span>
+                  <span>{days != null ? `${days}d to resolve` : "—"}</span>
                 </div>
-                <div style={{ ...terminalValueStyle({ tone: (row.yesPrice ?? 0) >= 0.5 ? "positive" : "default", size: 12 }), textAlign: "right" }}>{fmtPct(row.yesPrice)}</div>
-                <div style={{ fontSize: 10.5, textAlign: "right", fontFamily: "'DM Mono',monospace", ...terminalMutedStyle() }}>{fmtVolume(row.volume)}</div>
-                {row.url ? (
-                  <a href={row.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="np-terminal-link" style={{ ...terminalLinkStyle("cyan"), textAlign: "right" }}>↗</a>
-                ) : <span />}
               </button>
             );
           })}
-        </div>
-
-        <div style={{ padding: "6px 10px 0", fontSize: 10.5, ...terminalMutedStyle(), display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
-          <span>Δ24h = price change in pp (Polymarket history). Sparkline shows the full series.</span>
-          <span>Close dates in the focus drawer.</span>
         </div>
       </div>
     </TerminalPanel>
