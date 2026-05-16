@@ -22,8 +22,9 @@ export function buildEntityIndex(snapshot) {
   if (!snapshot?.entities) return map;
 
   Object.values(snapshot.entities).forEach((collection) => {
+    if (!Array.isArray(collection)) return;
     collection.forEach((item) => {
-      map.set(item.id, item);
+      if (item?.id) map.set(item.id, item);
     });
   });
 
