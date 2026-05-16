@@ -1,4 +1,4 @@
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useState } from "react";
 import { STATUS_COLORS } from "../../../data/constants.js";
 import { SUPPLY_STAGE_COLORS } from "../../../data/supplySites.js";
 import { useTerminal } from "../context.jsx";
@@ -7,22 +7,12 @@ import {
   terminalButtonStyle,
   terminalDataRowStyle,
   terminalLabelStyle,
-  terminalMetricDotStyle,
-  terminalMetricEyebrowStyle,
-  terminalMetricTileStyle,
   terminalMutedStyle,
   terminalScrollAreaStyle,
   terminalSelectStyle,
   terminalTagStyle,
-  terminalToneColor,
   terminalValueStyle,
 } from "./styles.js";
-
-function formatCompactCapacity(value) {
-  if (!value) return "0 GW";
-  if (value >= 1000) return `${(value / 1000).toFixed(1)} GW`;
-  return `${Math.round(value).toLocaleString("en-US")} MW`;
-}
 
 function getSelectionSummary(entity) {
   if (!entity) {
@@ -64,7 +54,6 @@ function getSelectionSummary(entity) {
 
 export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpenPlant }) {
   const {
-    snapshot,
     state,
     mapItems,
     selectedEntity,
@@ -89,47 +78,6 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
   const companionCountries = rankingRows
     .filter((country) => mapItems.some((item) => item.country === country.country))
     .slice(0, 6);
-  const fleetScopePlants = useMemo(() => snapshot.entities.plants.filter((plant) => {
-    if (state.countryFilter && plant.country !== state.countryFilter) return false;
-    if (state.layer === "reactors" && state.reactorTypeFilter && plant.normalizedType !== state.reactorTypeFilter) return false;
-    if (state.layer === "reactors" && state.statusFilter && plant.status !== state.statusFilter) return false;
-    return true;
-  }), [snapshot.entities.plants, state.countryFilter, state.layer, state.reactorTypeFilter, state.statusFilter]);
-
-  const headlineMetrics = [
-    {
-      label: "Operating reactors",
-      value: fleetScopePlants.filter((plant) => plant.status === "Operating").length,
-      detail: `${snapshot.entities.reactorUnits.length} tracked units`,
-      tone: "amber",
-      emphasis: "primary",
-      valueSize: 27,
-    },
-    {
-      label: "Visible capacity",
-      value: formatCompactCapacity(fleetScopePlants.reduce((total, plant) => total + (plant.capacityMw || 0), 0)),
-      detail: state.countryFilter ? `${state.countryFilter} scope` : "Global reactor scope",
-      tone: "cyan",
-      emphasis: "secondary",
-      valueSize: 24,
-    },
-    {
-      label: "Countries in scope",
-      value: visibleCountries,
-      detail: state.layer === "uranium" ? "Fuel-cycle footprint" : "Reactor footprint",
-      tone: "success",
-      emphasis: "default",
-      valueSize: 20,
-    },
-    {
-      label: "Construction watch",
-      value: fleetScopePlants.filter((plant) => plant.status === "Construction").length,
-      detail: "Buildout projects requiring follow-up",
-      tone: "warning",
-      emphasis: "default",
-      valueSize: 20,
-    },
-  ];
   const activeMapFocusId = hoveredMapItemId || hoveredGlobeItemId;
 
   const legendItems = state.layer === "reactors"
@@ -264,38 +212,9 @@ export default function MapNexusPanel({ GlobeComponent, isMobileViewport, onOpen
           >
             <div style={{ display: "grid", gap: 12, minWidth: 0 }}>
               <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: isMobileViewport ? "repeat(2, minmax(0,1fr))" : "repeat(4, minmax(0,1fr))",
-                  gap: 8,
-                }}
-              >
-                {headlineMetrics.map((metric) => (
-                  <div
-                    key={metric.label}
-                    style={terminalMetricTileStyle({
-                      accent: terminalToneColor(metric.tone),
-                      emphasis: metric.emphasis,
-                    })}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: 9, minWidth: 0 }}>
-                      <span aria-hidden="true" style={terminalMetricDotStyle(terminalToneColor(metric.tone))} />
-                      <div style={terminalMetricEyebrowStyle()}>{metric.label}</div>
-                    </div>
-                    <div style={{ ...terminalValueStyle({ tone: metric.tone, size: metric.valueSize }), marginTop: metric.emphasis === "primary" ? 10 : 8, letterSpacing: metric.emphasis === "primary" ? "-0.02em" : "0" }}>
-                      {metric.value}
-                    </div>
-                    <div style={{ fontSize: 10.5, lineHeight: 1.5, marginTop: metric.emphasis === "primary" ? 8 : 6, color: metric.emphasis === "primary" ? "rgba(171,181,191,0.84)" : undefined, ...terminalMutedStyle() }}>
-                      {metric.detail}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div
                 className="np-terminal-hero-map"
                 style={{
-                  minHeight: isMobileViewport ? 380 : 640,
+                  minHeight: isMobileViewport ? 280 : 360,
                   border: "1px solid rgba(125,139,156,0.1)",
                   background: "radial-gradient(circle at 50% 36%, rgba(60,75,90,0.22) 0%, rgba(15,20,27,0.88) 42%, rgba(8,12,17,1) 100%)",
                 }}
