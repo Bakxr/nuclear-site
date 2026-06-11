@@ -68,17 +68,6 @@
   --np-containment-bg: #161310;
 }
 
-.np-hero-grid {
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(30, 25, 18, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(30, 25, 18, 0.04) 1px, transparent 1px);
-  background-size: 48px 48px;
-  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.75), transparent 88%);
-  pointer-events: none;
-}
-
 * {
   box-sizing: border-box;
 }

@@ -90,11 +90,10 @@ export default function HeroSection({
         justifyContent: "center",
         background: isDark
           ? "radial-gradient(circle at top, rgba(212,165,74,0.12), transparent 30%), linear-gradient(180deg, #17120c 0%, #0e0b08 62%, #090705 100%)"
-          : "radial-gradient(circle at top, rgba(212,165,74,0.16), transparent 38%), linear-gradient(180deg, #f7f5ec 0%, #efecdd 48%, #f3f1e8 100%)",
+          : "radial-gradient(circle at top, rgba(212,165,74,0.34), transparent 44%), linear-gradient(180deg, #f7f5ec 0%, #efecdd 48%, #f3f1e8 100%)",
         overflow: "hidden",
         flex: 1,
       }}>
-        <div aria-hidden="true" className="np-hero-grid" />
         <motion.div style={isMobileViewport ? { width: "100%" } : { y: heroY, opacity: heroOpacity, width: "100%" }}>
           <motion.h1
             initial="hidden"
