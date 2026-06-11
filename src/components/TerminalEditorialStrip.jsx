@@ -80,26 +80,28 @@ export default function TerminalEditorialStrip({ signals, onOpenTerminal }) {
       justifyContent: "center",
     }}>
       <div style={{
-        width: "min(100%, 1240px)",
+        width: "min(100%, var(--np-content-max))",
         margin: 0,
-        borderRadius: 28,
-        border: "1px solid rgba(212,165,74,0.14)",
-        background: "#14110d",
+        borderRadius: 18,
+        border: "1px solid rgba(212,165,74,0.18)",
+        background: "#13100c",
         color: "#f5f0e8",
-        padding: "24px clamp(18px, 2.4vw, 30px)",
+        padding: "clamp(24px, 3vw, 36px) clamp(18px, 2.6vw, 36px)",
         display: "grid",
-        gap: 18,
-        boxShadow: "0 20px 48px rgba(0,0,0,0.18)",
+        gap: 20,
       }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 18, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 18, flexWrap: "wrap", paddingBottom: 18, borderBottom: "1px solid rgba(245,240,232,0.1)" }}>
           <div style={{ maxWidth: 720 }}>
-            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.14em", color: "#d4a54a", fontWeight: 700, marginBottom: 8 }}>
-              From The Terminal
+            <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 12 }}>
+              <span style={{ fontFamily: "var(--np-font-mono)", fontSize: 11, color: "rgba(212,165,74,0.9)", letterSpacing: "0.06em" }}>PRO</span>
+              <span style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.18em", color: "rgba(245,240,232,0.55)", fontWeight: 700 }}>
+                From the Terminal
+              </span>
             </div>
-            <h3 style={{ margin: 0, fontFamily: "'Playfair Display',serif", fontSize: "clamp(24px,3.4vw,34px)", lineHeight: 1.06 }}>
-              A tighter read on the <em style={{ color: "#d4a54a" }}>nuclear tape.</em>
+            <h3 style={{ margin: 0, fontFamily: "var(--np-font-display)", fontWeight: 400, letterSpacing: "-0.02em", fontSize: "clamp(26px,3.6vw,40px)", lineHeight: 1.04 }}>
+              A tighter read on the <em style={{ fontStyle: "italic", fontWeight: 350, color: "#d4a54a" }}>nuclear tape.</em>
             </h3>
-            <p style={{ margin: "10px 0 0", fontSize: 13.5, lineHeight: 1.7, color: "rgba(245,240,232,0.64)" }}>
+            <p style={{ margin: "12px 0 0", fontSize: 14, lineHeight: 1.7, color: "rgba(245,240,232,0.6)", maxWidth: "58ch" }}>
               Live catalysts, project movement, filings, and fleet signals. The full terminal is where the dense view lives.
             </p>
           </div>
@@ -107,10 +109,9 @@ export default function TerminalEditorialStrip({ signals, onOpenTerminal }) {
           <button
             type="button"
             onClick={onOpenTerminal}
-            className="np-data-chip"
-            style={{ background: "#f5f0e8", color: "#14120e", border: "1px solid rgba(212,165,74,0.35)", whiteSpace: "nowrap" }}
+            className="np-btn np-btn--light"
           >
-            Open terminal
+            Open terminal <span className="np-btn-arrow" aria-hidden="true">→</span>
           </button>
         </div>
 

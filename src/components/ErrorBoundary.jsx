@@ -35,7 +35,7 @@ export default class ErrorBoundary extends React.Component {
       }}>
         <div style={{ fontSize: 32, marginBottom: 16 }}>⚠</div>
         <h3 style={{
-          fontFamily: "'Playfair Display',serif",
+          fontFamily: "var(--np-font-display)",
           fontSize: 22,
           fontWeight: 600,
           color: dark ? "#f5f0e8" : "#1e1912",

@@ -56,7 +56,7 @@ export default function CountryModal({ country, onClose, onSelectPlant }) {
               <span style={{ fontSize: 36 }}>{shareData.flag}</span>
               <div>
                 <h3 id="country-modal-title" style={{
-                  fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 500,
+                  fontFamily: "var(--np-font-display)", fontSize: 26, fontWeight: 500,
                   margin: 0, color: "var(--np-text)", lineHeight: 1.1,
                 }}>{shareData.country}</h3>
                 <span style={{ fontSize: 12, color: "var(--np-text-muted)", fontWeight: 600 }}>

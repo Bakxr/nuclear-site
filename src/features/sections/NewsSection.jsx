@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import ErrorBoundary from "../../components/ErrorBoundary.jsx";
 import { inferNewsLocation } from "../../utils/news.js";
 import { fadeUp, staggerContainer } from "./animations.js";
-import { SectionLabel } from "./shared.jsx";
+import { SectionHeader } from "./shared.jsx";
 
 export default function NewsSection({
   sectionRef,
@@ -16,7 +16,6 @@ export default function NewsSection({
   uniqueNewsSources,
   newsLastUpdated,
   newsStatusLabel,
-  newsStatusTone,
   newsStatusColor,
   setNewsFilter,
   setNewsSort,
@@ -31,32 +30,34 @@ export default function NewsSection({
   return (
     <ErrorBoundary section="News">
       <section ref={sectionRef} style={{ padding: "var(--np-section-y) var(--np-section-x)", scrollMarginTop: 80, background: "linear-gradient(to bottom, var(--np-bg-alt) 0%, var(--np-bg) 100%)" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+        <div style={{ maxWidth: "var(--np-content-max)", margin: "0 auto" }}>
+          <SectionHeader
+            index="03"
+            label="Dispatch"
+            meta={`${news.length} stories · ${uniqueNewsSources} sources`}
+            title={<>The nuclear <em>dispatch.</em></>}
+            lede="Live reactor, policy, uranium, and buildout coverage from the sources moving the nuclear conversation."
+          />
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }} variants={staggerContainer}>
-            <SectionLabel>Industry News</SectionLabel>
-            <motion.h2 variants={fadeUp} style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(32px,4vw,52px)", fontWeight: 400, letterSpacing: "-0.02em", marginBottom: 8 }}>
-              Nuclear <em style={{ color: "var(--np-text-muted)" }}>dispatch.</em>
-            </motion.h2>
-            <motion.p variants={fadeUp} style={{ color: "var(--np-text-muted)", fontSize: 15, marginBottom: 20, maxWidth: 640, lineHeight: 1.6 }}>Live reactor, policy, uranium, and buildout coverage from the sources moving the nuclear conversation.</motion.p>
-            <motion.div variants={fadeUp} style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", marginBottom: 28 }}>
+            <motion.div variants={fadeUp} style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", marginBottom: 28, marginTop: -24 }}>
               <span style={{
-                fontSize: 11,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 7,
+                fontSize: 10.5,
                 textTransform: "uppercase",
-                letterSpacing: "0.12em",
+                letterSpacing: "0.14em",
                 fontWeight: 700,
                 color: newsStatusColor,
-                background: newsStatusTone,
-                border: `1px solid ${newsError ? "rgba(212,165,74,0.25)" : "rgba(74,222,128,0.22)"}`,
-                padding: "6px 10px",
+                border: `1px solid ${newsError ? "rgba(212,165,74,0.35)" : "rgba(74,222,128,0.3)"}`,
+                padding: "6px 12px",
                 borderRadius: 999,
               }}>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: newsStatusColor, ...(newsError ? {} : { boxShadow: "0 0 0 3px rgba(74,222,128,0.15)" }) }} />
                 {newsStatusLabel}
               </span>
-              <span style={{ fontSize: 12, color: "var(--np-text-faint)" }}>
-                {news.length} stories · {uniqueNewsSources} sources
-              </span>
               {newsLastUpdated && (
-                <span style={{ fontSize: 12, color: "var(--np-text-faint)" }}>
+                <span style={{ fontFamily: "var(--np-font-mono)", fontSize: 11, color: "var(--np-text-faint)", letterSpacing: "0.04em" }}>
                   Updated {newsLastUpdated.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
                 </span>
               )}
@@ -66,34 +67,22 @@ export default function NewsSection({
             {/* Tag filters */}
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {["All", "Policy", "Industry", "Expansion", "Research", "Markets", "Innovation", "Safety"].map(tag => (
-                <button key={tag} onClick={() => { setNewsFilter(tag); setNewsLimit(6); }} style={{
-                  background: newsFilter === tag ? "var(--np-text)" : "var(--np-surface)",
-                  color: newsFilter === tag ? "var(--np-bg)" : "var(--np-text-muted)",
-                  border: `1px solid ${newsFilter === tag ? "var(--np-text)" : "var(--np-border)"}`,
-                  borderRadius: 24, padding: "9px 20px", fontSize: 13, fontFamily: "'DM Sans',sans-serif",
-                  fontWeight: 500, cursor: "pointer", transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                  boxShadow: newsFilter === tag ? "0 2px 8px rgba(0,0,0,0.15)" : "0 1px 3px rgba(0,0,0,0.04)",
-                }}
-                  onMouseEnter={e => { if (newsFilter !== tag) { e.currentTarget.style.borderColor = "var(--np-border-strong)"; e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.08)"; } }}
-                  onMouseLeave={e => { if (newsFilter !== tag) { e.currentTarget.style.borderColor = "var(--np-border)"; e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.04)"; } }}
+                <button key={tag} onClick={() => { setNewsFilter(tag); setNewsLimit(6); }}
+                  className={`np-chip${newsFilter === tag ? " is-active" : ""}`}
                 >{tag}</button>
               ))}
             </div>
             {/* Sort controls */}
             <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-              <span style={{ fontSize: 11, color: "var(--np-text-faint)", fontWeight: 500, marginRight: 2 }}>Sort:</span>
+              <span style={{ fontSize: 10.5, color: "var(--np-text-faint)", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", marginRight: 4 }}>Sort</span>
               {[
                 { key: "latest", label: "Latest" },
                 { key: "top",    label: "Top Stories" },
                 { key: "source", label: "By Source" },
               ].map(s => (
-                <button key={s.key} onClick={() => { setNewsSort(s.key); setNewsLimit(6); }} style={{
-                  background: newsSort === s.key ? "rgba(212,165,74,0.12)" : "var(--np-surface)",
-                  color: newsSort === s.key ? "#d4a54a" : "var(--np-text-muted)",
-                  border: `1px solid ${newsSort === s.key ? "rgba(212,165,74,0.35)" : "var(--np-border)"}`,
-                  borderRadius: 8, padding: "7px 14px", fontSize: 12, fontFamily: "'DM Sans',sans-serif",
-                  fontWeight: 600, cursor: "pointer", transition: "all 0.2s",
-                }}>{s.label}</button>
+                <button key={s.key} onClick={() => { setNewsSort(s.key); setNewsLimit(6); }}
+                  className={`np-chip np-chip--accent${newsSort === s.key ? " is-active" : ""}`}
+                >{s.label}</button>
               ))}
             </div>
           </div>
@@ -143,33 +132,22 @@ export default function NewsSection({
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: (i % 6) * 0.05 }}
                     href={n.url} target="_blank" rel="noopener noreferrer"
+                    className="np-card"
                     style={{
-                      padding: "28px 30px", borderRadius: 16, border: "1px solid var(--np-card-border)",
-                      background: "var(--np-surface)", cursor: "pointer", transition: "border-color 0.2s, transform 0.2s, box-shadow 0.2s",
+                      padding: "26px 28px",
+                      cursor: "pointer",
                       textDecoration: "none", color: "inherit", display: "block",
-                      boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-                    }}
-                    onMouseEnter={e => {
-                      e.currentTarget.style.borderColor = "rgba(212,165,74,0.4)";
-                      e.currentTarget.style.transform = "translateY(-4px)";
-                      e.currentTarget.style.boxShadow = "0 12px 32px rgba(0,0,0,0.12)";
-                    }}
-                    onMouseLeave={e => {
-                      e.currentTarget.style.borderColor = "var(--np-card-border)";
-                      e.currentTarget.style.transform = "translateY(0)";
-                      e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.04)";
                     }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 16, paddingBottom: 12, borderBottom: "1px solid var(--np-border)" }}>
                       <span style={{
-                        fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700,
-                        color: "#d4a54a", background: "rgba(212,165,74,0.08)", padding: "4px 10px",
-                        borderRadius: 12
+                        fontSize: 10, textTransform: "uppercase", letterSpacing: "0.16em", fontWeight: 700,
+                        color: "var(--np-accent-ink)",
                       }}>{n.tag}</span>
-                      <span style={{ fontSize: 11, color: "var(--np-text-faint)", fontWeight: 500 }}>{n.date}</span>
+                      <span style={{ fontFamily: "var(--np-font-mono)", fontSize: 10.5, color: "var(--np-text-faint)" }}>{n.date}</span>
                     </div>
                     <h3 style={{
-                      fontFamily: "'Playfair Display',serif", fontSize: 19, fontWeight: 500,
-                      lineHeight: 1.4, margin: 0, color: "var(--np-text)", marginBottom: n.curiosityHook ? 10 : 12
+                      fontFamily: "var(--np-font-display)", fontSize: 21, fontWeight: 450, letterSpacing: "-0.01em",
+                      lineHeight: 1.3, margin: 0, color: "var(--np-text)", marginBottom: n.curiosityHook ? 10 : 12
                     }}>{n.title}</h3>
                     <p style={{
                       fontSize: 13, color: "var(--np-text-muted)", lineHeight: 1.6,
@@ -229,28 +207,12 @@ export default function NewsSection({
           {!newsLoading && filteredNews.length > 6 && (
             <div style={{ textAlign: "center", marginTop: 40 }}>
               {newsLimit < filteredNews.length ? (
-                <button onClick={() => setNewsLimit(l => l + 6)} style={{
-                  background: "none", border: "1px solid var(--np-border-strong)",
-                  borderRadius: 10, padding: "13px 36px", fontSize: 14, fontWeight: 600,
-                  cursor: "pointer", color: "var(--np-text)", fontFamily: "'DM Sans',sans-serif",
-                  transition: "all 0.2s",
-                }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(212,165,74,0.5)"; e.currentTarget.style.color = "#d4a54a"; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--np-border-strong)"; e.currentTarget.style.color = "var(--np-text)"; }}
-                >
-                  Show more · {Math.min(filteredNews.length - newsLimit, 6)} of {filteredNews.length - newsLimit} remaining
+                <button onClick={() => setNewsLimit(l => l + 6)} className="np-btn np-btn--ghost">
+                  Show more <span className="np-btn-arrow" aria-hidden="true">↓</span>
                 </button>
               ) : (
-                <button onClick={() => setNewsLimit(6)} style={{
-                  background: "none", border: "1px solid var(--np-border)",
-                  borderRadius: 10, padding: "13px 36px", fontSize: 14, fontWeight: 600,
-                  cursor: "pointer", color: "var(--np-text-muted)", fontFamily: "'DM Sans',sans-serif",
-                  transition: "all 0.2s",
-                }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--np-border-strong)"; e.currentTarget.style.color = "var(--np-text)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--np-border)"; e.currentTarget.style.color = "var(--np-text-muted)"; }}
-                >
-                  Show less ↑
+                <button onClick={() => setNewsLimit(6)} className="np-btn np-btn--ghost">
+                  Show less <span className="np-btn-arrow" aria-hidden="true">↑</span>
                 </button>
               )}
             </div>

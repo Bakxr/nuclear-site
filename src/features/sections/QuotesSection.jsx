@@ -16,38 +16,54 @@ const QUOTES = [
 
 export default function QuotesSection({ quoteIndex, quoteFading, setQuoteIndex, setQuoteFading }) {
   return (
-    <section style={{ padding: "var(--np-section-y) var(--np-section-x)", textAlign: "center", background: "var(--np-bg)" }}>
-      <div style={{ maxWidth: 880, margin: "0 auto" }}>
-        <div style={{ width: 40, height: 1, background: "rgba(212,165,74,0.5)", margin: "0 auto 48px" }} />
-        <div style={{ minHeight: 160, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+    <section style={{ padding: "var(--np-section-y-tight) var(--np-section-x)", textAlign: "center", background: "var(--np-bg)" }}>
+      <div style={{ maxWidth: 1060, margin: "0 auto" }}>
+        <div style={{ width: 44, height: 1, background: "rgba(212,165,74,0.55)", margin: "0 auto 44px" }} />
+        <div style={{ minHeight: 190, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
           <p style={{
-            fontFamily: "'Playfair Display',serif", fontSize: "clamp(20px,3vw,36px)", fontWeight: 400,
-            lineHeight: 1.45, letterSpacing: "-0.015em", color: "var(--np-text)",
-            opacity: quoteFading ? 0 : 1, transition: "opacity 0.4s ease",
+            fontFamily: "var(--np-font-display)",
+            fontSize: "clamp(22px, 2.6vw, 40px)",
+            fontWeight: 380,
+            fontStyle: "italic",
+            lineHeight: 1.42,
+            letterSpacing: "-0.015em",
+            color: "var(--np-text)",
+            opacity: quoteFading ? 0 : 1,
+            transition: "opacity 0.4s ease",
             margin: 0,
+            textWrap: "balance",
           }}>
-            "{QUOTES[quoteIndex].text}"
+            “{QUOTES[quoteIndex].text}”
           </p>
           <p style={{
-            marginTop: 28, fontSize: 12, fontFamily: "'DM Mono',monospace", letterSpacing: "0.06em",
-            color: "#d4a54a", fontWeight: 600, textTransform: "uppercase",
+            marginTop: 28, fontSize: 11.5, fontFamily: "var(--np-font-mono)", letterSpacing: "0.1em",
+            color: "var(--np-accent-ink)", fontWeight: 500, textTransform: "uppercase",
             opacity: quoteFading ? 0 : 1, transition: "opacity 0.4s ease",
           }}>
             — {QUOTES[quoteIndex].attr}
           </p>
         </div>
-        {/* Dot indicators */}
-        <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 40 }}>
-          {QUOTES.map((_, i) => (
-            <button key={i} onClick={() => { setQuoteFading(true); setTimeout(() => { setQuoteIndex(i); setQuoteFading(false); }, 400); }} style={{
-              width: i === quoteIndex ? 24 : 8, height: 8,
-              borderRadius: 4, border: "none", cursor: "pointer", padding: 0,
-              background: i === quoteIndex ? "#d4a54a" : "var(--np-border-strong)",
-              transition: "all 0.3s ease",
-            }} />
+
+        {/* Numbered indicators */}
+        <div style={{ display: "flex", justifyContent: "center", gap: 20, marginTop: 36 }}>
+          {QUOTES.map((q, i) => (
+            <button
+              key={i}
+              aria-label={`Show quote ${i + 1} of ${QUOTES.length}`}
+              onClick={() => { setQuoteFading(true); setTimeout(() => { setQuoteIndex(i); setQuoteFading(false); }, 400); }}
+              style={{
+                background: "none", border: "none", cursor: "pointer", padding: "4px 0",
+                fontFamily: "var(--np-font-mono)", fontSize: 11, letterSpacing: "0.08em",
+                color: i === quoteIndex ? "var(--np-text)" : "var(--np-text-faint)",
+                borderBottom: i === quoteIndex ? "1px solid var(--np-accent)" : "1px solid transparent",
+                transition: "color 0.25s ease, border-color 0.25s ease",
+              }}
+            >
+              {String(i + 1).padStart(2, "0")}
+            </button>
           ))}
         </div>
-        <div style={{ width: 40, height: 1, background: "rgba(212,165,74,0.5)", margin: "48px auto 0" }} />
+        <div style={{ width: 44, height: 1, background: "rgba(212,165,74,0.55)", margin: "44px auto 0" }} />
       </div>
     </section>
   );

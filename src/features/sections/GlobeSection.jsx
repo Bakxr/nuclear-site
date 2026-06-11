@@ -1,11 +1,9 @@
 import { lazy, Suspense } from "react";
-import { motion } from "framer-motion";
 import { STATUS_COLORS } from "../../data/constants.js";
 import { SUPPLY_STAGE_COLORS } from "../../data/supplySites.js";
 import ErrorBoundary from "../../components/ErrorBoundary.jsx";
 import LazySectionFallback from "../../components/LazySectionFallback.jsx";
-import { fadeUp, staggerContainer } from "./animations.js";
-import { SectionLabel } from "./shared.jsx";
+import { SectionHeader } from "./shared.jsx";
 
 const Globe = lazy(() => import("../../components/Globe.jsx"));
 
@@ -41,22 +39,17 @@ export default function GlobeSection({
   return (
     <ErrorBoundary section="Globe">
       <section ref={sectionRef} style={{ padding: "var(--np-section-y) var(--np-section-x) 48px", scrollMarginTop: 80, background: "var(--np-bg)" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <div className="np-globe-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24, gap: 20 }}>
-            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-40px" }} variants={staggerContainer}>
-              <SectionLabel>Interactive Map</SectionLabel>
-              <motion.h2 variants={fadeUp} style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(32px,4vw,52px)", fontWeight: 400, letterSpacing: "-0.02em", margin: 0 }}>
-                Every reactor on{" "}
-                <em style={{ color: "var(--np-accent)", fontStyle: "italic", textShadow: "0 0 18px rgba(212,165,74,0.08)" }}>
-                  Earth.
-                </em>
-              </motion.h2>
-              <motion.p variants={fadeUp} style={{ color: "var(--np-text-muted)", fontSize: 14, marginTop: 8, lineHeight: 1.6 }}>
-                {globeLayer === "reactors"
-                  ? `Drag to rotate, click markers for details, and track ${filteredPlants.length} live plant profiles.`
-                  : `Trace ${filteredSupplySites.length} uranium mines and fuel-cycle sites behind the reactor buildout story.`}
-              </motion.p>
-            </motion.div>
+        <div style={{ maxWidth: "var(--np-content-max)", margin: "0 auto" }}>
+          <SectionHeader
+            index="02"
+            label="Atlas"
+            meta="Drag to rotate · click any marker"
+            title={<>Every reactor on <em>Earth.</em></>}
+            lede={globeLayer === "reactors"
+              ? `Drag to rotate, click markers for details, and track ${filteredPlants.length} live plant profiles.`
+              : `Trace ${filteredSupplySites.length} uranium mines and fuel-cycle sites behind the reactor buildout story.`}
+          />
+          <div className="np-globe-header" style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", margin: "-24px 0 20px", gap: 20 }}>
             <div style={{ display: "flex", gap: 14, fontSize: 11, alignItems: "center", flexWrap: "wrap" }}>
               {Object.entries(globeLayer === "reactors" ? STATUS_COLORS : SUPPLY_STAGE_COLORS).map(([label, color]) => (
                 <span
@@ -87,8 +80,8 @@ export default function GlobeSection({
               className="np-globe-stage"
               style={{
                 background: "radial-gradient(ellipse at 50% 40%, #0d1b2a 0%, #0a1520 60%, #060e15 100%)",
-                borderRadius: 16,
-                border: "1px solid var(--np-border)",
+                borderRadius: "var(--np-r-lg)",
+                border: "1px solid var(--np-hairline)",
                 overflow: "hidden",
                 position: "relative",
               }}
@@ -103,8 +96,8 @@ export default function GlobeSection({
               className={`np-globe-panel${shouldUseCompactGlobePanel ? " np-globe-panel-mobile" : ""}${mobileGlobePanelExpanded ? " is-expanded" : " is-collapsed"}`}
               style={{
                 background: "var(--np-surface-dim)",
-                borderRadius: 16,
-                border: "1px solid var(--np-border)",
+                borderRadius: "var(--np-r-lg)",
+                border: "1px solid var(--np-hairline)",
                 padding: "16px 18px 28px",
                 overflowY: shouldUseCompactGlobePanel ? "visible" : "auto",
                 maxHeight: shouldUseCompactGlobePanel ? "none" : 520,

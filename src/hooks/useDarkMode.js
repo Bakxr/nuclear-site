@@ -4,7 +4,8 @@ export default function useDarkMode() {
   const [isDark, setIsDark] = useState(() => {
     const stored = localStorage.getItem("np-theme");
     if (stored) return stored === "dark";
-    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+    // Dark is the house default; visitors can switch and their choice sticks.
+    return true;
   });
 
   useEffect(() => {

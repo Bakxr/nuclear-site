@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ENERGY_COMPARISON, ENERGY_SOURCE_COLORS, STATUS_COLORS } from "../../data/constants.js";
 import { normalizeCountryName } from "../../utils/countries.js";
 import { fadeUp, staggerContainer } from "./animations.js";
-import { SectionLabel } from "./shared.jsx";
+import { SectionHeader } from "./shared.jsx";
 
 export default function DataSection({
   sectionRef,
@@ -36,39 +36,33 @@ export default function DataSection({
 }) {
   return (
     <section ref={sectionRef} className="np-data-section" style={{ padding: "var(--np-section-y) var(--np-section-x)", background: "var(--np-surface-dim)", scrollMarginTop: 80 }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+      <div style={{ maxWidth: "var(--np-content-max)", margin: "0 auto" }}>
+        <SectionHeader
+          index="01"
+          label="Global Data"
+          meta="IAEA PRIS · Our World in Data"
+          title={<>Where nuclear is <em>already real.</em></>}
+          lede="See which countries are betting biggest on nuclear, and why the numbers keep making the case for it. This is the signal behind the weekly briefing."
+        />
         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }} variants={staggerContainer}>
-          <SectionLabel>Global Data</SectionLabel>
-          <motion.h2 variants={fadeUp} style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(32px,4vw,52px)", fontWeight: 400, letterSpacing: "-0.02em", marginBottom: 8 }}>
-            Global nuclear <em style={{ color: "var(--np-text-muted)" }}>proof.</em>
-          </motion.h2>
-          <motion.p variants={fadeUp} style={{ color: "var(--np-text-muted)", fontSize: 15, marginBottom: 24, lineHeight: 1.6, maxWidth: 740 }}>
-            See which countries are betting biggest on nuclear, and why the numbers keep making the case for it. This is the signal behind the weekly briefing.
-          </motion.p>
-
           <motion.div
             variants={fadeUp}
             className="np-data-shell"
             style={{
-              border: `1px solid ${isDark ? "rgba(245,240,232,0.08)" : "var(--np-border)"}`,
-              borderRadius: 24,
-              background: isDark
-                ? "linear-gradient(180deg, rgba(245,240,232,0.045) 0%, rgba(245,240,232,0.02) 100%)"
-                : "linear-gradient(180deg, var(--np-surface) 0%, rgba(255,255,255,0.72) 100%)",
+              border: "1px solid var(--np-hairline)",
+              borderRadius: "var(--np-r-lg)",
+              background: "var(--np-surface)",
               overflow: "hidden",
-              boxShadow: isDark ? "0 20px 50px rgba(0,0,0,0.24)" : "0 20px 50px rgba(30,25,18,0.06)",
             }}
           >
             <div
               className="np-data-toolbar"
               style={{
                 padding: "20px 24px 18px",
-                borderBottom: `1px solid ${isDark ? "rgba(245,240,232,0.08)" : "var(--np-border)"}`,
+                borderBottom: "1px solid var(--np-hairline)",
                 display: "grid",
                 gap: 12,
-                background: isDark
-                  ? "linear-gradient(180deg, rgba(212,165,74,0.12) 0%, rgba(245,240,232,0.025) 100%)"
-                  : "linear-gradient(180deg, rgba(212,165,74,0.06) 0%, rgba(212,165,74,0.015) 100%)",
+                background: "var(--np-surface-dim)",
               }}
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
@@ -104,7 +98,7 @@ export default function DataSection({
                   <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: "#d4a54a" }}>
                     {dataView === "countries" ? "Country lens" : "Proof lens"}
                   </div>
-                  <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, lineHeight: 1.05, letterSpacing: "-0.03em", color: "var(--np-text)" }}>
+                  <div style={{ fontFamily: "var(--np-font-display)", fontSize: 24, lineHeight: 1.05, letterSpacing: "-0.03em", color: "var(--np-text)" }}>
                     {dataView === "countries" ? "Where nuclear is already real." : activeComparisonMetric.label}
                   </div>
                   <div style={{ fontSize: 13, lineHeight: 1.6, color: "var(--np-text-muted)" }}>

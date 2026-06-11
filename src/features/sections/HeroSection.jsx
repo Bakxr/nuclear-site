@@ -90,7 +90,7 @@ export default function HeroSection({
         justifyContent: "center",
         background: isDark
           ? "radial-gradient(circle at top, rgba(212,165,74,0.12), transparent 30%), linear-gradient(180deg, #17120c 0%, #0e0b08 62%, #090705 100%)"
-          : "radial-gradient(circle at top, rgba(212,165,74,0.14), transparent 34%), linear-gradient(180deg, #f2ebde 0%, #e4dbcb 38%, #f5f0e8 100%)",
+          : "radial-gradient(circle at top, rgba(212,165,74,0.16), transparent 38%), linear-gradient(180deg, #f7f5ec 0%, #efecdd 48%, #f3f1e8 100%)",
         overflow: "hidden",
         flex: 1,
       }}>
@@ -101,23 +101,23 @@ export default function HeroSection({
             animate="visible"
             variants={{ visible: { transition: { staggerChildren: 0.1, delayChildren: 0.15 } } }}
             style={{
-              fontFamily: "'Playfair Display',serif", fontSize: "clamp(40px,7vw,84px)", fontWeight: 400,
-              lineHeight: 0.94, letterSpacing: "-0.04em", maxWidth: 900, margin: "0 auto", color: isDark ? "#f5f0e8" : "#f7f3ed",
+              fontFamily: "var(--np-font-display)", fontSize: "clamp(40px,7vw,84px)", fontWeight: 400,
+              lineHeight: 0.94, letterSpacing: "-0.04em", maxWidth: 900, margin: "0 auto", color: isDark ? "#f5f0e8" : "#1b1609",
               textTransform: "uppercase",
-              textShadow: isDark ? "0 12px 40px rgba(0,0,0,0.36)" : "0 10px 35px rgba(0,0,0,0.22)",
+              textShadow: isDark ? "0 12px 40px rgba(0,0,0,0.36)" : "none",
             }}
           >
             {["Baseload", "for", "the"].map((w, i) => (
               <motion.span key={i} variants={wordReveal} style={{ display: "inline-block", marginRight: "0.22em" }}>{w}</motion.span>
             ))}
             <br />
-            <motion.em variants={wordReveal} style={{ color: "#d4a54a", display: "inline-block", marginRight: "0.22em", fontStyle: "normal" }}>industrial century.</motion.em>
+            <motion.em variants={wordReveal} style={{ color: isDark ? "#d4a54a" : "#a37b1e", display: "inline-block", marginRight: "0.22em", fontStyle: "normal" }}>industrial century.</motion.em>
           </motion.h1>
 
           <motion.p
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.9, ease: EASE, delay: 0.85 }}
-            style={{ fontSize: 16, color: isDark ? "rgba(245,240,232,0.76)" : "rgba(245,240,232,0.78)", maxWidth: 680, margin: "16px auto 0", lineHeight: 1.75, fontWeight: 500 }}
+            style={{ fontSize: 16, color: isDark ? "rgba(245,240,232,0.76)" : "#5e5546", maxWidth: 680, margin: "16px auto 0", lineHeight: 1.75, fontWeight: 500 }}
           >
             The grid will not be rebuilt with slogans. Track {NUCLEAR_PLANTS.length}+ reactors, uranium-sensitive markets, national buildouts, and the political fight over firm power in one scroll-heavy briefing.
           </motion.p>
@@ -148,7 +148,7 @@ export default function HeroSection({
             onMouseEnter={e => e.currentTarget.style.background = "var(--np-surface-dim)"}
             onMouseLeave={e => e.currentTarget.style.background = "var(--np-bg)"}
           >
-            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 36, fontWeight: 700, lineHeight: 1, letterSpacing: "-0.02em" }}>
+            <div style={{ fontFamily: "var(--np-font-display)", fontSize: 36, fontWeight: 700, lineHeight: 1, letterSpacing: "-0.02em" }}>
               <CountUp target={s.target} decimals={s.decimals} prefix={s.prefix} suffix={s.suffix} active={showStats} delay={i * 80} />
             </div>
             <div style={{ fontSize: 10, fontWeight: 600, color: "var(--np-text-muted)", marginTop: 10, textTransform: "uppercase", letterSpacing: "0.08em" }}>{s.label}</div>

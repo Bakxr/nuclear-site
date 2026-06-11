@@ -14,7 +14,7 @@ export default function OtherDiagram({ width = 680, accent = "#7a6b8b" }) {
 
       {/* ===== AGR (left panel) ===== */}
       <rect x="20" y="48" width="200" height="195" fill="rgba(122,107,139,0.06)" stroke="var(--np-text)" strokeWidth="1" rx="8" />
-      <text x="120" y="68" textAnchor="middle" fontFamily="Playfair Display,serif" fontSize="11" fill="var(--np-text)" fontWeight="600">AGR</text>
+      <text x="120" y="68" textAnchor="middle" fontFamily="var(--np-font-display)" fontSize="11" fill="var(--np-text)" fontWeight="600">AGR</text>
       <text x="120" y="80" textAnchor="middle" fontFamily="DM Sans,sans-serif" fontSize="8" fill="var(--np-text-muted)">Advanced Gas-Cooled</text>
 
       {/* AGR reactor vessel */}
@@ -39,7 +39,7 @@ export default function OtherDiagram({ width = 680, accent = "#7a6b8b" }) {
 
       {/* ===== FBR (center panel) ===== */}
       <rect x="240" y="48" width="200" height="195" fill="rgba(122,107,139,0.06)" stroke="var(--np-text)" strokeWidth="1" rx="8" />
-      <text x="340" y="68" textAnchor="middle" fontFamily="Playfair Display,serif" fontSize="11" fill="var(--np-text)" fontWeight="600">Fast Breeder (FBR)</text>
+      <text x="340" y="68" textAnchor="middle" fontFamily="var(--np-font-display)" fontSize="11" fill="var(--np-text)" fontWeight="600">Fast Breeder (FBR)</text>
       <text x="340" y="80" textAnchor="middle" fontFamily="DM Sans,sans-serif" fontSize="8" fill="var(--np-text-muted)">Liquid Metal Cooled</text>
 
       {/* FBR reactor vessel */}
@@ -65,7 +65,7 @@ export default function OtherDiagram({ width = 680, accent = "#7a6b8b" }) {
 
       {/* ===== HTGR (right panel) ===== */}
       <rect x="460" y="48" width="200" height="195" fill="rgba(122,107,139,0.06)" stroke="var(--np-text)" strokeWidth="1" rx="8" />
-      <text x="560" y="68" textAnchor="middle" fontFamily="Playfair Display,serif" fontSize="11" fill="var(--np-text)" fontWeight="600">HTGR</text>
+      <text x="560" y="68" textAnchor="middle" fontFamily="var(--np-font-display)" fontSize="11" fill="var(--np-text)" fontWeight="600">HTGR</text>
       <text x="560" y="80" textAnchor="middle" fontFamily="DM Sans,sans-serif" fontSize="8" fill="var(--np-text-muted)">High-Temperature Gas</text>
 
       {/* HTGR vessel */}

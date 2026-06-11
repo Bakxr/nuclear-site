@@ -4,7 +4,7 @@ import { REACTOR_TYPES, LEARN_COLORS } from "../../data/constants.js";
 import ReactorDiagram from "../../components/reactorDiagrams/index.jsx";
 import LazySectionFallback from "../../components/LazySectionFallback.jsx";
 import { fadeUp, staggerContainer } from "./animations.js";
-import { SectionLabel } from "./shared.jsx";
+import { SectionHeader, SectionLabel } from "./shared.jsx";
 
 const Reactor3D = lazy(() => import("../../components/reactorDiagrams/Reactor3D.jsx"));
 
@@ -25,15 +25,17 @@ export default function LearnSection({
 }) {
   return (
     <section ref={sectionRef} style={{ padding: "var(--np-section-y) var(--np-section-x)", scrollMarginTop: 80 }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+      <div style={{ maxWidth: "var(--np-content-max)", margin: "0 auto" }}>
 
         {/* Reactor Types */}
+        <SectionHeader
+          index="06"
+          label="Briefing"
+          meta="Six designs power the world"
+          title={<>Know your <em>reactors.</em></>}
+          lede="The six major reactor designs powering the world — click any card to explore advantages, deployments, and a working 3-D model."
+        />
         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }} variants={staggerContainer} style={{ marginBottom: 72 }}>
-          <SectionLabel>Education</SectionLabel>
-          <motion.h2 variants={fadeUp} style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(32px,4vw,52px)", fontWeight: 400, letterSpacing: "-0.02em", marginBottom: 8 }}>
-            Reactor <em style={{ color: "var(--np-text-muted)" }}>types.</em>
-          </motion.h2>
-          <motion.p variants={fadeUp} style={{ color: "var(--np-text-muted)", fontSize: 15, marginBottom: 32, lineHeight: 1.6 }}>The six major reactor designs powering the world — click any card to explore.</motion.p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))", gap: 18 }}>
             {REACTOR_TYPES.map((r, i) => (
               <motion.div key={r.type} variants={fadeUp} layout
@@ -47,7 +49,7 @@ export default function LearnSection({
                 onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = `0 8px 24px ${r.color}20`; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
               >
-                <div style={{ position: "absolute", top: 16, right: 16, fontFamily: "'Playfair Display',serif", fontSize: 44, fontWeight: 700, color: "var(--np-surface-dim)", lineHeight: 1 }}>{r.share}%</div>
+                <div style={{ position: "absolute", top: 16, right: 16, fontFamily: "var(--np-font-display)", fontSize: 44, fontWeight: 700, color: "var(--np-surface-dim)", lineHeight: 1 }}>{r.share}%</div>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 22, fontWeight: 700, color: r.color }}>{r.type}</div>
                   {r.reactorCount && <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 11, color: "var(--np-text-muted)", background: "var(--np-surface-dim)", borderRadius: 6, padding: "3px 8px" }}>{r.reactorCount} operating</span>}
@@ -149,11 +151,11 @@ export default function LearnSection({
         <div style={{ width: 40, height: 1, background: "var(--np-border-strong)", marginBottom: 64 }} />
 
         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }} variants={staggerContainer}>
-          <SectionLabel>Did You Know</SectionLabel>
-          <motion.h2 variants={fadeUp} style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(32px,4vw,52px)", fontWeight: 400, letterSpacing: "-0.02em", marginBottom: 12 }}>
-            Did you <em style={{ color: "var(--np-text-muted)" }}>know?</em>
+          <SectionLabel>Field Notes</SectionLabel>
+          <motion.h2 variants={fadeUp} style={{ fontFamily: "var(--np-font-display)", fontSize: "clamp(28px,3.2vw,44px)", fontWeight: 400, letterSpacing: "-0.02em", marginBottom: 12 }}>
+            Did you <em style={{ fontStyle: "italic", fontWeight: 350, color: "var(--np-accent-ink)" }}>know?</em>
           </motion.h2>
-          <motion.p variants={fadeUp} style={{ color: "var(--np-text-muted)", fontSize: 15, marginBottom: 24, maxWidth: 540, lineHeight: 1.6 }}>Key facts that explain why nuclear power matters for our energy future.</motion.p>
+          <motion.p variants={fadeUp} style={{ color: "var(--np-text-muted)", fontSize: 15, marginBottom: 24, maxWidth: 540, lineHeight: 1.7 }}>Key facts that explain why nuclear power matters for our energy future.</motion.p>
 
           {/* Filter tabs + Surprise Me */}
           <motion.div variants={fadeUp} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 32, flexWrap: "wrap" }}>
@@ -230,7 +232,7 @@ export default function LearnSection({
                           borderRadius: 6, padding: "4px 10px", marginBottom: 14,
                         }}>{item.category}</span>
                         <h4 style={{
-                          fontFamily: "'Playfair Display',serif", fontSize: 18, fontWeight: 500,
+                          fontFamily: "var(--np-font-display)", fontSize: 18, fontWeight: 500,
                           lineHeight: 1.3, color: "var(--np-text)", margin: 0,
                         }}>{item.headline}</h4>
                       </div>

@@ -159,7 +159,7 @@ export default function PlantModal({ plant, onClose }) {
               <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", color: "#d4a54a", fontWeight: 700, marginBottom: 4 }}>
                 Nuclear Power Station
               </div>
-              <h3 id="plant-modal-title" style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(22px, 4vw, 32px)", fontWeight: 500, margin: 0, color: "#fff", lineHeight: 1.15 }}>
+              <h3 id="plant-modal-title" style={{ fontFamily: "var(--np-font-display)", fontSize: "clamp(22px, 4vw, 32px)", fontWeight: 500, margin: 0, color: "#fff", lineHeight: 1.15 }}>
                 {plant.name}
               </h3>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6 }}>
@@ -241,7 +241,7 @@ export default function PlantModal({ plant, onClose }) {
             {/* Header + tab switcher */}
             <div className="np-reactor-header" style={{ padding: "16px 20px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
-                <h4 style={{ fontFamily: "'Playfair Display',serif", fontSize: 18, fontWeight: 500, margin: "0 0 3px", color: "var(--np-text)" }}>
+                <h4 style={{ fontFamily: "var(--np-font-display)", fontSize: 18, fontWeight: 500, margin: "0 0 3px", color: "var(--np-text)" }}>
                   How a <em style={{ color: "var(--np-text-muted)" }}>{normalizedType}</em> Works
                 </h4>
                 {reactorInfo && <p style={{ fontSize: 13, color: "var(--np-text-muted)", margin: 0, lineHeight: 1.5 }}>{reactorInfo.desc}</p>}

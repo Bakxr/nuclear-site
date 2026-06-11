@@ -59,7 +59,7 @@ export default function StockModal({ stock, onClose }) {
             <div style={{ fontSize: 14, color: "rgba(245,240,232,0.5)", marginTop: 2 }}>{stock.name}</div>
           </div>
           <div style={{ textAlign: "right" }}>
-            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 36, fontWeight: 700 }}>${stock.price.toFixed(2)}</div>
+            <div style={{ fontFamily: "var(--np-font-display)", fontSize: 36, fontWeight: 700 }}>${stock.price.toFixed(2)}</div>
             <div style={{ color: stock.change >= 0 ? "#4ade80" : "#f87171", fontSize: 14, fontFamily: "'DM Mono',monospace", marginTop: 2 }}>
               {stock.change >= 0 ? "+" : ""}{stock.change.toFixed(2)} ({stock.change >= 0 ? "+" : ""}{stock.pct.toFixed(2)}%) today
             </div>

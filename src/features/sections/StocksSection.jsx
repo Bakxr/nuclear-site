@@ -1,8 +1,6 @@
-import { motion } from "framer-motion";
 import { LineChart, Line, ResponsiveContainer } from "recharts";
 import ErrorBoundary from "../../components/ErrorBoundary.jsx";
-import { fadeUp, staggerContainer } from "./animations.js";
-import { SectionLabel } from "./shared.jsx";
+import { SectionHeader } from "./shared.jsx";
 
 export default function StocksSection({
   sectionRef,
@@ -16,14 +14,15 @@ export default function StocksSection({
   return (
     <ErrorBoundary section="Stocks" dark={true}>
       <section ref={sectionRef} style={{ padding: "var(--np-section-y) var(--np-section-x) 40px", background: "var(--np-dark-bg)", color: "var(--np-dark-text)", scrollMarginTop: 80 }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }} variants={staggerContainer}>
-            <SectionLabel dark>Market Overview</SectionLabel>
-            <motion.h2 variants={fadeUp} style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(32px,4vw,52px)", fontWeight: 400, letterSpacing: "-0.02em", marginBottom: 8 }}>
-              Nuclear industry <em style={{ color: "#d4a54a" }}>stocks.</em>
-            </motion.h2>
-            <motion.p variants={fadeUp} style={{ color: "rgba(245,240,232,0.4)", fontSize: 15, marginBottom: 40, maxWidth: 540, lineHeight: 1.6 }}>Click any card for detailed charts, metrics, and company information.</motion.p>
-          </motion.div>
+        <div style={{ maxWidth: "var(--np-content-max)", margin: "0 auto" }}>
+          <SectionHeader
+            dark
+            index="04"
+            label="Markets"
+            meta="Finnhub · 5-minute refresh"
+            title={<>Nuclear stocks, <em>live.</em></>}
+            lede="Reactor builders, fuel suppliers, and uranium miners — click any card for detailed charts, metrics, and company context."
+          />
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(270px,1fr))", gap: 16 }}>
             {stocksLoading ? (
               Array.from({ length: 12 }).map((_, i) => (
@@ -80,7 +79,7 @@ export default function StocksSection({
                       </ResponsiveContainer>
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                      <span style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 700 }}>${s.price.toFixed(2)}</span>
+                      <span style={{ fontFamily: "var(--np-font-display)", fontSize: 26, fontWeight: 700 }}>${s.price.toFixed(2)}</span>
                       <span style={{ fontSize: 10, color: "rgba(245,240,232,0.3)", fontFamily: "'DM Mono',monospace" }}>{s.sector}</span>
                     </div>
                   </div>

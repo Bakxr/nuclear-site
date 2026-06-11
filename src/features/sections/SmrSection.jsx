@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { fadeUp, staggerContainer } from "./animations.js";
-import { SectionLabel } from "./shared.jsx";
+import { SectionHeader } from "./shared.jsx";
 
 // ─── SMR TRACKER DATA ─────────────────────────────────────────────────
 const SMR_PROJECTS = [
@@ -30,18 +30,18 @@ const SMR_STATUS_COLORS = {
 export default function SmrSection({ sectionRef }) {
   return (
     <section ref={sectionRef} style={{ padding: "var(--np-section-y) var(--np-section-x)", background: "var(--np-dark-bg)", color: "var(--np-dark-text)", scrollMarginTop: 80 }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+      <div style={{ maxWidth: "var(--np-content-max)", margin: "0 auto" }}>
+        <SectionHeader
+          dark
+          index="05"
+          label="Buildout"
+          meta={`${SMR_PROJECTS.length} tracked programmes`}
+          title={<>Small modular <em>reactors.</em></>}
+          lede="The next generation of nuclear — factory-built, faster to deploy, and designed for a decarbonised grid."
+        />
         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }} variants={staggerContainer}>
-          <SectionLabel dark>SMR Tracker</SectionLabel>
-          <motion.h2 variants={fadeUp} style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(32px,4vw,52px)", fontWeight: 400, letterSpacing: "-0.02em", marginBottom: 8 }}>
-            Small modular <em style={{ color: "#d4a54a" }}>reactors.</em>
-          </motion.h2>
-          <motion.p variants={fadeUp} style={{ color: "rgba(245,240,232,0.45)", fontSize: 15, marginBottom: 32, maxWidth: 580, lineHeight: 1.6 }}>
-            The next generation of nuclear — factory-built, faster to deploy, and designed for a decarbonised grid.
-          </motion.p>
-
           {/* Status legend */}
-          <motion.div variants={fadeUp} style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 36 }}>
+          <motion.div variants={fadeUp} style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 36, marginTop: -16 }}>
             {SMR_STATUS_ORDER.map(s => (
               <div key={s} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "rgba(245,240,232,0.5)" }}>
                 <span style={{ width: 8, height: 8, borderRadius: "50%", background: SMR_STATUS_COLORS[s], flexShrink: 0 }} />
@@ -69,7 +69,7 @@ export default function SmrSection({ sectionRef }) {
               {/* Header row */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
                 <div>
-                  <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 17, fontWeight: 500, color: "#f5f0e8", lineHeight: 1.2 }}>{project.name}</div>
+                  <div style={{ fontFamily: "var(--np-font-display)", fontSize: 17, fontWeight: 500, color: "#f5f0e8", lineHeight: 1.2 }}>{project.name}</div>
                   <div style={{ fontSize: 12, color: "rgba(245,240,232,0.4)", marginTop: 2 }}>{project.company} · {project.country}</div>
                 </div>
                 <span style={{

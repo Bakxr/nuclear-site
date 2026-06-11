@@ -37,7 +37,7 @@ function TimelineCard({ event, isLeft }) {
       >
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
           <span style={{
-            fontFamily: "'Playfair Display',serif", fontSize: 28, fontWeight: 700,
+            fontFamily: "var(--np-font-display)", fontSize: 28, fontWeight: 700,
             color: eraColor, lineHeight: 1,
           }}>{event.year}</span>
           <span style={{
@@ -46,7 +46,7 @@ function TimelineCard({ event, isLeft }) {
           }}>{event.era}</span>
         </div>
         <h4 style={{
-          fontFamily: "'Playfair Display',serif", fontSize: 18, fontWeight: 500,
+          fontFamily: "var(--np-font-display)", fontSize: 18, fontWeight: 500,
           margin: "0 0 4px", color: "var(--np-text)",
         }}>{event.title}</h4>
         <p style={{ fontSize: 12, color: "var(--np-text-muted)", margin: "0 0 10px", fontWeight: 600 }}>
@@ -94,7 +94,7 @@ function TimelineCard({ event, isLeft }) {
           animate={inView ? { opacity: 0.4 } : {}}
           transition={{ duration: 0.4, delay: 0.3 }}
           style={{
-            fontFamily: "'Playfair Display',serif", fontSize: 48, fontWeight: 700,
+            fontFamily: "var(--np-font-display)", fontSize: 48, fontWeight: 700,
             color: "var(--np-text)", lineHeight: 1,
           }}
         >{event.year}</motion.span>

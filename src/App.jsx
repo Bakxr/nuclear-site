@@ -100,13 +100,13 @@ function NewsletterCapture({
           onKeyDown={(e) => e.key === "Enter" && onSubmit(surface)}
           disabled={form.status === "loading"}
           style={{
-            padding: "15px 22px",
+            padding: "15px 20px",
             fontSize: 14,
             fontFamily: "'DM Sans',sans-serif",
             background: "var(--np-surface)",
             color: "var(--np-text)",
-            border: `1px solid ${form.status === "error" ? "rgba(248,113,113,0.5)" : "var(--np-border)"}`,
-            borderRadius: "10px 0 0 10px",
+            border: `1px solid ${form.status === "error" ? "rgba(248,113,113,0.5)" : "var(--np-border-strong)"}`,
+            borderRadius: "6px 0 0 6px",
             width: 320,
             outline: "none",
             borderRight: "none",
@@ -122,17 +122,17 @@ function NewsletterCapture({
           onClick={() => onSubmit(surface)}
           disabled={form.status === "loading"}
           style={{
-            padding: "15px 32px",
-            fontSize: 13,
+            padding: "15px 30px",
+            fontSize: 12,
             fontFamily: "'DM Sans',sans-serif",
-            fontWeight: 600,
+            fontWeight: 700,
             background: "var(--np-text)",
             color: "var(--np-bg)",
             border: "none",
-            borderRadius: "0 10px 10px 0",
+            borderRadius: "0 6px 6px 0",
             cursor: form.status === "loading" ? "not-allowed" : "pointer",
             textTransform: "uppercase",
-            letterSpacing: "0.04em",
+            letterSpacing: "0.1em",
             transition: "all 0.2s",
             opacity: form.status === "loading" ? 0.6 : 1,
             ...buttonStyle,
@@ -304,7 +304,7 @@ function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport
             transition={{ type: "spring", damping: 28, stiffness: 320 }}
             style={{
               width: "min(92vw, 540px)",
-              borderRadius: 24,
+              borderRadius: 18,
               border: "1px solid rgba(212,165,74,0.2)",
               background: "linear-gradient(180deg, rgba(22,18,13,0.98) 0%, rgba(12,10,8,0.98) 100%)",
               boxShadow: "0 30px 90px rgba(0,0,0,0.35)",
@@ -341,7 +341,7 @@ function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#d4a54a" }}>
                 Account access
               </div>
-              <h3 id="account-access-title" style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(28px,4vw,40px)", lineHeight: 1.08, margin: "10px 0 8px" }}>
+              <h3 id="account-access-title" style={{ fontFamily: "var(--np-font-display)", fontSize: "clamp(28px,4vw,40px)", lineHeight: 1.08, margin: "10px 0 8px" }}>
                 {user ? "You're signed in." : "Sign in from the main page."}
               </h3>
               <p style={{ fontSize: 15, color: "rgba(245,240,232,0.72)", lineHeight: 1.7, margin: 0 }}>
@@ -1002,7 +1002,6 @@ export default function NuclearPulse() {
   const uniqueNewsSources = useMemo(() => new Set(news.map((item) => item.source)).size, [news]);
 
   const newsStatusLabel = newsError ? "Curated fallback" : "Live feeds";
-  const newsStatusTone = newsError ? "rgba(212,165,74,0.12)" : "rgba(74,222,128,0.12)";
   const newsStatusColor = newsError ? "#d4a54a" : "#4ade80";
 
   async function refreshNews() {
@@ -1244,51 +1243,51 @@ export default function NuclearPulse() {
       <header style={{ position: "sticky", top: 0, zIndex: 140, background: "var(--np-bg)" }}>
       <StockTicker stocks={stocks} onClickStock={setSelectedStock} />
 
-      {/* Nav */}
+      {/* Masthead */}
       <nav className="np-nav" style={{
         display: "flex", justifyContent: "space-between", alignItems: "center",
-        padding: "16px var(--np-section-x)", borderBottom: "1px solid var(--np-border)",
+        padding: "14px var(--np-section-x)", borderBottom: "1px solid var(--np-hairline)",
         background: "var(--np-nav-bg)",
         backdropFilter: "blur(24px)",
       }}>
-        <div className="np-brand" style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}
+        <div className="np-brand" style={{ display: "flex", alignItems: "center", gap: 11, cursor: "pointer" }}
              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
-          <span style={{ fontSize: 24 }}>⚛</span>
-          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <span style={{ fontFamily: "'Playfair Display',serif", fontSize: 21, fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1 }}>
-              Nuclear<span style={{ fontStyle: "italic", fontWeight: 400, color: "var(--np-text-muted)", marginLeft: 5 }}>Pulse</span>
+          <svg aria-hidden="true" width="26" height="26" viewBox="0 0 26 26" fill="none" style={{ flexShrink: 0 }}>
+            <circle cx="13" cy="13" r="2.2" fill="var(--np-accent)" />
+            <ellipse cx="13" cy="13" rx="10.6" ry="4.4" stroke="var(--np-text)" strokeWidth="1.1" />
+            <ellipse cx="13" cy="13" rx="10.6" ry="4.4" stroke="var(--np-text)" strokeWidth="1.1" transform="rotate(60 13 13)" />
+            <ellipse cx="13" cy="13" rx="10.6" ry="4.4" stroke="var(--np-text)" strokeWidth="1.1" transform="rotate(120 13 13)" />
+          </svg>
+          <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            <span style={{ fontFamily: "var(--np-font-display)", fontSize: 21, fontWeight: 500, letterSpacing: "-0.025em", lineHeight: 1, color: "var(--np-text)" }}>
+              Nuclear<em style={{ fontStyle: "italic", fontWeight: 350, marginLeft: 5 }}>Pulse</em>
             </span>
-            <span style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.16em", color: "var(--np-text-faint)", fontWeight: 700 }}>
+            <span style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.22em", color: "var(--np-text-faint)", fontWeight: 700 }}>
               Strategic Energy Briefing
             </span>
           </div>
         </div>
-        <div className="np-nav-links" style={{ display: "flex", gap: 28 }}>
-          <button onClick={() => switchAppView("terminal")} style={{
-            background: "none", border: "none", cursor: "pointer",
-            fontFamily: "'DM Sans',sans-serif", fontSize: 13, fontWeight: 700,
-            color: "#d4a54a", letterSpacing: "0.05em", textTransform: "uppercase",
-            padding: "4px 0", transition: "color 0.2s",
-          }}
-            onMouseEnter={e => e.currentTarget.style.color = "var(--np-text)"}
-            onMouseLeave={e => e.currentTarget.style.color = "#d4a54a"}
-          >Terminal</button>
-          {NAV_ITEMS.map(item => {
+        <div className="np-nav-links" style={{ display: "flex", alignItems: "center", gap: 22 }}>
+          {NAV_ITEMS.map((item, i) => {
             const isActive = activeSection === item.key;
             return (
-              <button key={item.key} onClick={() => scrollTo(item.key)} style={{
-                background: "none", border: "none", cursor: "pointer",
-                fontFamily: "'DM Sans',sans-serif", fontSize: 13, fontWeight: 500,
-                color: isActive ? "#d4a54a" : "var(--np-text-muted)",
-                letterSpacing: "0.05em", textTransform: "uppercase",
-                padding: "4px 0", transition: "color 0.2s",
-                borderBottom: isActive ? "1px solid rgba(212,165,74,0.6)" : "1px solid transparent",
-              }}
-                onMouseEnter={e => e.currentTarget.style.color = "var(--np-text)"}
-                onMouseLeave={e => e.currentTarget.style.color = isActive ? "#d4a54a" : "var(--np-text-muted)"}
-              >{item.label}</button>
+              <button key={item.key} onClick={() => scrollTo(item.key)} className={`np-nav-link${isActive ? " is-active" : ""}`}>
+                <span className="np-nav-index" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
+                {item.label}
+              </button>
             );
           })}
+          <button onClick={() => switchAppView("terminal")} style={{
+            background: "transparent", cursor: "pointer",
+            fontFamily: "'DM Sans',sans-serif", fontSize: 11.5, fontWeight: 700,
+            color: "var(--np-accent-ink)", letterSpacing: "0.13em", textTransform: "uppercase",
+            padding: "9px 16px", borderRadius: 6,
+            border: "1px solid rgba(212,165,74,0.45)",
+            transition: "background 0.2s, color 0.2s, border-color 0.2s",
+          }}
+            onMouseEnter={e => { e.currentTarget.style.background = "var(--np-text)"; e.currentTarget.style.color = "var(--np-bg)"; e.currentTarget.style.borderColor = "var(--np-text)"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--np-accent-ink)"; e.currentTarget.style.borderColor = "rgba(212,165,74,0.45)"; }}
+          >Terminal</button>
         </div>
         <div className="np-nav-actions" style={{ display: "flex", alignItems: "center", gap: 10 }}>
           {!isMobileViewport ? (
@@ -1300,14 +1299,19 @@ export default function NuclearPulse() {
                 alignItems: "center",
                 gap: 10,
                 minWidth: 0,
-                maxWidth: 210,
-                borderRadius: 18,
-                border: "1px solid var(--np-border)",
-                background: "var(--np-surface-dim)",
+                maxWidth: 200,
+                flexShrink: 0,
+                whiteSpace: "nowrap",
+                borderRadius: 6,
+                border: "1px solid var(--np-hairline)",
+                background: "transparent",
                 color: "var(--np-text)",
                 padding: "7px 12px",
                 cursor: "pointer",
+                transition: "border-color 0.2s",
               }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = "var(--np-border-strong)"}
+              onMouseLeave={e => e.currentTarget.style.borderColor = "var(--np-hairline)"}
             >
               <span style={{ width: 8, height: 8, borderRadius: "50%", background: accountStatusMeta.accent, flexShrink: 0 }} />
               <span style={{ display: "grid", minWidth: 0, textAlign: "left" }}>
@@ -1325,17 +1329,20 @@ export default function NuclearPulse() {
             aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
             title={isDark ? "Switch to light mode" : "Switch to dark mode"}
             style={{
-              background: "none", border: "1px solid var(--np-border)", borderRadius: "50%",
-              width: 34, height: 34, cursor: "pointer", display: "flex", alignItems: "center",
-              justifyContent: "center", fontSize: 16, transition: "border-color 0.2s",
+              background: "none", border: "1px solid var(--np-hairline)", borderRadius: 6,
+              width: 36, height: 36, cursor: "pointer", display: "flex", alignItems: "center",
+              justifyContent: "center", fontSize: 15, transition: "border-color 0.2s",
               color: "var(--np-text-muted)", flexShrink: 0,
             }}
             onMouseEnter={e => e.currentTarget.style.borderColor = "var(--np-accent)"}
-            onMouseLeave={e => e.currentTarget.style.borderColor = "var(--np-border)"}
+            onMouseLeave={e => e.currentTarget.style.borderColor = "var(--np-hairline)"}
           ><span aria-hidden="true">{isDark ? "☀" : "☾"}</span></button>
           <div className="np-search-shell" style={{ position: "relative" }}>
-            <div className="np-nav-search" style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--np-surface-dim)", borderRadius: 20, padding: "7px 16px", border: "1px solid var(--np-border)", transition: "border-color 0.2s" }}>
-              <span aria-hidden="true" style={{ opacity: 0.3, fontSize: 13 }}>🔍</span>
+            <div className="np-nav-search" style={{ display: "flex", alignItems: "center", gap: 8, background: "transparent", borderRadius: 6, padding: "7px 14px", border: "1px solid var(--np-hairline)", transition: "border-color 0.2s" }}>
+              <svg aria-hidden="true" width="13" height="13" viewBox="0 0 14 14" fill="none" style={{ opacity: 0.45, flexShrink: 0 }}>
+                <circle cx="6" cy="6" r="4.6" stroke="currentColor" strokeWidth="1.4" />
+                <line x1="9.4" y1="9.4" x2="13" y2="13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+              </svg>
               <input
                 type="search"
                 aria-label="Search everything"
@@ -1427,8 +1434,11 @@ export default function NuclearPulse() {
               </button>
             ))}
             <div style={{ padding: "8px 12px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--np-surface-dim)", borderRadius: 12, padding: "8px 12px" }}>
-                <span aria-hidden="true" style={{ opacity: 0.3, fontSize: 13 }}>🔍</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--np-surface-dim)", borderRadius: 6, padding: "8px 12px" }}>
+                <svg aria-hidden="true" width="13" height="13" viewBox="0 0 14 14" fill="none" style={{ opacity: 0.45, flexShrink: 0 }}>
+                  <circle cx="6" cy="6" r="4.6" stroke="currentColor" strokeWidth="1.4" />
+                  <line x1="9.4" y1="9.4" x2="13" y2="13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                </svg>
                 <input type="text" placeholder="Search plants..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
                   style={{ background: "none", border: "none", outline: "none", fontSize: 14, fontFamily: "'DM Sans',sans-serif", color: "var(--np-text)", width: "100%" }} />
               </div>
@@ -1527,7 +1537,6 @@ export default function NuclearPulse() {
         uniqueNewsSources={uniqueNewsSources}
         newsLastUpdated={newsLastUpdated}
         newsStatusLabel={newsStatusLabel}
-        newsStatusTone={newsStatusTone}
         newsStatusColor={newsStatusColor}
         setNewsFilter={setNewsFilter}
         setNewsSort={setNewsSort}
@@ -1541,25 +1550,21 @@ export default function NuclearPulse() {
       />
 
       <section style={{ padding: "0 var(--np-section-x) var(--np-section-y)", background: "var(--np-bg)" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+        <div style={{ maxWidth: "var(--np-content-max)", margin: "0 auto" }}>
           <div style={{
-            borderRadius: 24,
-            border: "1px solid rgba(212,165,74,0.16)",
-            background: isDark
-              ? "linear-gradient(135deg, rgba(212,165,74,0.08) 0%, rgba(245,240,232,0.03) 100%)"
-              : "linear-gradient(135deg, rgba(212,165,74,0.08) 0%, rgba(255,255,255,0.72) 100%)",
-            padding: isMobileViewport ? "24px 18px" : "30px 34px",
-            boxShadow: isDark ? "0 16px 40px rgba(0,0,0,0.18)" : "0 14px 36px rgba(30,25,18,0.08)",
+            borderTop: "1px solid var(--np-hairline)",
+            borderBottom: "1px solid var(--np-hairline)",
+            padding: isMobileViewport ? "36px 0" : "clamp(40px, 5vw, 64px) 0",
           }}>
-            <div style={{ display: "grid", gridTemplateColumns: isMobileViewport ? "1fr" : "minmax(0, 1.1fr) minmax(320px, 420px)", gap: 22, alignItems: "center" }}>
+            <div style={{ display: "grid", gridTemplateColumns: isMobileViewport ? "1fr" : "minmax(0, 1.1fr) minmax(320px, 420px)", gap: 28, alignItems: "center" }}>
               <div>
-                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#d4a54a" }}>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--np-accent-ink)" }}>
                   The signal behind the week
                 </div>
-                <div style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(28px,3vw,42px)", lineHeight: 1.08, marginTop: 10 }}>
-                  Get the moves that matter, once a week.
+                <div style={{ fontFamily: "var(--np-font-display)", fontSize: "clamp(28px,3.4vw,48px)", fontWeight: 400, letterSpacing: "-0.02em", lineHeight: 1.06, marginTop: 14, textWrap: "balance" }}>
+                  Get the moves that matter, <em style={{ fontStyle: "italic", fontWeight: 350, color: "var(--np-accent-ink)" }}>once a week.</em>
                 </div>
-                <div style={{ fontSize: 15, color: "var(--np-text-muted)", lineHeight: 1.7, marginTop: 12, maxWidth: 620 }}>
+                <div style={{ fontSize: 15, color: "var(--np-text-muted)", lineHeight: 1.7, marginTop: 14, maxWidth: "56ch" }}>
                   If you made it this far, you already care about the buildout story. The briefing turns reactor maps, uranium signals, policy shifts, and market moves into one clean weekly read.
                 </div>
               </div>
@@ -1667,7 +1672,7 @@ export default function NuclearPulse() {
               transition={{ type: "spring", damping: 28, stiffness: 320 }}
               style={{
                 width: "min(92vw, 520px)",
-                borderRadius: 24,
+                borderRadius: 18,
                 border: "1px solid rgba(212,165,74,0.2)",
                 background: "linear-gradient(180deg, rgba(22,18,13,0.98) 0%, rgba(13,11,8,0.98) 100%)",
                 boxShadow: "0 28px 80px rgba(0,0,0,0.35)",
@@ -1700,7 +1705,7 @@ export default function NuclearPulse() {
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#d4a54a" }}>
                 Weekly atomic briefing
               </div>
-              <h3 id="newsletter-popup-title" style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(28px,4vw,40px)", lineHeight: 1.08, margin: "10px 0 10px" }}>
+              <h3 id="newsletter-popup-title" style={{ fontFamily: "var(--np-font-display)", fontSize: "clamp(28px,4vw,40px)", lineHeight: 1.08, margin: "10px 0 10px" }}>
                 Don’t lose the signal.
               </h3>
               <p style={{ fontSize: 15, color: "rgba(245,240,232,0.72)", lineHeight: 1.7, margin: "0 0 18px" }}>
