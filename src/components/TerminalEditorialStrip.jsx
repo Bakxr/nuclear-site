@@ -1,3 +1,6 @@
+import { useEffect, useState } from "react";
+import { fetchPredictionTeaser } from "../services/predictionsAPI.js";
+
 function TerminalMetric({ card }) {
   return (
     <div style={{
@@ -63,7 +66,112 @@ function TerminalMiniList({ title, accent = "#d4a54a", items, renderMeta }) {
   );
 }
 
+function formatOdds(yesPrice) {
+  return `${Math.round(yesPrice * 100)}%`;
+}
+
+function formatVolume(volume) {
+  if (!Number.isFinite(volume) || volume <= 0) return null;
+  if (volume >= 1_000_000) return `$${(volume / 1_000_000).toFixed(1)}m`;
+  if (volume >= 1_000) return `$${Math.round(volume / 1_000)}k`;
+  return `$${Math.round(volume)}`;
+}
+
+function formatEndDate(endDate) {
+  if (!endDate) return null;
+  const date = new Date(endDate);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+}
+
+function PredictionOddsBoard({ markets, onOpenTerminal }) {
+  if (!markets.length) return null;
+
+  return (
+    <div style={{ display: "grid", gap: 12 }}>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+          <span style={{ fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.16em", color: "#d4a54a", fontWeight: 700 }}>
+            Market odds
+          </span>
+          <span style={{ fontFamily: "var(--np-font-mono)", fontSize: 10, color: "rgba(245,240,232,0.4)", letterSpacing: "0.05em" }}>
+            Polymarket · Kalshi
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={onOpenTerminal}
+          style={{
+            background: "none", border: "none", padding: 0, cursor: "pointer",
+            fontFamily: "var(--np-font-mono)", fontSize: 11, letterSpacing: "0.05em",
+            color: "rgba(212,165,74,0.85)",
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = "#d4a54a"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(212,165,74,0.85)"; }}
+        >
+          Full board in the terminal →
+        </button>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))", gap: 12 }}>
+        {markets.map((market) => {
+          const meta = [
+            market.source === "kalshi" ? "Kalshi" : "Polymarket",
+            formatVolume(market.volume),
+            formatEndDate(market.endDate) ? `ends ${formatEndDate(market.endDate)}` : null,
+          ].filter(Boolean).join(" · ");
+          return (
+            <div
+              key={market.id}
+              style={{
+                borderRadius: 14,
+                border: "1px solid rgba(212,165,74,0.16)",
+                background: "rgba(20,18,14,0.58)",
+                padding: "14px 16px",
+                display: "grid",
+                gridTemplateColumns: "minmax(0, 1fr) auto",
+                gap: 12,
+                alignItems: "center",
+                minWidth: 0,
+              }}
+            >
+              <div style={{ minWidth: 0, display: "grid", gap: 6 }}>
+                <div style={{
+                  fontSize: 12.5, fontWeight: 600, lineHeight: 1.45, color: "#f5f0e8",
+                  display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
+                }}>
+                  {market.question}
+                </div>
+                <div style={{ fontFamily: "var(--np-font-mono)", fontSize: 10, color: "rgba(245,240,232,0.42)", letterSpacing: "0.04em" }}>
+                  {meta}
+                </div>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontFamily: "var(--np-font-display)", fontSize: 28, fontWeight: 450, lineHeight: 1, color: "#d4a54a" }}>
+                  {formatOdds(market.yesPrice)}
+                </div>
+                <div style={{ fontSize: 9.5, textTransform: "uppercase", letterSpacing: "0.12em", color: "rgba(245,240,232,0.4)", marginTop: 4 }}>
+                  Yes
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function TerminalEditorialStrip({ signals, onOpenTerminal }) {
+  const [predictionMarkets, setPredictionMarkets] = useState([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchPredictionTeaser().then((markets) => {
+      if (!cancelled) setPredictionMarkets(markets.slice(0, 4));
+    });
+    return () => { cancelled = true; };
+  }, []);
+
   if (!signals) return null;
 
   const summaryCards = signals.cards.slice(0, 4);
@@ -114,6 +222,8 @@ export default function TerminalEditorialStrip({ signals, onOpenTerminal }) {
             Open terminal <span className="np-btn-arrow" aria-hidden="true">→</span>
           </button>
         </div>
+
+        <PredictionOddsBoard markets={predictionMarkets} onOpenTerminal={onOpenTerminal} />
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 12 }}>
           {summaryCards.map((card) => (
