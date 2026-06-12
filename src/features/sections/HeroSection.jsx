@@ -45,18 +45,75 @@ function buildUraniumStat(live) {
   };
 }
 
-function useUraniumPrice() {
-  const [data, setData] = useState(null);
+function useHeroSignals() {
+  const [data, setData] = useState({ uranium: null, fleet: null });
   useEffect(() => {
     let cancelled = false;
     const controller = new AbortController();
     fetch("/api/news", { signal: controller.signal })
       .then((res) => (res.ok ? res.json() : null))
-      .then((payload) => { if (!cancelled && payload?.uranium) setData(payload.uranium); })
+      .then((payload) => {
+        if (cancelled || !payload) return;
+        setData({ uranium: payload.uranium || null, fleet: payload.fleet || null });
+      })
       .catch(() => {});
     return () => { cancelled = true; controller.abort(); };
   }, []);
   return data;
+}
+
+function fleetDotStyle(power) {
+  if (power >= 90) {
+    return { background: "var(--np-accent)" };
+  }
+  if (power > 0) {
+    return { background: "rgba(212,165,74,0.32)" };
+  }
+  return { background: "transparent", border: "1px solid var(--np-border-strong)" };
+}
+
+// One dot per US power reactor, colored by today's NRC-reported output.
+function FleetPulse({ fleet }) {
+  if (!fleet || !Array.isArray(fleet.units) || !fleet.units.length) return null;
+
+  return (
+    <section
+      aria-label="US nuclear fleet status from the NRC daily report"
+      style={{ background: "var(--np-bg)", borderTop: "1px solid var(--np-hairline)", padding: "14px var(--np-section-x) 16px" }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: "14px 22px", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexShrink: 0 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--np-accent-ink)" }}>
+            Fleet pulse
+          </span>
+          <span style={{ fontFamily: "var(--np-font-mono)", fontSize: 10, color: "var(--np-text-faint)", letterSpacing: "0.04em" }}>
+            US reactors · {fleet.reportDate}
+          </span>
+        </div>
+
+        <div aria-hidden="true" style={{ display: "flex", flexWrap: "wrap", gap: 3, flex: "1 1 320px", minWidth: 0 }}>
+          {fleet.units.map((u) => (
+            <span
+              key={u.unit}
+              title={`${u.unit} — ${u.power}%`}
+              style={{ width: 8, height: 8, borderRadius: 2, flexShrink: 0, ...fleetDotStyle(u.power) }}
+            />
+          ))}
+        </div>
+
+        <a
+          href="https://www.nrc.gov/reading-rm/doc-collections/event-status/reactor-status/"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ fontFamily: "var(--np-font-mono)", fontSize: 11, color: "var(--np-text-muted)", textDecoration: "none", letterSpacing: "0.03em", flexShrink: 0 }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = "var(--np-accent-ink)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = "var(--np-text-muted)"; }}
+        >
+          {fleet.online}/{fleet.total} online · fleet avg {fleet.avgPower}% · NRC ↗
+        </a>
+      </div>
+    </section>
+  );
 }
 
 export default function HeroSection({
@@ -67,7 +124,7 @@ export default function HeroSection({
   heroOpacity,
   showStats,
 }) {
-  const uranium = useUraniumPrice();
+  const { uranium, fleet } = useHeroSignals();
   const GLOBAL_STATS = [...STATIC_GLOBAL_STATS, buildUraniumStat(uranium)];
   return (
     <div
@@ -156,6 +213,8 @@ export default function HeroSection({
           </a>
         ))}
       </section>
+
+      <FleetPulse fleet={fleet} />
     </div>
   );
 }
