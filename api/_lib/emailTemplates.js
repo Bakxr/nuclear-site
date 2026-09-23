@@ -116,7 +116,7 @@ function bulletList(items) {
 
 function uraniumBlock(uranium) {
   if (!uranium) return null;
-  const price = uranium.price ?? uranium.value ?? uranium.spotPrice ?? null;
+  const price = uranium.price ?? uranium.value ?? uranium.spotPrice ?? uranium.pricePerLb ?? null;
   const pct = uranium.pct ?? uranium.changePct ?? null;
   const up = (pct ?? 0) >= 0;
   return `<div style="display:flex;justify-content:space-between;align-items:center;">
@@ -210,7 +210,8 @@ export function buildDailyEmail({ user, email, movers = [], filings = [], operat
 
 export function buildWeeklyEmail({ email, headlines = [], movers = [], uranium = null }) {
   const summaryParts = [];
-  if (uranium) summaryParts.push(`Uranium ${formatPercent(uranium.pct ?? uranium.changePct ?? 0)}`);
+  const uraniumPct = uranium?.pct ?? uranium?.changePct ?? null;
+  if (uranium && Number.isFinite(uraniumPct)) summaryParts.push(`Uranium ${formatPercent(uraniumPct)}`);
   if (movers[0]) summaryParts.push(`${movers[0].ticker} leads`);
   const weekSummary = summaryParts.join(" · ") || "Weekly recap";
   const subject = `Weekly atomic briefing — ${weekSummary}`;
