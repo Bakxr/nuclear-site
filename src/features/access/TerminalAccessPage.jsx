@@ -338,10 +338,10 @@ export default function TerminalAccessPage({ isMobileViewport, onExitTerminal })
               <div className="np-terminal-panel-body" style={{ padding: isMobileViewport ? "16px" : "20px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 12 }}>
                   <div>
-                    <div style={terminalLabelStyle("cyan")}>Unlocked surfaces</div>
+                    <div style={terminalLabelStyle("cyan")}>A peek inside</div>
                     <div style={{ ...terminalValueStyle({ size: 20 }), marginTop: 8 }}>Console modules</div>
                   </div>
-                  <span style={terminalTagStyle({ tone: "cyan", compact: true })}>Workspace parity</span>
+                  <span style={terminalTagStyle({ tone: "amber", compact: true })}>🔒 PRO workspace</span>
                 </div>
 
                 <div style={{ display: "grid", gridTemplateColumns: isMobileViewport ? "1fr" : "repeat(3, minmax(0,1fr))", gap: 12 }}>
@@ -349,9 +349,15 @@ export default function TerminalAccessPage({ isMobileViewport, onExitTerminal })
                     { label: "Filing radar", detail: "Track SEC signals by company, country, and ticker context.", tone: "amber" },
                     { label: "Operations pulse", detail: "Monitor NRC power-level signals with terminal-native filtering.", tone: "success" },
                     { label: "Project pipeline", detail: "Follow construction and advanced-reactor buildout in one workspace.", tone: "cyan" },
+                    { label: "Catalyst wire", detail: "Reactor approvals, restarts, and policy shifts as they hit.", tone: "amber" },
+                    { label: "Insider trades", detail: "Insider buying across the uranium complex, in one feed.", tone: "success" },
+                    { label: "Gov contracts", detail: "DOE awards and contracts moving the fuel cycle.", tone: "cyan" },
                   ].map((item) => (
-                    <div key={item.label} style={terminalMetricTileStyle({ accent: item.tone === "success" ? "var(--np-terminal-green)" : item.tone === "cyan" ? "var(--np-terminal-cyan)" : "var(--np-terminal-amber)" })}>
-                      <div style={terminalLabelStyle(item.tone === "success" ? "success" : item.tone === "cyan" ? "cyan" : "amber")}>{item.label}</div>
+                    <div key={item.label} style={{ ...terminalMetricTileStyle({ accent: item.tone === "success" ? "var(--np-terminal-green)" : item.tone === "cyan" ? "var(--np-terminal-cyan)" : "var(--np-terminal-amber)" }), position: "relative" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                        <div style={terminalLabelStyle(item.tone === "success" ? "success" : item.tone === "cyan" ? "cyan" : "amber")}>{item.label}</div>
+                        <span style={terminalTagStyle({ tone: "amber", compact: true })}>🔒 PRO</span>
+                      </div>
                       <div style={{ fontSize: 12.5, lineHeight: 1.65, color: "var(--np-terminal-text)", marginTop: 8 }}>{item.detail}</div>
                     </div>
                   ))}

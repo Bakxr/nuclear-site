@@ -2,10 +2,20 @@ import { LineChart, Line, ResponsiveContainer } from "recharts";
 import ErrorBoundary from "../../components/ErrorBoundary.jsx";
 import { SectionHeader } from "./shared.jsx";
 
+function formatQuotesMeta(loading, lastUpdated) {
+  if (loading) return "Finnhub · Updating…";
+  if (!lastUpdated) return "Finnhub · 5-minute refresh";
+  const mins = Math.max(0, Math.round((Date.now() - lastUpdated.getTime()) / 60000));
+  if (mins < 1) return "Finnhub · Updated just now";
+  if (mins === 1) return "Finnhub · Updated 1 min ago";
+  return `Finnhub · Updated ${mins} min ago`;
+}
+
 export default function StocksSection({
   sectionRef,
   stocks,
   stocksLoading,
+  stocksLastUpdated,
   stocksError,
   setStocksError,
   setStocksRetry,
@@ -19,7 +29,7 @@ export default function StocksSection({
             dark
             index="04"
             label="Markets"
-            meta="Finnhub · 5-minute refresh"
+            meta={formatQuotesMeta(stocksLoading, stocksLastUpdated)}
             title={<>Nuclear stocks, <em>live.</em></>}
             lede="Reactor builders, fuel suppliers, and uranium miners — click any card for detailed charts, metrics, and company context."
           />

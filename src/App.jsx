@@ -11,6 +11,7 @@ import TimelineSection from "./features/sections/TimelineSection.jsx";
 import SmrSection from "./features/sections/SmrSection.jsx";
 import StocksSection from "./features/sections/StocksSection.jsx";
 import NewsletterSection from "./features/sections/NewsletterSection.jsx";
+import ProSection from "./features/sections/ProSection.jsx";
 import FooterSection from "./features/sections/FooterSection.jsx";
 import HeroSection from "./features/sections/HeroSection.jsx";
 import QuotesSection, { QUOTES } from "./features/sections/QuotesSection.jsx";
@@ -570,6 +571,7 @@ export default function NuclearPulse() {
   const [stocksLoading, setStocksLoading] = useState(true);
   const [stocksError, setStocksError] = useState(false);
   const [stocksRetry, setStocksRetry] = useState(0);
+  const [stocksLastUpdated, setStocksLastUpdated] = useState(null);
   const [news, setNews] = useState(() => getInstantNews());
   const [newsLoading, setNewsLoading] = useState(true);
   const [newsError, setNewsError] = useState(false);
@@ -890,6 +892,7 @@ export default function NuclearPulse() {
         );
 
         setStocks(stocksWithData);
+        setStocksLastUpdated(new Date());
       } catch (error) {
         console.error('Error loading stock data:', error);
         setStocksError(true);
@@ -1590,10 +1593,16 @@ export default function NuclearPulse() {
         </div>
       </section>
 
+      <ProSection
+        isMobileViewport={isMobileViewport}
+        onOpenTerminal={() => switchAppView("terminal")}
+      />
+
       <StocksSection
         sectionRef={sectionRefs.stocks}
         stocks={stocks}
         stocksLoading={stocksLoading}
+        stocksLastUpdated={stocksLastUpdated}
         stocksError={stocksError}
         setStocksError={setStocksError}
         setStocksRetry={setStocksRetry}

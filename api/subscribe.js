@@ -8,11 +8,14 @@ export default async function handler(req, res) {
   if (!ensureAllowedOrigin(req, res, ["POST", "OPTIONS"])) return;
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
+  // Writes use the service key server-side (never exposed to the client).
+  // The subscribers table is RLS-hardened to service-key-only access;
+  // abuse is contained here via validation, honeypot, and rate limiting.
+  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
     return res.status(500).json({ error: 'Server configuration is incomplete.' });
   }
 
-  const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+  const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
   const { email, website } = req.body || {};
 

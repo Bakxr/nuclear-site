@@ -1,4 +1,5 @@
 import { getStripe, hasRecordedWebhookEvent, recordWebhookEvent, syncMembershipFromSubscription, syncMembershipFromSubscriptionId } from "../_lib/billing.js";
+import { sendEmail } from "../_lib/dispatch.js";
 import { readRawBody, setNoStore } from "../_lib/http.js";
 
 export const config = {
@@ -6,6 +7,55 @@ export const config = {
     bodyParser: false,
   },
 };
+
+// Instant owner notification when a new paid subscription is created.
+// Never throws and never breaks the webhook: missing OWNER_EMAIL or a
+// failed send is logged and skipped silently.
+async function notifyOwnerOfNewSubscription(subscription) {
+  try {
+    const ownerEmail = process.env.OWNER_EMAIL?.trim();
+    if (!ownerEmail) return;
+
+    const item = subscription?.items?.data?.[0] || null;
+    const price = item?.price || null;
+    const interval = price?.recurring?.interval || "unknown";
+    const amount = price?.unit_amount != null && price?.currency
+      ? `${(price.unit_amount / 100).toFixed(2)} ${String(price.currency).toUpperCase()}`
+      : "unknown";
+    const customer = subscription?.customer;
+    const customerEmail = subscription?.metadata?.email
+      || (customer && typeof customer === "object" ? customer.email : null)
+      || "unknown";
+
+    const subject = `⚛️ New PRO subscriber — ${customerEmail}`;
+    const text = [
+      "A new paid subscription was created on Nuclear Pulse.",
+      "",
+      `Customer: ${customerEmail}`,
+      `Plan: ${amount} / ${interval}`,
+      `Subscription: ${subscription?.id || "unknown"}`,
+      `Status: ${subscription?.status || "unknown"}`,
+    ].join("\n");
+    const html = [
+      "<div style=\"font-family:sans-serif;max-width:560px\">",
+      "<h2>⚛️ New PRO subscriber</h2>",
+      `<p><strong>Customer:</strong> ${customerEmail}<br/>`,
+      `<strong>Plan:</strong> ${amount} / ${interval}<br/>`,
+      `<strong>Subscription:</strong> ${subscription?.id || "unknown"}<br/>`,
+      `<strong>Status:</strong> ${subscription?.status || "unknown"}</p>`,
+      "</div>",
+    ].join("\n");
+
+    const result = await sendEmail({ to: ownerEmail, subject, html, text });
+    if (result.ok) {
+      console.info("[stripe/webhook] owner alert sent", result.id);
+    } else {
+      console.error("[stripe/webhook] owner alert failed", result.error);
+    }
+  } catch (error) {
+    console.error("[stripe/webhook] owner alert error", error?.message || error);
+  }
+}
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
@@ -36,6 +86,10 @@ export default async function handler(req, res) {
           checkoutSessionId: session.id,
         });
       }
+    }
+
+    if (event.type === "customer.subscription.created") {
+      await notifyOwnerOfNewSubscription(event.data.object);
     }
 
     if (event.type === "customer.subscription.created" || event.type === "customer.subscription.updated" || event.type === "customer.subscription.deleted") {
