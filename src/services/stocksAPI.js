@@ -39,89 +39,31 @@ export async function fetchStockQuote(ticker) {
   }
 }
 
-/**
- * Deterministic seeded PRNG — same ticker always produces the same chart shape
- */
-function hashTicker(str) {
-  let h = 5381;
-  for (let i = 0; i < str.length; i++) {
-    h = Math.imul(h, 31) + str.charCodeAt(i) | 0;
-  }
-  return Math.abs(h);
-}
+let _historyRequest = null;
 
-function makeSeededRand(seed) {
-  let s = seed || 1;
-  return () => {
-    s ^= s << 13; s ^= s >> 17; s ^= s << 5;
-    return (s >>> 0) / 0xFFFFFFFF;
-  };
+async function loadAllHistories() {
+  if (!_historyRequest) {
+    _historyRequest = fetch('/api/market/quotes?type=history', { headers: { Accept: 'application/json' } })
+      .then((response) => (response.ok ? response.json() : { histories: {} }))
+      .then((data) => data?.histories || {})
+      .catch(() => ({}))
+      .finally(() => {
+        // Allow a refetch after the cache window.
+        setTimeout(() => { _historyRequest = null; }, CACHE_DURATION);
+      });
+  }
+  return _historyRequest;
 }
 
 /**
- * Generate deterministic historical data based on ticker + current price.
- * The same ticker always produces the same chart shape, anchored to the real price.
+ * Daily closing prices (~6 months) for a tracked ticker.
+ * Returns [] when history is unavailable — never synthesised data, since the
+ * charts are presented as real market history.
  */
-function generateFallbackHistory(ticker, currentPrice, days = 90) {
-  const rand = makeSeededRand(hashTicker(ticker));
-  const data = [];
-  const volatility = currentPrice * 0.018;
-  // Each ticker gets its own trend direction (-0.0015 to +0.0025)
-  const trend = (rand() - 0.4) * 0.002;
-
-  // Back-calculate a starting price so the walk ends near currentPrice
-  let price = currentPrice * (1 - trend * days * 0.6) * (0.9 + rand() * 0.08);
-
-  for (let i = 0; i < days; i++) {
-    price += (rand() - 0.47 + trend) * volatility;
-    price = Math.max(currentPrice * 0.25, price);
-
-    const date = new Date();
-    date.setDate(date.getDate() - (days - i));
-
-    const hi = price * (1 + rand() * 0.012);
-    const lo = price * (1 - rand() * 0.012);
-
-    data.push({
-      day: i,
-      price: +(price.toFixed(2)),
-      date: date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-      high: +hi.toFixed(2),
-      low: +lo.toFixed(2),
-      open: +(price * (1 + (rand() - 0.5) * 0.008)).toFixed(2),
-      volume: Math.floor(rand() * 900000 + 100000),
-    });
-  }
-
-  // Pin the final bar to the actual live price
-  data[data.length - 1].price = +currentPrice.toFixed(2);
-  return data;
-}
-
-/**
- * Fetch historical stock data for charts
- * @param {string} ticker - Stock ticker symbol
- * @param {string} resolution - Time resolution ('D' for daily, 'W' for weekly, '1' for 1min, etc.)
- * @param {number} days - Number of days of history to fetch
- * @param {number} currentPrice - Current price for fallback generation
- */
-export async function fetchStockHistory(ticker, resolution = 'D', days = 90, currentPrice = null) {
-  const cacheKey = `history_${ticker}_${resolution}_${days}`;
-  const cached = cache.get(cacheKey);
-
-  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-    return cached.data;
-  }
-
-  // Candle endpoint requires a paid Finnhub plan — use deterministic fallback directly.
-  // Same ticker always produces the same chart shape, anchored to the live price.
-  if (currentPrice) {
-    const history = generateFallbackHistory(ticker, currentPrice, days);
-    cache.set(cacheKey, { data: history, timestamp: Date.now() });
-    return history;
-  }
-
-  return [];
+export async function fetchStockHistory(ticker) {
+  const histories = await loadAllHistories();
+  const history = histories?.[ticker];
+  return Array.isArray(history) ? history : [];
 }
 
 /**

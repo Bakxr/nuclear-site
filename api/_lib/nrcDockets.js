@@ -7,7 +7,8 @@ const FETCH_TIMEOUT_MS = 10_000;
 // NRC RSS for press releases / significant licensing actions. The HTML index
 // pages are layout-heavy; the news RSS is the cleanest public surface and is
 // the documented feed for "what NRC just did".
-const NRC_NEWS_RSS = "https://www.nrc.gov/public-involve/news.xml";
+// news.xml was retired (403); this is the live NRC news RSS endpoint.
+const NRC_NEWS_RSS = "https://www.nrc.gov/public-involve/rss?feed=news";
 
 async function fetchWithTimeout(url) {
   const controller = new AbortController();

@@ -16,11 +16,10 @@ const MAX_RECENTS = 5;
 
 const DESKS = [
   { id: "overview", label: "Overview", hotkey: "1" },
-  { id: "map", label: "Map", hotkey: "2" },
-  { id: "fuel", label: "Fuel cycle", hotkey: "3" },
-  { id: "markets", label: "Markets", hotkey: "4" },
-  { id: "pipeline", label: "Pipeline", hotkey: "5" },
-  { id: "filings", label: "Filings", hotkey: "6" },
+  { id: "markets", label: "Markets", hotkey: "2" },
+  { id: "fleet", label: "Fleet", hotkey: "3" },
+  { id: "regulatory", label: "Regulatory", hotkey: "4" },
+  { id: "wire", label: "Wire", hotkey: "5" },
 ];
 
 const ENTITY_GROUP_ORDER = [

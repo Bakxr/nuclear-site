@@ -1,4 +1,5 @@
 import { readTerminalCache, writeTerminalCache } from "./terminalStore.js";
+import { isExpiredMarket } from "../../src/features/terminal/marketTopic.js";
 
 const CACHE_KEY = "prediction_markets_v1";
 const CACHE_TTL_MS = 30 * 60 * 1000;
@@ -157,7 +158,10 @@ export async function fetchPredictionMarkets({ force = false } = {}) {
 
   if (!all.length && cached?.payload) return cached.payload;
 
+  // Drop past-deadline markets before the cap so they can't crowd out live ones.
+  const now = Date.now();
   const sorted = all
+    .filter((market) => !isExpiredMarket(market, now))
     .sort((a, b) => (b.volume || 0) - (a.volume || 0))
     .slice(0, MAX_TOTAL);
 

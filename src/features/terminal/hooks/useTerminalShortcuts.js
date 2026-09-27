@@ -3,11 +3,8 @@ import { useTerminal } from "../context.jsx";
 
 // Global keyboard shortcuts for the /terminal route.
 //
-// NOTE: desk hotkeys (1-6) and `go <desk>` palette intents dispatch a
-// CustomEvent "np-terminal-desk" on window. NuclearTerminal.jsx is expected
-// to attach a listener that maps `detail.deskId` to its existing
-// `activateDesk` callback. TODO: wire that listener in NuclearTerminal.jsx
-// in the follow-up commit.
+// Desk hotkeys (1-5) and `go <desk>` palette intents dispatch a CustomEvent
+// "np-terminal-desk" on window; TerminalShell listens and switches desks.
 function isTypingSurface(target) {
   if (!target) return false;
   const tag = target.tagName;
@@ -30,11 +27,10 @@ export function dispatchDeskChange(deskId) {
 
 const DESK_BY_DIGIT = {
   1: "overview",
-  2: "map",
-  3: "fuel",
-  4: "markets",
-  5: "pipeline",
-  6: "filings",
+  2: "markets",
+  3: "fleet",
+  4: "regulatory",
+  5: "wire",
 };
 
 export default function useTerminalShortcuts() {

@@ -878,15 +878,15 @@ export default function NuclearPulse() {
             const quote = quotes[stock.ticker];
             const currentPrice = quote?.price || 0;
 
-            // Fetch history with current price for fallback generation
-            const history = await fetchStockHistory(stock.ticker, 'D', 90, currentPrice);
+            // Real daily closes (shared, cached request); empty if unavailable.
+            const history = await fetchStockHistory(stock.ticker);
 
             return {
               ...stock,
               price: currentPrice,
               change: quote?.change || 0,
               pct: quote?.pct || 0,
-              history: history.length > 0 ? history : [{ day: 0, price: currentPrice, date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" }) }],
+              history,
             };
           })
         );

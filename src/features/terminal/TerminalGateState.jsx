@@ -3,6 +3,7 @@ import { color, fontMono, fontSans, radius } from "./components/tokens.js";
 export default function TerminalGateState({ title, message, actionLabel, onAction, secondaryLabel, onSecondary }) {
   return (
     <div
+      className="np-terminal-shell"
       style={{
         minHeight: "100vh",
         background: color.bg,

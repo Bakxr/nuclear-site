@@ -518,11 +518,15 @@ export default function Globe({
 
     const onResize = () => {
       const nw = mount.clientWidth, nh = mount.clientHeight;
+      if (!nw || !nh) return;
       camera.aspect = nw / nh;
       camera.updateProjectionMatrix();
       renderer.setSize(nw, nh);
     };
     window.addEventListener("resize", onResize);
+    // Container can resize without the window (grid/layout changes).
+    const resizeObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(onResize) : null;
+    resizeObserver?.observe(mount);
 
     return () => {
       cancelAnimationFrame(frame);
@@ -537,6 +541,7 @@ export default function Globe({
       el.removeEventListener("touchmove", onTouchMove);
       el.removeEventListener("touchend", onTouchEnd);
       window.removeEventListener("resize", onResize);
+      resizeObserver?.disconnect();
       // Dispose static geometry/materials
       oceanGeom.dispose();
       oceanMat.dispose();

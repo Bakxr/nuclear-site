@@ -10,7 +10,9 @@ export default function StockModal({ stock, onClose }) {
   if (!stock) return null;
 
   const data = stock.history || [];
-  const rangeData = timeRange === "1M" ? data.slice(-30) : timeRange === "1W" ? data.slice(-7) : data;
+  // Daily trading bars: ~5 per week, ~21 per month.
+  const TRADING_DAYS = { "1W": 5, "1M": 21, "3M": 63 };
+  const rangeData = TRADING_DAYS[timeRange] ? data.slice(-(TRADING_DAYS[timeRange] + 1)) : data;
   const startP = rangeData[0]?.price || 0;
   const endP = rangeData[rangeData.length - 1]?.price || 0;
   const minP = rangeData.length ? Math.min(...rangeData.map(d => d.price)) : 0;
@@ -68,7 +70,7 @@ export default function StockModal({ stock, onClose }) {
 
         {/* Time range buttons */}
         <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-          {["1W", "1M", "3M"].map(r => (
+          {["1W", "1M", "3M", "6M"].map(r => (
             <button key={r} onClick={() => setTimeRange(r)} style={{
               background: timeRange === r ? "rgba(212,165,74,0.2)" : "rgba(245,240,232,0.05)",
               border: `1px solid ${timeRange === r ? "rgba(212,165,74,0.4)" : "rgba(245,240,232,0.08)"}`,

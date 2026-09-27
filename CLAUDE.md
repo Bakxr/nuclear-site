@@ -69,6 +69,17 @@ tests/              Vitest setup
 - **`api/terminal/entity.js` imports from `src/features/terminal/selectors.js`** — this couples serverless code to the Vite tree. If you touch a selector, do not introduce `import.meta.env` or anything else client-only into its dependency chain.
 - The `subscribers` table for newsletter isn't in `supabase/migrations/` — it exists in the live DB but the schema isn't tracked here yet. If you change subscribe/unsubscribe flows, document the expected shape.
 
+## Terminal architecture (2026-09 rebuild)
+
+- `src/components/NuclearTerminal.jsx` → `features/terminal/shell/TerminalShell.jsx`. Shell = TopBar (desk tabs 1–5, ⌘K), TickerTape, KpiBand, desk grid, Inspector, StatusBar. Styles in `shell/terminal.css` (lazy with the terminal chunk); only the `--np-terminal-*` palette lives in `index.css`.
+- **Selection is focus, not a filter.** `selectEntity` only sets `selectedEntityId`; workspace panels always show the full universe. Entity-scoped rows for the Inspector come from `focus` in `context.jsx`. Don't reintroduce selection → map-filter/layer side effects.
+- The map filter ignores `state.query` (that belongs to the command palette).
+- Prediction markets: `marketTopic.js` drops expired markets and collapses deadline variants (shared with `api/market/quotes.js`). Probabilities go through `formatProbability` (never "0%" for a live market).
+- Feed health (`shell/sourceStatus.js`) is derived from what each feed delivered — an empty feed is "No data", not "Live".
+- Daily price history is real (Yahoo chart API via `api/_lib/priceHistory.js`, cached 1h). Never synthesise chart data; render an empty state instead.
+- Insider trades classify by Form 4 transaction code (P/S = open market; A/M/F/G are not buys/sells). Parse the raw `ownershipDocument` XML, not the `xslF345X…/` rendered page.
+- Known dead feeds: IAEA PRIS moved to a JS app (pris-stats.iaea.org) — `iaea.js` scrape returns nothing; Senate LDA (`lda.gov`) refuses unregistered clients; SAM.gov needs `SAM_API_KEY`.
+
 ## Recent work
 
 - 2026-09-26: Billing/email/perf pass —

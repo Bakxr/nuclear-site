@@ -9,6 +9,7 @@ import { fetchNrcPlantStatus } from "./nrc.js";
 import { fetchNrcDockets } from "./nrcDockets.js";
 import { fetchPredictionMarkets } from "./predictionMarkets.js";
 import { fetchMarketHistory } from "./polymarketHistory.js";
+import { fetchPriceHistories, toChartHistory } from "./priceHistory.js";
 import { inferMarketAnchor } from "../../src/features/terminal/marketAnchor.js";
 import { fetchGovContracts } from "./samGov.js";
 import { fetchLatestCompanyFilings } from "./sec.js";
@@ -60,6 +61,7 @@ async function buildSnapshot(cached, force) {
     earningsResult,
     nrcDocketsResult,
     predictionResult,
+    priceHistoryResult,
   ] = await Promise.allSettled([
     fetchBatchQuotes(STOCKS_BASE.map((stock) => stock.ticker)),
     getLiveNewsPayload({ force }),
@@ -73,9 +75,11 @@ async function buildSnapshot(cached, force) {
     fetchEarningsAndEvents(STOCKS_BASE),
     fetchNrcDockets({ force }),
     fetchPredictionMarkets({ force }),
+    fetchPriceHistories(STOCKS_BASE.map((stock) => stock.ticker), { force }),
   ]);
 
   const quotes = settled(quotesResult, {});
+  const priceHistories = settled(priceHistoryResult, {});
   const now = new Date().toISOString();
   const newsPayload = newsResult.status === "fulfilled"
     ? newsResult.value
@@ -101,11 +105,17 @@ async function buildSnapshot(cached, force) {
     throw newsResult.reason;
   }
 
-  const stocks = STOCKS_BASE.map((stock) => ({
-    ...stock,
-    ...(quotes[stock.ticker] || {}),
-    history: [],
-  }));
+  const stocks = STOCKS_BASE.map((stock) => {
+    const daily = priceHistories[stock.ticker];
+    return {
+      ...stock,
+      ...(quotes[stock.ticker] || {}),
+      history: toChartHistory(daily),
+      high52: daily?.high52 ?? null,
+      low52: daily?.low52 ?? null,
+      volume: daily?.volume ?? null,
+    };
+  });
 
   const snapshot = buildTerminalSnapshot({
     stocks,

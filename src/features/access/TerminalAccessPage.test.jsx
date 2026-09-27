@@ -1,6 +1,6 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const accessContext = {
   accessState: 'logged_out',
@@ -30,6 +30,8 @@ vi.mock('../../services/billingAPI.js', () => ({
 const { default: TerminalAccessPage } = await import('./TerminalAccessPage.jsx');
 
 describe('TerminalAccessPage', () => {
+  afterEach(cleanup);
+
   beforeEach(() => {
     accessContext.accessState = 'logged_out';
     accessContext.getAccessToken.mockReset();
@@ -49,10 +51,10 @@ describe('TerminalAccessPage', () => {
     const user = userEvent.setup();
     accessContext.sendOtp.mockResolvedValue('person@example.com');
 
-    render(<TerminalAccessPage isMobileViewport={false} onExitTerminal={vi.fn()} />);
+    render(<TerminalAccessPage onExitTerminal={vi.fn()} />);
 
-    await user.type(screen.getByPlaceholderText(/Email address/i), 'Person@Example.com');
-    await user.click(screen.getByRole('button', { name: /Send login code/i }));
+    await user.type(screen.getByLabelText(/Work email/i), 'Person@Example.com');
+    await user.click(screen.getByRole('button', { name: /Continue with email/i }));
 
     expect(accessContext.sendOtp).toHaveBeenCalledWith('Person@Example.com');
     expect(await screen.findByText(/A login code was sent to person@example.com\./i)).toBeInTheDocument();
@@ -66,13 +68,31 @@ describe('TerminalAccessPage', () => {
     accessContext.getAccessToken.mockResolvedValue('jwt-token');
     createCheckoutSession.mockImplementation(() => new Promise(() => {}));
 
-    render(<TerminalAccessPage isMobileViewport={false} onExitTerminal={vi.fn()} />);
+    render(<TerminalAccessPage onExitTerminal={vi.fn()} />);
 
-    await user.click(screen.getByRole('button', { name: /Continue to Stripe Checkout/i }));
+    await user.click(screen.getByRole('button', { name: /Start Pro/i }));
 
     await waitFor(() => {
       expect(createCheckoutSession).toHaveBeenCalledWith('year', 'jwt-token');
     });
-    expect(screen.getByRole('button', { name: /Opening checkout/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Opening secure checkout/i })).toBeInTheDocument();
+  });
+
+  it('checks out on the monthly plan when selected', async () => {
+    const user = userEvent.setup();
+
+    accessContext.accessState = 'inactive';
+    accessContext.user = { email: 'person@example.com' };
+    accessContext.getAccessToken.mockResolvedValue('jwt-token');
+    createCheckoutSession.mockImplementation(() => new Promise(() => {}));
+
+    render(<TerminalAccessPage onExitTerminal={vi.fn()} />);
+
+    await user.click(screen.getByRole('radio', { name: /Monthly/i }));
+    await user.click(screen.getByRole('button', { name: /Start Pro — \$19\/mo/i }));
+
+    await waitFor(() => {
+      expect(createCheckoutSession).toHaveBeenCalledWith('month', 'jwt-token');
+    });
   });
 });

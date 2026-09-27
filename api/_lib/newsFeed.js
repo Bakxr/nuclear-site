@@ -87,6 +87,14 @@ function pickWhyItMatters(tag, key) {
   return pool[hashString(key) % pool.length];
 }
 
+function safeFromCodePoint(code) {
+  try {
+    return Number.isFinite(code) && code > 0 ? String.fromCodePoint(code) : "";
+  } catch {
+    return "";
+  }
+}
+
 function decodeEntities(text = "") {
   return text
     .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
@@ -97,6 +105,16 @@ function decodeEntities(text = "") {
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
     .replace(/&nbsp;/g, " ")
+    // Numeric entities (WordPress feeds emit &#038;, &#8217; …), including
+    // double-encoded ones that the &amp; pass above has just unwrapped.
+    .replace(/&#(\d+);/g, (_, code) => safeFromCodePoint(Number(code)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => safeFromCodePoint(parseInt(hex, 16)))
+    .replace(/&(rsquo|lsquo);/g, "'")
+    .replace(/&(rdquo|ldquo);/g, '"')
+    .replace(/&(mdash|ndash);/g, (_, name) => (name === "mdash" ? "—" : "–"))
+    .replace(/&hellip;/g, "…")
+    // Entity-encoded markup (&lt;p&gt;) only becomes a tag after decoding.
+    .replace(/<[^>]+>/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }

@@ -70,10 +70,10 @@ const footerStyle = {
 const SHORTCUTS = [
   { keys: ["⌘K", "Ctrl+K"], desc: "Open command palette" },
   { keys: ["/"], desc: "Open command palette (when not typing)" },
-  { keys: ["Esc"], desc: "Close" },
+  { keys: ["Esc"], desc: "Close / clear focus" },
   { keys: ["↑", "↓"], desc: "Navigate results" },
   { keys: ["↵"], desc: "Select" },
-  { keys: ["1", "–", "6"], desc: "Jump to desk" },
+  { keys: ["1", "–", "5"], desc: "Overview · Markets · Fleet · Regulatory · Wire" },
   { keys: ["?"], desc: "Toggle this help" },
 ];
 
@@ -122,7 +122,7 @@ export default function ShortcutsHelp({ open, onClose }) {
         </div>
         <div style={footerStyle}>
           <span>Press <kbd style={kbdStyle()}>?</kbd> anytime to toggle</span>
-          <span style={{ color: color.textFaint }}>View desk hotkeys: 1–6</span>
+          <span style={{ color: color.textFaint }}>Desk hotkeys: 1–5</span>
         </div>
       </div>
     </div>

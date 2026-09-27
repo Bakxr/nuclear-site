@@ -2,31 +2,13 @@ import { ensureAllowedOrigin, getClientAddress, setRetryAfter } from "../_lib/ht
 import { checkRateLimit } from "../_lib/rateLimit.js";
 import { fetchBatchQuotes } from "../_lib/market.js";
 import { fetchPredictionMarkets } from "../_lib/predictionMarkets.js";
+import { fetchPriceHistories, toChartHistory } from "../_lib/priceHistory.js";
 import { STOCKS_BASE } from "../../src/data/constants.js";
+import { marketTopicKey } from "../../src/features/terminal/marketTopic.js";
 
 const MAX_SYMBOLS = 20;
 const ALLOWED_TICKERS = new Set(STOCKS_BASE.map((stock) => stock.ticker.toUpperCase()));
 const PREDICTION_TEASER_LIMIT = 6;
-
-const MONTH_PATTERN = "jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?";
-const DATE_FRAGMENT = new RegExp(
-  `\\b(?:by|before|until|on|in)\\s+(?:${MONTH_PATTERN})\\.?\\s+\\d{1,2}(?:st|nd|rd|th)?(?:,?\\s*\\d{4})?\\b`,
-  "g",
-);
-
-// Markets often repeat the same question with different deadlines
-// ("...by May 31, 2026?", "...by June 30, 2026?"). Collapse those so the
-// public teaser shows distinct topics; input is volume-sorted so the
-// highest-volume variant survives.
-function teaserTopicKey(question = "") {
-  return String(question)
-    .toLowerCase()
-    .replace(DATE_FRAGMENT, " ")
-    .replace(/\b(?:by|before|until|in)\s+(?:q[1-4]\s*)?\d{4}\b/g, " ")
-    .replace(/\b\d{4}\b/g, " ")
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
-}
 
 export default async function handler(req, res) {
   if (!ensureAllowedOrigin(req, res, ["GET", "OPTIONS"])) return;
@@ -47,7 +29,7 @@ export default async function handler(req, res) {
       const teaser = markets
         .filter((market) => Number.isFinite(market.yesPrice))
         .filter((market) => {
-          const key = teaserTopicKey(market.question) || market.id;
+          const key = marketTopicKey(market.question) || market.id;
           if (seenTopics.has(key)) return false;
           seenTopics.add(key);
           return true;
@@ -64,6 +46,22 @@ export default async function handler(req, res) {
       return res.status(200).json({ markets: teaser, fetchedAt: new Date().toISOString() });
     } catch {
       return res.status(200).json({ markets: [], fetchedAt: new Date().toISOString() });
+    }
+  }
+
+  // Public daily closes for the tracked equities (editorial charts). Cached
+  // server-side, so this never fans out to the upstream per request.
+  if (String(req.query?.type || "") === "history") {
+    try {
+      const tickers = STOCKS_BASE.map((stock) => stock.ticker);
+      const histories = await fetchPriceHistories(tickers);
+      const payload = Object.fromEntries(
+        Object.entries(histories).map(([ticker, history]) => [ticker, toChartHistory(history)]),
+      );
+      res.setHeader("Cache-Control", "public, s-maxage=1800, stale-while-revalidate=3600");
+      return res.status(200).json({ histories: payload, fetchedAt: new Date().toISOString() });
+    } catch {
+      return res.status(200).json({ histories: {}, fetchedAt: new Date().toISOString() });
     }
   }
 

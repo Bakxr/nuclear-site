@@ -1,9 +1,10 @@
 import { lazy, Suspense } from "react";
 import LazySectionFallback from "../../components/LazySectionFallback.jsx";
-import TerminalAccessPage from "../access/TerminalAccessPage.jsx";
 import TerminalGateState from "./TerminalGateState.jsx";
 
 const NuclearTerminal = lazy(() => import("../../components/NuclearTerminal.jsx"));
+// Lazy so the paywall page (and its styles) stay out of the editorial bundle.
+const TerminalAccessPage = lazy(() => import("../access/TerminalAccessPage.jsx"));
 
 export default function TerminalRouteView({
   GlobeComponent,
@@ -29,7 +30,11 @@ export default function TerminalRouteView({
   }
 
   if (accessState !== "active") {
-    return <TerminalAccessPage isMobileViewport={isMobileViewport} onExitTerminal={onExitTerminal} />;
+    return (
+      <Suspense fallback={<LazySectionFallback height={720} />}>
+        <TerminalAccessPage onExitTerminal={onExitTerminal} />
+      </Suspense>
+    );
   }
 
   if (!terminalSnapshot) {

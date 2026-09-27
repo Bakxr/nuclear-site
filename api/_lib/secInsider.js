@@ -1,6 +1,6 @@
 import { readTerminalCache, writeTerminalCache } from "./terminalStore.js";
 
-const CACHE_KEY = "sec_insider_form4_v2";
+const CACHE_KEY = "sec_insider_form4_v3";
 const CACHE_TTL_MS = 4 * 60 * 60 * 1000;
 const FILING_CACHE_KEY = "sec_insider_form4_doc_v1";
 const FILING_TTL_MS = 4 * 60 * 60 * 1000;
@@ -67,10 +67,34 @@ function buildDocUrl(cik, accession, primaryDoc) {
   return `https://www.sec.gov/Archives/edgar/data/${Number(cik)}/${accession.replace(/-/g, "")}/${primaryDoc}`;
 }
 
+// SEC Form 4 transaction codes → what the row actually represents. Only P
+// and S are open-market trades; A/M/F/G etc. are grants, exercises and
+// withholding, which must not be presented as buying or selling.
+const TRANSACTION_CODES = {
+  P: { type: "buy", label: "Open-market buy" },
+  S: { type: "sell", label: "Open-market sale" },
+  A: { type: "grant", label: "Grant / award" },
+  M: { type: "exercise", label: "Option exercise" },
+  X: { type: "exercise", label: "Option exercise" },
+  C: { type: "exercise", label: "Conversion" },
+  F: { type: "tax", label: "Tax withholding" },
+  G: { type: "gift", label: "Gift" },
+  D: { type: "sell", label: "Disposition to issuer" },
+};
+
+function decodeXml(text) {
+  return text
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;|&#39;/g, "'")
+    .replace(/&amp;/g, "&");
+}
+
 function pickText(xml, tag) {
   const re = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i");
   const m = xml.match(re);
-  return m ? m[1].replace(/<[^>]+>/g, "").trim() : "";
+  return m ? decodeXml(m[1].replace(/<[^>]+>/g, "").trim()) : "";
 }
 
 function pickValue(xml, tag) {
@@ -104,13 +128,18 @@ export function parseForm4Xml(xml, { ticker, url } = {}) {
     const date = pickValue(block, "transactionDate");
     const shares = Number(pickValue(block, "transactionShares")) || 0;
     const price = Number(pickValue(block, "transactionPricePerShare")) || 0;
-    const code = pickValue(block, "transactionAcquiredDisposedCode").toUpperCase();
+    const direction = pickValue(block, "transactionAcquiredDisposedCode").toUpperCase();
+    const code = pickText(block, "transactionCode").toUpperCase();
     if (!date || !shares) continue;
+    const kind = TRANSACTION_CODES[code] || { type: "other", label: direction === "A" ? "Acquired" : direction === "D" ? "Disposed" : "Other" };
     out.push({
       ticker,
       filer,
       title,
-      transactionType: code === "A" ? "buy" : code === "D" ? "sell" : "other",
+      transactionCode: code || null,
+      transactionType: kind.type,
+      transactionLabel: kind.label,
+      direction: direction || null,
       shares,
       pricePerShare: price || null,
       totalValue: price ? Math.round(shares * price * 100) / 100 : null,
@@ -131,11 +160,16 @@ function collectForm4Filings(submissions, ticker) {
     const primaryDoc = recent.primaryDocument?.[i] || null;
     const date = recent.filingDate?.[i] || null;
     if (!accession || !primaryDoc) continue;
+    // primaryDocument points at SEC's XSL-rendered HTML ("xslF345X06/…xml").
+    // The machine-readable ownershipDocument lives at the same name one level
+    // up; keep the rendered page as the human-facing link.
+    const rawDoc = primaryDoc.replace(/^xsl[^/]+\//i, "");
     out.push({
       ticker,
       accession,
       filingDate: date,
       url: buildDocUrl(submissions?.cik, accession, primaryDoc),
+      xmlUrl: buildDocUrl(submissions?.cik, accession, rawDoc),
     });
   }
   return out;
@@ -143,12 +177,13 @@ function collectForm4Filings(submissions, ticker) {
 
 async function fetchAndParseDoc(filing) {
   // per-doc cache (memory only — docs are immutable)
-  const cached = inMemory.docs.get(filing.url);
+  const docUrl = filing.xmlUrl || filing.url;
+  const cached = inMemory.docs.get(docUrl);
   if (cached && Date.now() - cached.at < FILING_TTL_MS) return cached.rows;
   try {
-    const xml = await fetchWithTimeout(filing.url, { accept: "application/xml,text/xml,*/*" });
+    const xml = await fetchWithTimeout(docUrl, { accept: "application/xml,text/xml,*/*" });
     const rows = parseForm4Xml(xml, { ticker: filing.ticker, url: filing.url });
-    inMemory.docs.set(filing.url, { rows, at: Date.now() });
+    inMemory.docs.set(docUrl, { rows, at: Date.now() });
     return rows;
   } catch (error) {
     console.warn(`[sec/insider] doc fetch failed for ${filing.url}:`, error?.message || error);

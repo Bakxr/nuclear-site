@@ -4,7 +4,9 @@ const CACHE_KEY = "senate_lda_lobbying_v1";
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const FETCH_TIMEOUT_MS = 10_000;
 
-const LDA_URL = "https://lda.senate.gov/api/v1/filings/";
+// Senate LDA moved to lda.gov (the old host 301s). Note: lda.gov sits behind
+// Akamai and may refuse unregistered clients — the panel degrades to empty.
+const LDA_URL = "https://lda.gov/api/v1/filings/";
 const MAX_ITEMS = 50;
 
 async function fetchWithTimeout(url) {

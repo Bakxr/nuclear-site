@@ -131,47 +131,49 @@ function reducer(state, action) {
   }
 }
 
-function inferLayerFromEntity(entity) {
-  if (!entity) return "reactors";
-  if (entity.entityType === "supplySite") return "uranium";
-  if (entity.entityType === "company" && /uranium|fuel/i.test(entity.theme || "")) return "uranium";
-  if (entity.entityType === "story" && /uranium|mine|mining|fuel|enrichment|haleu/i.test(`${entity.title} ${entity.curiosityHook}`)) return "uranium";
-  return "reactors";
-}
-
-function inferPatchFromEntity(entity) {
-  if (!entity) return {};
-  if (entity.entityType === "country") return { countryFilter: entity.country, layer: "reactors", query: entity.country };
-  if (entity.entityType === "plant") return { countryFilter: entity.country, layer: "reactors", reactorTypeFilter: entity.normalizedType, query: entity.name };
-  if (entity.entityType === "supplySite") return { countryFilter: entity.country, layer: "uranium", query: entity.name };
-  if (entity.entityType === "company") return { countryFilter: entity.countries?.[0] || "", layer: inferLayerFromEntity(entity), query: "" };
-  if (entity.entityType === "story") return { countryFilter: entity.country || "", layer: inferLayerFromEntity(entity), query: "" };
-  if (entity.entityType === "project") return { countryFilter: entity.country, layer: "reactors", query: entity.name };
-  if (entity.entityType === "filing") return { countryFilter: entity.country || "", layer: inferLayerFromEntity(entity), query: "" };
-  if (entity.entityType === "operationsSignal") return { countryFilter: entity.country || "USA", layer: "reactors", query: entity.plantName || entity.name };
-  if (entity.entityType === "sourceBrief") return { query: "" };
-  return {};
-}
-
 export function TerminalProvider({ snapshot, isMobileViewport, children }) {
   const [state, dispatch] = useReducer(reducer, isMobileViewport, createInitialState);
   const entityIndex = useMemo(() => buildEntityIndex(snapshot), [snapshot]);
   const selectedEntity = useMemo(() => (state.selectedEntityId ? entityIndex.get(state.selectedEntityId) || null : null), [entityIndex, state.selectedEntityId]);
-  const mapItems = useMemo(() => filterMapItems(snapshot, state), [snapshot, state]);
+  // The map is driven by its own filters only; `state.query` belongs to the
+  // command palette and must not silently filter the globe.
+  const mapItems = useMemo(
+    () => filterMapItems(snapshot, {
+      layer: state.layer,
+      countryFilter: state.countryFilter,
+      reactorTypeFilter: state.reactorTypeFilter,
+      statusFilter: state.statusFilter,
+    }),
+    [snapshot, state.layer, state.countryFilter, state.reactorTypeFilter, state.statusFilter],
+  );
   const rankingRows = useMemo(() => selectCountryRanking(snapshot, state.rankingMetric), [snapshot, state.rankingMetric]);
-  const marketRows = useMemo(() => selectMarketRows(snapshot, { selectedEntity, marketSort: state.marketSort }), [snapshot, selectedEntity, state.marketSort]);
-  const newsRows = useMemo(() => selectNewsRows(snapshot, { selectedEntity, newsTag: state.newsTag }), [snapshot, selectedEntity, state.newsTag]);
-  const officialRows = useMemo(() => selectOfficialWireRows(snapshot, { selectedEntity }), [snapshot, selectedEntity]);
-  const pipelineRows = useMemo(() => selectPipelineRows(snapshot, { selectedEntity }), [snapshot, selectedEntity]);
-  const filingRows = useMemo(() => selectFilingRows(snapshot, { selectedEntity }), [snapshot, selectedEntity]);
-  const operationsRows = useMemo(() => selectOperationsRows(snapshot, { selectedEntity }), [snapshot, selectedEntity]);
+  // Workspace panels always show the full universe. Selecting an entity
+  // drives the inspector (via `focus`) rather than emptying every panel.
+  const marketRows = useMemo(() => selectMarketRows(snapshot, { marketSort: state.marketSort }), [snapshot, state.marketSort]);
+  const newsRows = useMemo(() => selectNewsRows(snapshot, { newsTag: state.newsTag }), [snapshot, state.newsTag]);
+  const officialRows = useMemo(() => selectOfficialWireRows(snapshot), [snapshot]);
+  const pipelineRows = useMemo(() => selectPipelineRows(snapshot), [snapshot]);
+  const filingRows = useMemo(() => selectFilingRows(snapshot), [snapshot]);
+  const operationsRows = useMemo(() => selectOperationsRows(snapshot), [snapshot]);
   const sourceRows = useMemo(() => selectSourceRows(snapshot), [snapshot]);
-  const insiderRows = useMemo(() => selectInsiderRows(snapshot, { selectedEntity }), [snapshot, selectedEntity]);
+  const insiderRows = useMemo(() => selectInsiderRows(snapshot), [snapshot]);
   const contractRows = useMemo(() => selectContractRows(snapshot), [snapshot]);
   const lobbyingRows = useMemo(() => selectLobbyingRows(snapshot), [snapshot]);
-  const earningsRows = useMemo(() => selectEarningsRows(snapshot, { selectedEntity }), [snapshot, selectedEntity]);
-  const materialEventRows = useMemo(() => selectMaterialEventRows(snapshot, { selectedEntity }), [snapshot, selectedEntity]);
-  const nrcDocketRows = useMemo(() => selectNrcDocketRows(snapshot, { selectedEntity }), [snapshot, selectedEntity]);
+  const earningsRows = useMemo(() => selectEarningsRows(snapshot), [snapshot]);
+  const materialEventRows = useMemo(() => selectMaterialEventRows(snapshot), [snapshot]);
+  const nrcDocketRows = useMemo(() => selectNrcDocketRows(snapshot), [snapshot]);
+  const focus = useMemo(() => {
+    if (!selectedEntity) return null;
+    return {
+      news: selectNewsRows(snapshot, { selectedEntity }),
+      filings: selectFilingRows(snapshot, { selectedEntity }),
+      operations: selectOperationsRows(snapshot, { selectedEntity }),
+      materialEvents: selectMaterialEventRows(snapshot, { selectedEntity }),
+      earnings: selectEarningsRows(snapshot, { selectedEntity }),
+      insider: selectInsiderRows(snapshot, { selectedEntity }),
+      pipeline: selectPipelineRows(snapshot, { selectedEntity }),
+    };
+  }, [snapshot, selectedEntity]);
   const predictionMarketRows = useMemo(() => selectPredictionMarketRows(snapshot), [snapshot]);
   const searchResults = useMemo(() => searchTerminalSnapshot(snapshot, state.query), [snapshot, state.query]);
   const compareEntities = useMemo(() => state.compareIds.map((id) => entityIndex.get(id)).filter(Boolean), [entityIndex, state.compareIds]);
@@ -288,6 +290,7 @@ export function TerminalProvider({ snapshot, isMobileViewport, children }) {
     dispatch({ type: "patch", value: { selectedMarketId: id } });
   }, []);
   const closeMarket = useCallback(() => dispatch({ type: "patch", value: { selectedMarketId: null } }), []);
+  const clearSelection = useCallback(() => dispatch({ type: "patch", value: { selectedEntityId: null } }), []);
   const selectedMarket = useMemo(() => {
     if (!state.selectedMarketId) return null;
     const rows = snapshot?.entities?.predictionMarkets || [];
@@ -298,7 +301,8 @@ export function TerminalProvider({ snapshot, isMobileViewport, children }) {
   const selectEntity = useCallback((entityOrId) => {
     const entity = typeof entityOrId === "string" ? entityIndex.get(entityOrId) : entityOrId;
     if (!entity) return;
-    dispatch({ type: "patch", value: { selectedEntityId: entity.id, ...inferPatchFromEntity(entity) } });
+    // Focus only — map layer and filters stay under the user's control.
+    dispatch({ type: "patch", value: { selectedEntityId: entity.id } });
   }, [entityIndex]);
 
   const toggleCompare = useCallback((entityId) => {
@@ -409,6 +413,7 @@ export function TerminalProvider({ snapshot, isMobileViewport, children }) {
     materialEventRows,
     nrcDocketRows,
     predictionMarketRows,
+    focus,
     searchResults,
     compareEntities,
     availableCountries,
@@ -445,6 +450,7 @@ export function TerminalProvider({ snapshot, isMobileViewport, children }) {
     selectedMarket,
     openMarket,
     closeMarket,
+    clearSelection,
     getEntityById: (entityId) => getEntityById(snapshot, entityId),
   }), [
     snapshot,
@@ -466,6 +472,7 @@ export function TerminalProvider({ snapshot, isMobileViewport, children }) {
     materialEventRows,
     nrcDocketRows,
     predictionMarketRows,
+    focus,
     searchResults,
     compareEntities,
     availableCountries,
@@ -502,6 +509,7 @@ export function TerminalProvider({ snapshot, isMobileViewport, children }) {
     selectedMarket,
     openMarket,
     closeMarket,
+    clearSelection,
   ]);
 
   return <TerminalContext.Provider value={value}>{children}</TerminalContext.Provider>;

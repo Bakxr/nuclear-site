@@ -174,7 +174,7 @@ export default function MarketFocusDrawer() {
                 Chart unavailable — open on Polymarket
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 320, height: 150 }}>
                 <AreaChart data={chartData} margin={{ top: 4, right: 32, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="mfd-gold" x1="0" y1="0" x2="0" y2="1">
@@ -183,7 +183,16 @@ export default function MarketFocusDrawer() {
                     </linearGradient>
                   </defs>
                   <XAxis dataKey="tLabel" tick={{ fontSize: 10, fill: "rgba(237,241,245,0.55)" }} axisLine={false} tickLine={false} minTickGap={28} />
-                  <YAxis domain={[0, 1]} tick={{ fontSize: 10, fill: "rgba(237,241,245,0.55)" }} axisLine={false} tickLine={false} width={28} tickFormatter={(v) => `${Math.round(v * 100)}`} />
+                  <YAxis
+                    // Fit the axis to the series (with a small pad) so low-probability
+                    // markets aren't a flat line on the floor of a 0–100 scale.
+                    domain={[(min) => Math.max(0, min - 0.02), (max) => Math.min(1, max + 0.02)]}
+                    tick={{ fontSize: 10, fill: "rgba(237,241,245,0.55)" }}
+                    axisLine={false}
+                    tickLine={false}
+                    width={28}
+                    tickFormatter={(v) => `${Math.round(v * 100)}`}
+                  />
                   <Tooltip
                     contentStyle={{ background: "rgba(10,14,19,0.95)", border: "1px solid rgba(125,139,156,0.18)", borderRadius: 2, fontSize: 11 }}
                     formatter={(v) => [`${Math.round(v * 100)}%`, "Yes"]}

@@ -12,7 +12,8 @@ export function mergeTerminalSnapshots(localStocks, remoteSnapshot) {
       desc: item.desc || localItem.desc,
       pe: item.pe || localItem.pe,
       mktCap: item.mktCap || localItem.mktCap,
-      history: Array.isArray(localItem.history) && localItem.history.length ? localItem.history : item.history || [],
+      // Server history is real daily closes; local history is only a fallback.
+      history: Array.isArray(item.history) && item.history.length ? item.history : localItem.history || [],
     };
   });
 

@@ -1,5 +1,6 @@
 import { normalizeCountryName } from "../../utils/countries.js";
 import { categorizeMarket, computeMarketDelta, DELTA_WINDOW_24H, DELTA_WINDOW_7D } from "./marketCategory.js";
+import { collapseMarketSeries, isExpiredMarket } from "./marketTopic.js";
 
 function decorateMarket(row) {
   if (!row) return row;
@@ -247,8 +248,11 @@ export function selectNrcDocketRows(snapshot, { selectedEntity } = {}) {
   return [...rows].sort((a, b) => new Date(b.filedAt || 0).getTime() - new Date(a.filedAt || 0).getTime());
 }
 
-export function selectPredictionMarketRows(snapshot) {
-  return [...safeArray(snapshot.entities.predictionMarkets)]
+export function selectPredictionMarketRows(snapshot, { now = Date.now() } = {}) {
+  const live = safeArray(snapshot.entities.predictionMarkets)
+    .filter((market) => !isExpiredMarket(market, now))
+    .sort((a, b) => (b.volume || 0) - (a.volume || 0));
+  return collapseMarketSeries(live)
     .map(decorateMarket)
     .sort((a, b) => (b.volume || 0) - (a.volume || 0));
 }

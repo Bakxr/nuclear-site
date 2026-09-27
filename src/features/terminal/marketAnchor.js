@@ -208,6 +208,13 @@ function containsWord(haystack, needle) {
   return re.test(haystack);
 }
 
+// First words of company names that are ordinary industry vocabulary —
+// "Uranium Energy Corp" must not claim every question mentioning uranium.
+const GENERIC_NAME_HEADS = new Set([
+  "uranium", "energy", "nuclear", "power", "fuel", "fuels", "global", "american",
+  "united", "general", "national", "international", "atomic", "clean", "advanced",
+]);
+
 export function inferMarketAnchor(market, { plants = [], countries = [], companies = [] } = {}) {
   if (!market?.question) return null;
   const raw = String(market.question);
@@ -279,7 +286,7 @@ export function inferMarketAnchor(market, { plants = [], countries = [], compani
     const name = company?.name;
     if (!name) continue;
     const head = String(name).split(/[\s,]/)[0]?.toLowerCase();
-    if (head && head.length >= 4 && containsWord(text, head)) {
+    if (head && head.length >= 4 && !GENERIC_NAME_HEADS.has(head) && containsWord(text, head)) {
       const country = company.countries?.[0] || company.country;
       const centroid = country ? COUNTRY_CENTROIDS[country] : null;
       if (centroid) {
