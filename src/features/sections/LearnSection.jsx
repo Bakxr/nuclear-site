@@ -49,14 +49,17 @@ export default function LearnSection({
                 onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = `0 8px 24px ${r.color}20`; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
               >
-                <div style={{ position: "absolute", top: 16, right: 16, fontFamily: "var(--np-font-display)", fontSize: 44, fontWeight: 700, color: "var(--np-surface-dim)", lineHeight: 1 }}>{r.share}%</div>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 22, fontWeight: 700, color: r.color }}>{r.type}</div>
                   {r.reactorCount && <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 11, color: "var(--np-text-muted)", background: "var(--np-surface-dim)", borderRadius: 6, padding: "3px 8px" }}>{r.reactorCount} operating</span>}
                 </div>
                 <div style={{ fontSize: 12, fontWeight: 600, color: "var(--np-text-muted)", marginTop: 4 }}>{r.full}</div>
                 <div style={{ fontSize: 13, color: "var(--np-text-muted)", marginTop: 12, lineHeight: 1.55, opacity: 0.75 }}>{r.desc}</div>
-                <div style={{ marginTop: 16, height: 3, borderRadius: 2, background: "var(--np-surface-dim)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 16, marginBottom: 6, fontSize: 10.5, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--np-text-faint)" }}>
+                  <span>Share of global fleet</span>
+                  <span style={{ fontFamily: "var(--np-font-mono)", fontSize: 12, color: r.color, letterSpacing: 0 }}>{r.share}%</span>
+                </div>
+                <div style={{ height: 3, borderRadius: 2, background: "var(--np-surface-dim)" }}>
                   <motion.div
                     initial={{ width: 0 }}
                     whileInView={{ width: `${r.share}%` }}
@@ -132,11 +135,11 @@ export default function LearnSection({
                           {/* View */}
                           {reactorViewMode === "3d"
                             ? (
-                              <Suspense fallback={<LazySectionFallback height={320} />}>
+                              <Suspense fallback={<LazySectionFallback height={isMobileViewport ? 340 : 420} />}>
                                 <Reactor3D key={r.type} type={r.type} />
                               </Suspense>
                             )
-                            : <div style={{ padding: isMobileViewport ? "14px 12px" : "16px 20px" }}><ReactorDiagram type={r.type} width={isMobileViewport ? 520 : 900} /></div>
+                            : <ReactorDiagram type={r.type} bare />
                           }
                         </div>
                       </div>

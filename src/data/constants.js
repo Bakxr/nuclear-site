@@ -15,21 +15,69 @@ export const STATUS_COLORS_HEX = {
   Shutdown:     0xef4444,
 };
 
-// Stock base data (static info - prices will be fetched live from Finnhub)
+// Tracked equities. Prices are fetched live (Finnhub); daily history via the
+// server. `featured` names appear on the editorial homepage; the terminal
+// tracks the full list. `group` drives the terminal board filter. `sec: false`
+// marks ETFs and foreign OTC lines that don't file 10-Q/8-K/Form 4 with the SEC.
+export const STOCK_GROUPS = ["Uranium", "Fuel cycle", "Reactors & SMR", "Utilities", "Services", "Funds"];
+
 export const STOCKS_BASE = [
-  { ticker: "CCJ", name: "Cameco Corporation", sector: "Uranium Mining", desc: "World's largest publicly traded uranium company. Operates mines in Canada and Kazakhstan." },
-  { ticker: "UEC", name: "Uranium Energy Corp", sector: "Uranium Mining", desc: "US-based uranium mining and exploration company with ISR operations in Texas and Wyoming." },
-  { ticker: "NXE", name: "NexGen Energy Ltd", sector: "Uranium Mining", desc: "Developing the Rook I project in Saskatchewan's Athabasca Basin — one of the world's richest uranium deposits." },
-  { ticker: "LEU", name: "Centrus Energy Corp", sector: "Fuel Services", desc: "Supplies enriched uranium fuel and enrichment services. Only US-owned HALEU production facility." },
-  { ticker: "DNN", name: "Denison Mines Corp", sector: "Uranium Mining", desc: "Canadian uranium exploration and development company focused on the Athabasca Basin." },
-  { ticker: "SMR", name: "NuScale Power Corp", sector: "SMR Technology", desc: "First and only SMR design to receive NRC approval. Developing 77MW VOYGR modules." },
-  { ticker: "OKLO", name: "Oklo Inc", sector: "Advanced Reactors", desc: "Developing compact fast reactors that run on used nuclear fuel. Backed by Sam Altman." },
-  { ticker: "CEG", name: "Constellation Energy", sector: "Nuclear Utility", desc: "Largest US nuclear fleet operator with 21 reactors. Major clean energy supplier to tech companies." },
-  { ticker: "VST", name: "Vistra Corp", sector: "Nuclear Utility", desc: "Operates Comanche Peak nuclear plant in Texas. Growing nuclear portfolio for data center demand." },
-  { ticker: "UUUU", name: "Energy Fuels Inc", sector: "Uranium/REE", desc: "Leading US producer of uranium and vanadium. Expanding into rare earth elements processing." },
-  { ticker: "NNE", name: "Nano Nuclear Energy", sector: "Micro Reactors", desc: "Developing portable micro nuclear reactors (ZEUS & ODIN) for remote and defense applications." },
-  { ticker: "GEV", name: "GE Vernova", sector: "Nuclear Services", desc: "Spun out of GE. Building BWRX-300 SMRs. Major nuclear turbine and services provider globally." },
+  // ── Featured (homepage) ──
+  { ticker: "CCJ", name: "Cameco Corporation", sector: "Uranium Mining", group: "Uranium", featured: true, desc: "World's largest publicly traded uranium company. Operates mines in Canada and Kazakhstan." },
+  { ticker: "UEC", name: "Uranium Energy Corp", sector: "Uranium Mining", group: "Uranium", featured: true, desc: "US-based uranium mining and exploration company with ISR operations in Texas and Wyoming." },
+  { ticker: "NXE", name: "NexGen Energy Ltd", sector: "Uranium Mining", group: "Uranium", featured: true, desc: "Developing the Rook I project in Saskatchewan's Athabasca Basin — one of the world's richest uranium deposits." },
+  { ticker: "LEU", name: "Centrus Energy Corp", sector: "Fuel Services", group: "Fuel cycle", featured: true, desc: "Supplies enriched uranium fuel and enrichment services. Only US-owned HALEU production facility." },
+  { ticker: "DNN", name: "Denison Mines Corp", sector: "Uranium Mining", group: "Uranium", featured: true, desc: "Canadian uranium exploration and development company focused on the Athabasca Basin." },
+  { ticker: "SMR", name: "NuScale Power Corp", sector: "SMR Technology", group: "Reactors & SMR", featured: true, desc: "First and only SMR design to receive NRC approval. Developing 77MW VOYGR modules." },
+  { ticker: "OKLO", name: "Oklo Inc", sector: "Advanced Reactors", group: "Reactors & SMR", featured: true, desc: "Developing compact fast reactors that run on used nuclear fuel. Backed by Sam Altman." },
+  { ticker: "CEG", name: "Constellation Energy", sector: "Nuclear Utility", group: "Utilities", featured: true, desc: "Largest US nuclear fleet operator with 21 reactors. Major clean energy supplier to tech companies." },
+  { ticker: "VST", name: "Vistra Corp", sector: "Nuclear Utility", group: "Utilities", featured: true, desc: "Operates Comanche Peak nuclear plant in Texas. Growing nuclear portfolio for data center demand." },
+  { ticker: "UUUU", name: "Energy Fuels Inc", sector: "Uranium/REE", group: "Uranium", featured: true, desc: "Leading US producer of uranium and vanadium. Expanding into rare earth elements processing." },
+  { ticker: "NNE", name: "Nano Nuclear Energy", sector: "Micro Reactors", group: "Reactors & SMR", featured: true, desc: "Developing portable micro nuclear reactors (ZEUS & ODIN) for remote and defense applications." },
+  { ticker: "GEV", name: "GE Vernova", sector: "Nuclear Services", group: "Reactors & SMR", featured: true, desc: "Spun out of GE. Building BWRX-300 SMRs. Major nuclear turbine and services provider globally." },
+
+  // ── Uranium ──
+  { ticker: "NATKY", name: "Kazatomprom", sector: "Uranium Mining", group: "Uranium", sec: false, countries: ["Kazakhstan"], desc: "World's largest uranium producer, majority-owned by the Kazakh state. OTC ADR; primary listings in London and Astana." },
+  { ticker: "PALAF", name: "Paladin Energy", sector: "Uranium Mining", group: "Uranium", sec: false, countries: ["Namibia", "Canada"], desc: "Australian miner operating the Langer Heinrich mine in Namibia, with the Patterson Lake South project in Canada. OTC; primary listing ASX." },
+  { ticker: "URG", name: "Ur-Energy Inc", sector: "Uranium Mining", group: "Uranium", countries: ["USA"], desc: "US in-situ recovery uranium producer operating Lost Creek in Wyoming." },
+  { ticker: "EU", name: "enCore Energy Corp", sector: "Uranium Mining", group: "Uranium", countries: ["USA"], desc: "US in-situ recovery uranium producer with operations in South Texas and development projects in the western US." },
+  { ticker: "ISOU", name: "IsoEnergy Ltd", sector: "Uranium Mining", group: "Uranium", countries: ["Canada", "USA"], desc: "Uranium developer with high-grade Athabasca Basin assets in Canada and past-producing mines in the US." },
+  { ticker: "UROY", name: "Uranium Royalty Corp", sector: "Uranium Royalties", group: "Uranium", countries: ["Canada", "USA"], desc: "Holds royalty interests in uranium projects alongside a physical uranium inventory." },
+
+  // ── Fuel cycle ──
+  { ticker: "ASPI", name: "ASP Isotopes", sector: "Enrichment", group: "Fuel cycle", countries: ["USA", "South Africa"], desc: "Developing isotope enrichment technology, including HALEU for advanced reactors." },
+  { ticker: "LTBR", name: "Lightbridge Corp", sector: "Nuclear Fuel", group: "Fuel cycle", countries: ["USA"], desc: "Developing metallic nuclear fuel designed for existing and advanced reactors." },
+
+  // ── Reactors & SMR ──
+  { ticker: "RYCEY", name: "Rolls-Royce Holdings", sector: "SMR Technology", group: "Reactors & SMR", sec: false, countries: ["UK"], desc: "Aerospace and defense group whose Rolls-Royce SMR business is developing a 470 MW small modular reactor. OTC ADR; primary listing London." },
+  { ticker: "FRMI", name: "Fermi Inc", sector: "Power Development", group: "Reactors & SMR", countries: ["USA"], desc: "Developing a large Texas power campus for data centers with plans to include nuclear generation." },
+
+  // ── Utilities ──
+  { ticker: "TLN", name: "Talen Energy", sector: "Nuclear Utility", group: "Utilities", countries: ["USA"], desc: "Independent power producer that owns the Susquehanna nuclear plant in Pennsylvania, which supplies an adjacent data-center campus." },
+  { ticker: "PCG", name: "PG&E Corp", sector: "Nuclear Utility", group: "Utilities", countries: ["USA"], desc: "California utility operating Diablo Canyon, the state's last operating nuclear plant." },
+  { ticker: "SO", name: "Southern Company", sector: "Nuclear Utility", group: "Utilities", countries: ["USA"], desc: "Utility holding company whose Georgia Power unit operates Plant Vogtle, including the new Units 3 and 4." },
+  { ticker: "DUK", name: "Duke Energy", sector: "Nuclear Utility", group: "Utilities", countries: ["USA"], desc: "Operates one of the largest regulated nuclear fleets in the US, concentrated in the Carolinas." },
+  { ticker: "ETR", name: "Entergy Corp", sector: "Nuclear Utility", group: "Utilities", countries: ["USA"], desc: "Gulf South utility operating nuclear plants including Grand Gulf, River Bend, Waterford 3 and Arkansas Nuclear One." },
+  { ticker: "D", name: "Dominion Energy", sector: "Nuclear Utility", group: "Utilities", countries: ["USA"], desc: "Virginia-based utility operating the North Anna and Surry nuclear stations." },
+  { ticker: "PEG", name: "PSEG", sector: "Nuclear Utility", group: "Utilities", countries: ["USA"], desc: "New Jersey utility holding company whose nuclear fleet includes the Salem and Hope Creek stations." },
+
+  // ── Services & supply chain ──
+  { ticker: "BWXT", name: "BWX Technologies", sector: "Nuclear Components", group: "Services", countries: ["USA", "Canada"], desc: "Supplies naval nuclear reactors, nuclear components and fuel, and is developing microreactors." },
+  { ticker: "CW", name: "Curtiss-Wright", sector: "Nuclear Components", group: "Services", countries: ["USA"], desc: "Supplies reactor coolant pumps, valves and components for commercial and naval nuclear programs." },
+  { ticker: "MIR", name: "Mirion Technologies", sector: "Radiation Detection", group: "Services", countries: ["USA"], desc: "Radiation detection and measurement products for nuclear power, defense and medicine." },
+  { ticker: "FLR", name: "Fluor Corp", sector: "Engineering", group: "Services", countries: ["USA"], desc: "Global engineering and construction firm and a major shareholder in NuScale Power." },
+
+  // ── Physical uranium & ETFs ──
+  { ticker: "SRUUF", name: "Sprott Physical Uranium Trust", sector: "Physical Uranium", group: "Funds", sec: false, countries: ["Canada"], desc: "Closed-end trust holding physical U3O8 and a major source of spot-market demand. OTC; primary listing TSX (U.U)." },
+  { ticker: "YLLXF", name: "Yellow Cake plc", sector: "Physical Uranium", group: "Funds", sec: false, countries: ["UK", "Kazakhstan"], desc: "Holds physical U3O8, with a purchase agreement with Kazatomprom. OTC; primary listing London (YCA)." },
+  { ticker: "URA", name: "Global X Uranium ETF", sector: "ETF", group: "Funds", sec: false, desc: "Largest uranium ETF, holding uranium miners and nuclear component companies." },
+  { ticker: "URNM", name: "Sprott Uranium Miners ETF", sector: "ETF", group: "Funds", sec: false, desc: "Tracks uranium miners and physical uranium holders." },
+  { ticker: "NLR", name: "VanEck Uranium & Nuclear ETF", sector: "ETF", group: "Funds", sec: false, desc: "Tracks uranium miners, nuclear utilities and nuclear component suppliers." },
+  { ticker: "NUKZ", name: "Range Nuclear Renaissance ETF", sector: "ETF", group: "Funds", sec: false, desc: "Tracks the nuclear fuel cycle, reactor builders and nuclear utilities." },
 ];
+
+// Homepage (editorial) set — the public quote endpoint caps batch size.
+export const FEATURED_STOCKS = STOCKS_BASE.filter((stock) => stock.featured);
 
 // Nuclear share by country
 export const NUCLEAR_SHARE = [

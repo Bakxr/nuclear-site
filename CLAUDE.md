@@ -80,6 +80,12 @@ tests/              Vitest setup
 - Insider trades classify by Form 4 transaction code (P/S = open market; A/M/F/G are not buys/sells). Parse the raw `ownershipDocument` XML, not the `xslF345X…/` rendered page.
 - Known dead feeds: IAEA PRIS moved to a JS app (pris-stats.iaea.org) — `iaea.js` scrape returns nothing; Senate LDA (`lda.gov`) refuses unregistered clients; SAM.gov needs `SAM_API_KEY`.
 
+## Reactor visuals (2026-09)
+
+- Schematics: `src/components/reactorDiagrams/ReactorSchematic.jsx` + `schematic/kit.jsx` (primitives, `FLUID` colours) + `schematic/layouts.jsx` (one drawing + `parts` copy per design: PWR, BWR, PHWR, VVER, SMR, Other=HTGR). Pure SVG, themed via `--np-*` vars.
+- 3D: `Reactor3D.jsx` (viewer shell) + `three/build.js` (procedural cutaway models). Group-local convention: ground y=0, reactor at origin, turbine hall +x, camera from +z, shells cut open on +z. Hotspot ids must exist in the design's `parts` (enforced by `reactorDiagrams.test.jsx`).
+- Both views share the `parts` descriptions and the `FLUID` legend — edit copy in `layouts.jsx` only.
+
 ## Recent work
 
 - 2026-09-26: Billing/email/perf pass —

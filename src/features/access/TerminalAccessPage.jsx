@@ -5,6 +5,9 @@ import { useTerminalAccess } from "./context.jsx";
 import "../terminal/shell/terminal.css";
 import "./access.css";
 
+// Mirrors TRIAL_DAYS in api/_lib/billing.js; the server decides eligibility.
+const TRIAL_DAYS = 7;
+
 const PLAN_OPTIONS = [
   { interval: "month", name: "Monthly", price: 19, cadence: "/mo", note: "Billed monthly. Cancel anytime." },
   { interval: "year", name: "Annual", price: 190, cadence: "/yr", note: "Two months free — $15.83/mo billed yearly.", badge: "Save 17%" },
@@ -12,7 +15,7 @@ const PLAN_OPTIONS = [
 
 // Customer-facing capabilities — each maps to a live terminal panel.
 const FEATURES = [
-  { title: "Nuclear equity board", body: "Twelve names from miners to SMR developers with real daily history, 52-week ranges and breadth." },
+  { title: "Nuclear equity board", body: "Nearly 40 names — miners, fuel, SMR developers, utilities, suppliers and uranium funds — with real daily history and 52-week ranges." },
   { title: "Event odds", body: "Polymarket and Kalshi markets on enrichment, deals and policy — deduplicated, expired markets removed." },
   { title: "Insider & 8-K flow", body: "Form 4 open-market buys and sells parsed from SEC XML, plus every material 8-K item." },
   { title: "Fleet & unit status", body: "Global fleet by country, live NRC unit power levels, and the new-build pipeline." },
@@ -247,6 +250,8 @@ export default function TerminalAccessPage({ onExitTerminal }) {
   const plan = PLAN_OPTIONS.find((option) => option.interval === selectedInterval) || PLAN_OPTIONS[1];
   const step = user ? 3 : otpSent ? 2 : 1;
   const lapsed = membership?.subscription_status && !membership?.terminal_access;
+  // First-time subscribers get a trial (server-enforced: one per customer).
+  const trialEligible = !membership?.stripe_subscription_id;
 
   return (
     <div className="np-terminal-shell npt npa">
@@ -318,7 +323,10 @@ export default function TerminalAccessPage({ onExitTerminal }) {
             <span className="npa-price-num">${plan.price}</span>
             <span className="npa-price-cad">{plan.cadence}</span>
           </div>
-          <p className="npa-price-note">{plan.note}</p>
+          <p className="npa-price-note">
+            {trialEligible ? <><strong className="npt-gold">{TRIAL_DAYS} days free</strong>, then ${plan.price}{plan.cadence}. </> : null}
+            {plan.note}
+          </p>
 
           <ol className="npa-steps" aria-label="Checkout steps">
             {["Email", "Verify", "Checkout"].map((label, index) => (
@@ -373,7 +381,13 @@ export default function TerminalAccessPage({ onExitTerminal }) {
           ) : (
             <div className="npa-form">
               <button type="button" className="npa-cta" onClick={handleCheckout} disabled={billingBusy}>
-                {billingBusy ? "Opening secure checkout…" : lapsed ? `Reactivate — $${plan.price}${plan.cadence}` : `Start Pro — $${plan.price}${plan.cadence}`}
+                {billingBusy
+                  ? "Opening secure checkout…"
+                  : trialEligible
+                    ? `Start ${TRIAL_DAYS}-day free trial`
+                    : lapsed
+                      ? `Reactivate — $${plan.price}${plan.cadence}`
+                      : `Start Pro — $${plan.price}${plan.cadence}`}
               </button>
               {membership?.stripe_customer_id ? (
                 <button type="button" className="npt-btn" onClick={handleOpenPortal} disabled={billingBusy} style={{ justifyContent: "center" }}>
@@ -391,10 +405,15 @@ export default function TerminalAccessPage({ onExitTerminal }) {
           {successMessage ? <div className="npa-notice" data-tone="success" role="status">{successMessage}</div> : null}
 
           <ul className="npa-assure">
+            {trialEligible ? <li>Cancel within {TRIAL_DAYS} days and you won't be charged</li> : null}
             <li>Secure payment by Stripe</li>
             <li>Cancel anytime from the billing portal</li>
             <li>Access follows your email across devices</li>
           </ul>
+          <p className="npa-legal">
+            By subscribing you agree to the <a href="/legal/terms.html">Terms</a> and <a href="/legal/privacy.html">Privacy Policy</a>.
+            Market data is for information only and is not investment advice.
+          </p>
         </aside>
       </main>
     </div>

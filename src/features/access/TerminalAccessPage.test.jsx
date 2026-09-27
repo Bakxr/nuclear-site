@@ -70,7 +70,8 @@ describe('TerminalAccessPage', () => {
 
     render(<TerminalAccessPage onExitTerminal={vi.fn()} />);
 
-    await user.click(screen.getByRole('button', { name: /Start Pro/i }));
+    // First-time subscriber: offered the free trial.
+    await user.click(screen.getByRole('button', { name: /Start 7-day free trial/i }));
 
     await waitFor(() => {
       expect(createCheckoutSession).toHaveBeenCalledWith('year', 'jwt-token');
@@ -78,10 +79,11 @@ describe('TerminalAccessPage', () => {
     expect(screen.getByRole('button', { name: /Opening secure checkout/i })).toBeInTheDocument();
   });
 
-  it('checks out on the monthly plan when selected', async () => {
+  it('offers reactivation (no trial) to a returning subscriber on the monthly plan', async () => {
     const user = userEvent.setup();
 
     accessContext.accessState = 'inactive';
+    accessContext.membership = { stripe_subscription_id: 'sub_old', subscription_status: 'canceled', terminal_access: false };
     accessContext.user = { email: 'person@example.com' };
     accessContext.getAccessToken.mockResolvedValue('jwt-token');
     createCheckoutSession.mockImplementation(() => new Promise(() => {}));
@@ -89,7 +91,8 @@ describe('TerminalAccessPage', () => {
     render(<TerminalAccessPage onExitTerminal={vi.fn()} />);
 
     await user.click(screen.getByRole('radio', { name: /Monthly/i }));
-    await user.click(screen.getByRole('button', { name: /Start Pro — \$19\/mo/i }));
+    expect(screen.queryByRole('button', { name: /free trial/i })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /Reactivate — \$19\/mo/i }));
 
     await waitFor(() => {
       expect(createCheckoutSession).toHaveBeenCalledWith('month', 'jwt-token');

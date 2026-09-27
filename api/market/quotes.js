@@ -3,7 +3,7 @@ import { checkRateLimit } from "../_lib/rateLimit.js";
 import { fetchBatchQuotes } from "../_lib/market.js";
 import { fetchPredictionMarkets } from "../_lib/predictionMarkets.js";
 import { fetchPriceHistories, toChartHistory } from "../_lib/priceHistory.js";
-import { STOCKS_BASE } from "../../src/data/constants.js";
+import { FEATURED_STOCKS, STOCKS_BASE } from "../../src/data/constants.js";
 import { marketTopicKey } from "../../src/features/terminal/marketTopic.js";
 
 const MAX_SYMBOLS = 20;
@@ -53,7 +53,9 @@ export default async function handler(req, res) {
   // server-side, so this never fans out to the upstream per request.
   if (String(req.query?.type || "") === "history") {
     try {
-      const tickers = STOCKS_BASE.map((stock) => stock.ticker);
+      // Editorial charts only need the featured set; the terminal gets the
+      // full universe through the authenticated snapshot.
+      const tickers = FEATURED_STOCKS.map((stock) => stock.ticker);
       const histories = await fetchPriceHistories(tickers);
       const payload = Object.fromEntries(
         Object.entries(histories).map(([ticker, history]) => [ticker, toChartHistory(history)]),

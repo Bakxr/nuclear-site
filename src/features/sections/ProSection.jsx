@@ -1,27 +1,28 @@
+// Keep in step with what the terminal actually ships (see TerminalAccessPage FEATURES).
 const PRO_MODULES = [
   {
-    label: "Filing radar",
-    detail: "SEC filings and disclosures tracked by company, ticker, and country.",
+    label: "Equity board",
+    detail: "Nearly 40 nuclear names — miners to utilities — with real price history and 52-week ranges.",
   },
   {
-    label: "Catalyst wire",
-    detail: "Reactor approvals, restarts, and policy shifts — as they hit.",
+    label: "Event odds",
+    detail: "Polymarket and Kalshi odds on enrichment, deals and policy, cleaned and deduplicated.",
   },
   {
-    label: "Operations pulse",
-    detail: "NRC power-level signals with terminal-native filtering.",
+    label: "Insider flow",
+    detail: "Form 4 open-market buys and sells, parsed straight from SEC filings.",
   },
   {
-    label: "Insider trades",
-    detail: "Follow the money: insider buying across the uranium complex.",
+    label: "Unit status",
+    detail: "Daily NRC power levels for US reactors — derates and outages first.",
   },
   {
-    label: "NRC dockets",
-    detail: "Licensing dockets and regulatory milestones, decoded.",
+    label: "Regulatory wire",
+    detail: "NRC licensing notices, 8-K material events and sector news in one tape.",
   },
   {
-    label: "Gov contracts",
-    detail: "DOE awards and government contracts moving the fuel cycle.",
+    label: "Alerts & brief",
+    detail: "Price and event alerts by email, plus a morning brief built from your watchlist.",
   },
 ];
 
@@ -161,10 +162,10 @@ export default function ProSection({ isMobileViewport, onOpenTerminal }) {
                 fontFamily: "'DM Sans',sans-serif",
               }}
             >
-              Open the terminal
+              Start 7-day free trial
             </button>
             <div style={{ fontSize: 12.5, color: "var(--np-text-muted)" }}>
-              Passwordless email sign-in · Cancel anytime · Secure Stripe checkout
+              Free for 7 days · Cancel anytime · Secure Stripe checkout
             </div>
           </div>
         </div>

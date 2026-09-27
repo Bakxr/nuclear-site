@@ -40,15 +40,24 @@ export async function fetchQuote(ticker) {
   return payload;
 }
 
+const EMPTY_QUOTE = { price: 0, change: 0, pct: 0, high: 0, low: 0, open: 0, previousClose: 0 };
+const QUOTE_CONCURRENCY = 5;
+
+// Finnhub free tier allows 60 calls/min (30/s burst); quotes are cached 5 min,
+// so a full ~40-ticker refresh fits comfortably with modest concurrency.
 export async function fetchBatchQuotes(tickers = []) {
   const results = {};
-  for (const ticker of tickers) {
-    try {
-      results[ticker] = await fetchQuote(ticker);
-    } catch {
-      results[ticker] = { price: 0, change: 0, pct: 0, high: 0, low: 0, open: 0, previousClose: 0 };
+  const queue = [...tickers];
+  async function worker() {
+    while (queue.length) {
+      const ticker = queue.shift();
+      try {
+        results[ticker] = await fetchQuote(ticker);
+      } catch {
+        results[ticker] = { ...EMPTY_QUOTE };
+      }
     }
-    await new Promise((resolve) => setTimeout(resolve, 220));
   }
+  await Promise.all(Array.from({ length: Math.min(QUOTE_CONCURRENCY, tickers.length) }, worker));
   return results;
 }

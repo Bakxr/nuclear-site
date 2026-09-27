@@ -97,7 +97,7 @@ export default function StocksSection({
               })
             )}
           </div>
-          <p style={{ fontSize: 10, color: "rgba(245,240,232,0.2)", marginTop: 24, textAlign: "center" }}>Data is illustrative. Not financial advice. Always do your own research.</p>
+          <p style={{ fontSize: 10, color: "rgba(245,240,232,0.2)", marginTop: 24, textAlign: "center" }}>Market data for information only — not investment advice. Always do your own research.</p>
         </div>
       </section>
     </ErrorBoundary>

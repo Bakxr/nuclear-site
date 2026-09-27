@@ -147,13 +147,14 @@ function buildCompanies(stocks, updatedAt) {
   return stocks.map((stock) => {
     const intelligence = TERMINAL_COMPANY_INTELLIGENCE[stock.ticker] || {};
     const companyId = intelligence.companyId || buildCompanyId(stock.name);
-    const countries = (intelligence.countries || []).map((country) => normalizeCountryName(country));
+    const countries = (intelligence.countries || stock.countries || []).map((country) => normalizeCountryName(country));
     return {
       id: companyId,
       entityType: "company",
       ticker: stock.ticker,
       name: stock.name,
       sector: stock.sector,
+      group: stock.group || null,
       desc: stock.desc,
       theme: intelligence.focus || inferStockTheme(stock),
       countries,
@@ -168,9 +169,10 @@ function buildCompanies(stocks, updatedAt) {
 function buildMarketInstruments(stocks, updatedAt) {
   return stocks.map((stock) => {
     const intelligence = TERMINAL_COMPANY_INTELLIGENCE[stock.ticker] || {};
-    const countries = (intelligence.countries || []).map((country) => normalizeCountryName(country));
+    const countries = (intelligence.countries || stock.countries || []).map((country) => normalizeCountryName(country));
     return {
       id: `market:${stock.ticker.toLowerCase()}`,
+      group: stock.group || null,
       entityType: "marketInstrument",
       ticker: stock.ticker,
       name: stock.name,

@@ -1,14 +1,4 @@
-const COMPANY_TICKERS_URL = "https://www.sec.gov/files/company_tickers.json";
-const SUBMISSIONS_URL = "https://data.sec.gov/submissions";
-const COMPANY_MAP_CACHE_MS = 24 * 60 * 60 * 1000;
-const FILINGS_CACHE_MS = 15 * 60 * 1000;
-
-const secCache = globalThis.__npSecCache ?? {
-  companyMap: null,
-  companyMapAt: 0,
-  filings: new Map(),
-};
-globalThis.__npSecCache = secCache;
+import { getSubmissions, getTickerMap, mapWithConcurrency, normalizeTicker, secFilers } from "./secClient.js";
 
 const IMPORTANT_FORMS = [
   "8-K",
@@ -24,17 +14,8 @@ const IMPORTANT_FORMS = [
   "DEF 14A",
 ];
 
-function getUserAgent() {
-  return process.env.SEC_USER_AGENT || "NuclearPulseBot admin@atomic-energy.vercel.app";
-}
 
-function normalizeTicker(value = "") {
-  return String(value || "").trim().toUpperCase();
-}
 
-function padCik(value) {
-  return String(value || "").replace(/\D/g, "").padStart(10, "0");
-}
 
 function buildDocumentUrl(cik, accessionNumber, primaryDocument) {
   if (!cik || !accessionNumber || !primaryDocument) return "";
@@ -62,55 +43,8 @@ function inferPriority(form = "") {
   return 1;
 }
 
-async function fetchJson(url) {
-  const response = await fetch(url, {
-    headers: {
-      accept: "application/json",
-      "accept-encoding": "gzip, deflate",
-      "user-agent": getUserAgent(),
-    },
-  });
 
-  if (!response.ok) {
-    throw new Error(`SEC request failed with ${response.status}`);
-  }
 
-  return response.json();
-}
-
-async function getCompanyTickerMap() {
-  if (secCache.companyMap && Date.now() - secCache.companyMapAt < COMPANY_MAP_CACHE_MS) {
-    return secCache.companyMap;
-  }
-
-  const payload = await fetchJson(COMPANY_TICKERS_URL);
-  const map = new Map(
-    Object.values(payload || {}).map((entry) => [
-      normalizeTicker(entry.ticker),
-      {
-        ticker: normalizeTicker(entry.ticker),
-        cik: padCik(entry.cik_str),
-        name: entry.title,
-      },
-    ]),
-  );
-
-  secCache.companyMap = map;
-  secCache.companyMapAt = Date.now();
-  return map;
-}
-
-async function getCompanySubmissions(cik) {
-  const cacheKey = `submissions:${cik}`;
-  const cached = secCache.filings.get(cacheKey);
-  if (cached && Date.now() - cached.at < FILINGS_CACHE_MS) {
-    return cached.payload;
-  }
-
-  const payload = await fetchJson(`${SUBMISSIONS_URL}/CIK${cik}.json`);
-  secCache.filings.set(cacheKey, { payload, at: Date.now() });
-  return payload;
-}
 
 function collectRecentFilings(submissions, ticker, fallbackName) {
   const recent = submissions?.filings?.recent;
@@ -139,23 +73,19 @@ function collectRecentFilings(submissions, ticker, fallbackName) {
 }
 
 export async function fetchLatestCompanyFilings(stocks = []) {
-  const tickerMap = await getCompanyTickerMap();
-  const filings = [];
-
-  for (const stock of stocks) {
+  const tickerMap = await getTickerMap();
+  const perCompany = await mapWithConcurrency(secFilers(stocks), 4, async (stock) => {
     const ticker = normalizeTicker(stock.ticker);
     const company = tickerMap.get(ticker);
-    if (!company?.cik) continue;
-
+    if (!company?.cik) return [];
     try {
-      const submissions = await getCompanySubmissions(company.cik);
-      filings.push(...collectRecentFilings(submissions, ticker, stock.name));
+      return collectRecentFilings(await getSubmissions(company.cik), ticker, stock.name);
     } catch {
       // Ignore individual company failures so the rest of the filings panel still renders.
+      return [];
     }
-
-    await new Promise((resolve) => setTimeout(resolve, 140));
-  }
+  });
+  const filings = perCompany.flat();
 
   return filings
     .sort((left, right) => {
@@ -164,5 +94,5 @@ export async function fetchLatestCompanyFilings(stocks = []) {
       if (leftDate !== rightDate) return rightDate - leftDate;
       return right.priority - left.priority;
     })
-    .slice(0, 18);
+    .slice(0, 30);
 }

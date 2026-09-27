@@ -3,6 +3,7 @@ import { useTerminal } from "../context.jsx";
 import TerminalPanel from "../components/TerminalPanel.jsx";
 import Sparkline from "./Sparkline.jsx";
 import { fmtCompact, fmtPrice, fmtSignedPct, historyChange, isNum, toneOf } from "./format.js";
+import { STOCK_GROUPS } from "../../../data/constants.js";
 
 const SORTS = [
   { id: "pct", label: "1D" },
@@ -25,16 +26,19 @@ function RangeBar({ low, high, price }) {
 export default function MarketBoard({ compact = false }) {
   const { snapshot, selectedEntity, selectEntity, getEntityById, watchedSet, toggleWatch } = useTerminal();
   const [sort, setSort] = useState("pct");
+  const [group, setGroup] = useState("all");
 
   const rows = useMemo(() => {
-    const list = (snapshot?.entities?.marketInstruments || []).map((instrument) => ({
-      ...instrument,
-      month: historyChange(instrument.history, 21),
-    }));
+    const list = (snapshot?.entities?.marketInstruments || [])
+      .filter((instrument) => group === "all" || instrument.group === group)
+      .map((instrument) => ({
+        ...instrument,
+        month: historyChange(instrument.history, 21),
+      }));
     if (sort === "ticker") return list.sort((a, b) => a.ticker.localeCompare(b.ticker));
     const key = sort === "month" ? "month" : "pct";
     return list.sort((a, b) => (isNum(b[key]) ? b[key] : -Infinity) - (isNum(a[key]) ? a[key] : -Infinity));
-  }, [snapshot, sort]);
+  }, [snapshot, sort, group]);
 
   const selectRow = (row) => {
     const company = row.companyId ? getEntityById(row.companyId) : null;
@@ -48,6 +52,11 @@ export default function MarketBoard({ compact = false }) {
       count={rows.length}
       subtitle="Tracked nuclear equities. Quotes via Finnhub; daily history via Yahoo Finance."
       actions={(
+        <>
+        <select className="npt-select" value={group} onChange={(event) => setGroup(event.target.value)} aria-label="Group" style={{ height: 24, fontSize: 10.5 }}>
+          <option value="all">All groups</option>
+          {STOCK_GROUPS.map((name) => <option key={name} value={name}>{name}</option>)}
+        </select>
         <div className="npt-seg" role="group" aria-label="Sort">
           {SORTS.map((option) => (
             <button key={option.id} type="button" aria-pressed={sort === option.id} onClick={() => setSort(option.id)}>
@@ -55,6 +64,7 @@ export default function MarketBoard({ compact = false }) {
             </button>
           ))}
         </div>
+        </>
       )}
       bodyStyle={{ padding: "6px 0 0" }}
     >

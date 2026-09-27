@@ -4,9 +4,9 @@ import { NUCLEAR_PLANTS } from "../../data/plants.js";
 import { EASE, wordReveal } from "./animations.js";
 import CountUp from "./CountUp.jsx";
 
-// Fallback values used until the live fetch returns (or if every provider fails).
+// Source/label defaults. There is deliberately no fallback *price*: a stale
+// hard-coded number would read as live data.
 const URANIUM_FALLBACK = {
-  target: 110,
   sub: "per lb U₃O₈",
   source: "UxC / Trading Economics",
   sourceUrl: "https://tradingeconomics.com/commodity/uranium",
@@ -33,16 +33,7 @@ function buildUraniumStat(live) {
       sourceUrl: live.sourceUrl || URANIUM_FALLBACK.sourceUrl,
     };
   }
-  return {
-    label: "Uranium Price",
-    target: URANIUM_FALLBACK.target,
-    decimals: 0,
-    prefix: "$",
-    suffix: "",
-    sub: URANIUM_FALLBACK.sub,
-    source: URANIUM_FALLBACK.source,
-    sourceUrl: URANIUM_FALLBACK.sourceUrl,
-  };
+  return null;
 }
 
 function useHeroSignals() {
@@ -125,7 +116,8 @@ export default function HeroSection({
   showStats,
 }) {
   const { uranium, fleet } = useHeroSignals();
-  const GLOBAL_STATS = [...STATIC_GLOBAL_STATS, buildUraniumStat(uranium)];
+  const uraniumStat = buildUraniumStat(uranium);
+  const GLOBAL_STATS = uraniumStat ? [...STATIC_GLOBAL_STATS, uraniumStat] : STATIC_GLOBAL_STATS;
   return (
     <div
       className="np-first-fold"

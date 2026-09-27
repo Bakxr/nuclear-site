@@ -1,66 +1,21 @@
 import { readTerminalCache, writeTerminalCache } from "./terminalStore.js";
+import { getSubmissions, getTickerMap, mapWithConcurrency, normalizeTicker, secFetch, secFilers } from "./secClient.js";
 
-const CACHE_KEY = "sec_insider_form4_v3";
+const CACHE_KEY = "sec_insider_form4_v4";
 const CACHE_TTL_MS = 4 * 60 * 60 * 1000;
 const FILING_CACHE_KEY = "sec_insider_form4_doc_v1";
 const FILING_TTL_MS = 4 * 60 * 60 * 1000;
-const FETCH_TIMEOUT_MS = 10_000;
 
-const COMPANY_TICKERS_URL = "https://www.sec.gov/files/company_tickers.json";
-const SUBMISSIONS_URL = "https://data.sec.gov/submissions";
 const MAX_PER_TICKER = 10;
-const MAX_TOTAL = 50;
+const MAX_TOTAL = 60;
 
-const inMemory = globalThis.__npSecInsiderCache ?? { tickerMap: null, tickerMapAt: 0, docs: new Map() };
+const inMemory = globalThis.__npSecInsiderCache ?? { docs: new Map() };
 globalThis.__npSecInsiderCache = inMemory;
-const TICKER_MAP_TTL = 24 * 60 * 60 * 1000;
 
-function getUserAgent() {
-  return process.env.SEC_USER_AGENT || "NuclearPulseBot admin@atomic-energy.vercel.app";
-}
 
-function padCik(value) {
-  return String(value || "").replace(/\D/g, "").padStart(10, "0");
-}
 
-function normalizeTicker(value = "") {
-  return String(value || "").trim().toUpperCase();
-}
 
-async function fetchWithTimeout(url, { accept = "application/json" } = {}) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-  try {
-    const res = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        accept,
-        "accept-encoding": "gzip, deflate",
-        "user-agent": getUserAgent(),
-      },
-    });
-    if (!res.ok) throw new Error(`sec:${res.status}`);
-    return accept.includes("json") ? res.json() : res.text();
-  } finally {
-    clearTimeout(timer);
-  }
-}
 
-async function getTickerMap() {
-  if (inMemory.tickerMap && Date.now() - inMemory.tickerMapAt < TICKER_MAP_TTL) {
-    return inMemory.tickerMap;
-  }
-  const payload = await fetchWithTimeout(COMPANY_TICKERS_URL);
-  const map = new Map(
-    Object.values(payload || {}).map((entry) => [
-      normalizeTicker(entry.ticker),
-      { cik: padCik(entry.cik_str), name: entry.title },
-    ]),
-  );
-  inMemory.tickerMap = map;
-  inMemory.tickerMapAt = Date.now();
-  return map;
-}
 
 function buildDocUrl(cik, accession, primaryDoc) {
   if (!cik || !accession || !primaryDoc) return "";
@@ -181,7 +136,7 @@ async function fetchAndParseDoc(filing) {
   const cached = inMemory.docs.get(docUrl);
   if (cached && Date.now() - cached.at < FILING_TTL_MS) return cached.rows;
   try {
-    const xml = await fetchWithTimeout(docUrl, { accept: "application/xml,text/xml,*/*" });
+    const xml = await secFetch(docUrl, { accept: "application/xml,text/xml,*/*" });
     const rows = parseForm4Xml(xml, { ticker: filing.ticker, url: filing.url });
     inMemory.docs.set(docUrl, { rows, at: Date.now() });
     return rows;
@@ -209,30 +164,28 @@ export async function fetchInsiderForm4(stocks = []) {
     return cached?.payload || [];
   }
 
-  // First pass: collect filing pointers across all tickers (cheap).
-  const filings = [];
-  for (const stock of stocks) {
+  // First pass: collect filing pointers across all SEC filers (shared,
+  // memoised submissions fetch — see secClient.js).
+  const perCompany = await mapWithConcurrency(secFilers(stocks), 4, async (stock) => {
     const ticker = normalizeTicker(stock.ticker);
     const company = tickerMap.get(ticker);
-    if (!company?.cik) continue;
+    if (!company?.cik) return [];
     try {
-      const submissions = await fetchWithTimeout(`${SUBMISSIONS_URL}/CIK${company.cik}.json`);
-      filings.push(...collectForm4Filings(submissions, ticker));
+      return collectForm4Filings(await getSubmissions(company.cik), ticker);
     } catch (error) {
       console.warn(`[sec/insider] submissions ${ticker}:`, error?.message || error);
+      return [];
     }
-    await new Promise((r) => setTimeout(r, 140));
-  }
+  });
+  const filings = perCompany.flat();
 
   filings.sort((a, b) => new Date(b.filingDate || 0).getTime() - new Date(a.filingDate || 0).getTime());
 
-  // Second pass: fetch XML & parse, stopping once we hit MAX_TOTAL transactions.
+  // Second pass: fetch XML & parse the newest filings until MAX_TOTAL rows.
   const all = [];
   for (const filing of filings) {
     if (all.length >= MAX_TOTAL) break;
-    const rows = await fetchAndParseDoc(filing);
-    all.push(...rows);
-    await new Promise((r) => setTimeout(r, 90));
+    all.push(...(await fetchAndParseDoc(filing)));
   }
 
   const sorted = all

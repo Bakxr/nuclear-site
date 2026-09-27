@@ -22,11 +22,16 @@ export default function StockTicker({ stocks, onClickStock }) {
           >
             <span style={{ fontWeight: 700, color: "#d4a54a" }}>{s.ticker}</span>
             {" "}
-            <span style={{ opacity: 0.5 }}>${s.price.toFixed(2)}</span>
-            {" "}
-            <span style={{ color: s.change >= 0 ? "#4ade80" : "#f87171" }}>
-              {s.change >= 0 ? "▲" : "▼"}{Math.abs(s.pct).toFixed(2)}%
-            </span>
+            {/* No quote yet (or the feed is down): show a dash, never "$0.00". */}
+            <span style={{ opacity: 0.5 }}>{s.price > 0 ? `$${s.price.toFixed(2)}` : "—"}</span>
+            {s.price > 0 ? (
+              <>
+                {" "}
+                <span style={{ color: s.change >= 0 ? "#4ade80" : "#f87171" }}>
+                  {s.change >= 0 ? "▲" : "▼"}{Math.abs(s.pct).toFixed(2)}%
+                </span>
+              </>
+            ) : null}
           </button>
         ))}
       </div>

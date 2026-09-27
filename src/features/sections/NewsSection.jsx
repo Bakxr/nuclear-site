@@ -149,14 +149,13 @@ export default function NewsSection({
                       fontFamily: "var(--np-font-display)", fontSize: 21, fontWeight: 450, letterSpacing: "-0.01em",
                       lineHeight: 1.3, margin: 0, color: "var(--np-text)", marginBottom: n.curiosityHook ? 10 : 12
                     }}>{n.title}</h3>
-                    <p style={{
-                      fontSize: 13, color: "var(--np-text-muted)", lineHeight: 1.6,
-                      margin: "0 0 12px", display: "-webkit-box",
-                      WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden",
-                    }}>{n.curiosityHook || n.whyItMatters}</p>
-                    <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--np-text-faint)", marginBottom: 8 }}>
-                      Why it matters
-                    </div>
+                    {n.curiosityHook ? (
+                      <p style={{
+                        fontSize: 13, color: "var(--np-text-muted)", lineHeight: 1.6,
+                        margin: "0 0 12px", display: "-webkit-box",
+                        WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden",
+                      }}>{n.curiosityHook}</p>
+                    ) : null}
                     <div style={{
                       fontSize: 12, color: "var(--np-text-muted)", fontWeight: 500,
                       display: "flex", alignItems: "center", gap: 6

@@ -1,0 +1,105 @@
+/* Reactor schematics — themed via the site's --np-* variables. */
+
+.npx {
+  margin: 0;
+  display: grid;
+  gap: 0;
+  border: 1px solid var(--np-border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--np-surface);
+  color: var(--np-text);
+}
+.npx-canvas {
+  overflow-x: auto;
+  background:
+    radial-gradient(ellipse 70% 60% at 25% 55%, rgba(229, 103, 58, 0.06), transparent 70%),
+    var(--np-surface);
+}
+.npx-canvas svg {
+  display: block;
+  width: 100%;
+  max-width: 1040px;
+  min-width: 560px;
+  height: auto;
+  margin: 0 auto;
+}
+
+/* Structures */
+.npx-shell { fill: var(--np-surface); stroke: var(--np-text); stroke-opacity: 0.55; stroke-width: 2; }
+.npx-containment { fill: none; stroke: var(--np-text); stroke-opacity: 0.45; stroke-width: 3; stroke-linejoin: round; }
+.npx-containment-fill { fill: var(--np-text); fill-opacity: 0.035; }
+.npx-machine { fill: var(--np-surface); stroke: var(--np-text); stroke-opacity: 0.55; stroke-width: 2; }
+.npx-machine-mark { stroke: var(--np-text); stroke-opacity: 0.35; stroke-width: 1.5; fill: none; }
+.npx-shaft { stroke: var(--np-text); stroke-opacity: 0.45; stroke-width: 5; }
+.npx-rod { fill: var(--np-text); fill-opacity: 0.55; }
+.npx-tower { fill: var(--np-surface); stroke: var(--np-text); stroke-opacity: 0.5; stroke-width: 2; }
+.npx-vapor ellipse { fill: var(--np-text); fill-opacity: 0.06; }
+.npx-ground { stroke: var(--np-text); stroke-opacity: 0.25; stroke-width: 1.5; stroke-dasharray: 2 5; }
+.npx-pool { fill: #3f86c6; fill-opacity: 0.12; stroke: #3f86c6; stroke-opacity: 0.35; stroke-width: 1.5; }
+
+/* Labels */
+.npx-label-text { font: 600 13px/1 var(--np-font-sans, 'DM Sans', sans-serif); fill: var(--np-text); fill-opacity: 0.86; }
+.npx-label-sub { font: 500 11px/1 var(--np-font-mono, 'DM Mono', monospace); fill: var(--np-text-muted); }
+.npx-caption { font: 600 10px/1 var(--np-font-mono, 'DM Mono', monospace); letter-spacing: 0.12em; fill: var(--np-text-muted); }
+.npx-leader { stroke: var(--np-text); stroke-opacity: 0.35; stroke-width: 1; fill: none; }
+.npx-leader-dot { fill: var(--np-accent); }
+
+/* Flow animation */
+.npx-flow { stroke-dasharray: 2 13; animation: npx-flow 1.6s linear infinite; }
+@keyframes npx-flow { to { stroke-dashoffset: -30; } }
+.npx-core-glow { animation: npx-glow 3.2s ease-in-out infinite; }
+@keyframes npx-glow { 50% { opacity: 0.32; } }
+.npx-vapor { animation: npx-rise 6s ease-in-out infinite; }
+@keyframes npx-rise { 50% { transform: translateY(-6px); opacity: 0.7; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .npx-flow, .npx-core-glow, .npx-vapor { animation: none; }
+}
+
+/* Interaction */
+.npx-part { cursor: pointer; outline: none; transition: opacity 0.2s ease; }
+.npx-part[data-state="off"] { opacity: 0.35; }
+.npx-part[data-state="on"] .npx-shell,
+.npx-part[data-state="on"] .npx-machine,
+.npx-part[data-state="on"] .npx-tower,
+.npx-part[data-state="on"] .npx-containment {
+  stroke: var(--np-accent);
+  stroke-opacity: 1;
+}
+.npx-part:focus-visible .npx-shell,
+.npx-part:focus-visible .npx-machine { stroke: var(--np-accent); stroke-opacity: 1; stroke-width: 3; }
+
+/* Caption + legend */
+.npx-caption-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: start;
+  padding: 14px 18px 16px;
+  border-top: 1px solid var(--np-border);
+  min-height: 88px;
+}
+.npx-caption-main { display: grid; gap: 4px; min-width: 0; }
+.npx-caption-main strong { font: 600 14px/1.3 var(--np-font-sans, 'DM Sans', sans-serif); color: var(--np-text); }
+.npx-caption-main span { font: 400 13px/1.55 var(--np-font-sans, 'DM Sans', sans-serif); color: var(--np-text-muted); max-width: 70ch; }
+.npx-legend {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font: 500 11px/1.2 var(--np-font-sans, 'DM Sans', sans-serif);
+  color: var(--np-text-muted);
+  white-space: nowrap;
+}
+.npx-legend li { display: flex; align-items: center; gap: 7px; }
+.npx-legend i { width: 14px; height: 4px; border-radius: 2px; }
+
+@media (max-width: 640px) {
+  .npx-caption-bar { grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 12px 14px 14px; }
+  .npx-legend { grid-template-columns: repeat(2, minmax(0, 1fr)); white-space: normal; }
+}
+
+/* Embedded inside another framed panel (Learn section, plant modal). */
+.npx--bare { border: 0; border-radius: 0; }

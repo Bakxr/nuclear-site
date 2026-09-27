@@ -123,6 +123,9 @@ function StatusBar({ onShowSources }) {
       ))}
       <span className="npt-statusbar-item">Snapshot {fmtAgo(snapshot?.generatedAt)}</span>
       <span className="npt-statusbar-spacer" />
+      <span className="npt-statusbar-item">Not investment advice</span>
+      <a className="npt-statusbar-item" href="/legal/terms.html" style={{ color: "inherit" }}>Terms</a>
+      <a className="npt-statusbar-item" href="/legal/privacy.html" style={{ color: "inherit" }}>Privacy</a>
       <span className="npt-statusbar-item"><kbd className="npt-kbd">/</kbd> search</span>
       <span className="npt-statusbar-item"><kbd className="npt-kbd">1–5</kbd> desks</span>
       <span className="npt-statusbar-item"><kbd className="npt-kbd">Esc</kbd> clear</span>

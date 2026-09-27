@@ -1,64 +1,16 @@
 import { readTerminalCache, writeTerminalCache } from "./terminalStore.js";
+import { getSubmissions, getTickerMap, mapWithConcurrency, normalizeTicker, secFilers } from "./secClient.js";
 
-const CACHE_KEY = "earnings_8k_v1";
+const CACHE_KEY = "earnings_8k_v2";
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
-const FETCH_TIMEOUT_MS = 10_000;
 
-const COMPANY_TICKERS_URL = "https://www.sec.gov/files/company_tickers.json";
-const SUBMISSIONS_URL = "https://data.sec.gov/submissions";
-
-const inMemory = globalThis.__npEarningsCache ?? { tickerMap: null, tickerMapAt: 0 };
-globalThis.__npEarningsCache = inMemory;
-const TICKER_MAP_TTL = 24 * 60 * 60 * 1000;
 
 const TRACKED_8K_ITEMS = new Set(["1.01", "2.02", "5.02", "7.01", "8.01"]);
 
-function getUserAgent() {
-  return process.env.SEC_USER_AGENT || "NuclearPulseBot admin@atomic-energy.vercel.app";
-}
 
-function padCik(value) {
-  return String(value || "").replace(/\D/g, "").padStart(10, "0");
-}
 
-function normalizeTicker(value = "") {
-  return String(value || "").trim().toUpperCase();
-}
 
-async function fetchJson(url) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-  try {
-    const res = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        accept: "application/json",
-        "accept-encoding": "gzip, deflate",
-        "user-agent": getUserAgent(),
-      },
-    });
-    if (!res.ok) throw new Error(`sec:${res.status}`);
-    return res.json();
-  } finally {
-    clearTimeout(timer);
-  }
-}
 
-async function getTickerMap() {
-  if (inMemory.tickerMap && Date.now() - inMemory.tickerMapAt < TICKER_MAP_TTL) {
-    return inMemory.tickerMap;
-  }
-  const payload = await fetchJson(COMPANY_TICKERS_URL);
-  const map = new Map(
-    Object.values(payload || {}).map((entry) => [
-      normalizeTicker(entry.ticker),
-      { cik: padCik(entry.cik_str), name: entry.title },
-    ]),
-  );
-  inMemory.tickerMap = map;
-  inMemory.tickerMapAt = Date.now();
-  return map;
-}
 
 function buildDocUrl(cik, accession, primaryDoc) {
   if (!cik || !accession || !primaryDoc) return "";
@@ -159,42 +111,43 @@ export async function fetchEarningsAndEvents(stocks = []) {
     return cached?.payload || { calendar: [], events: [] };
   }
 
-  const calendar = [];
-  const events = [];
-
-  for (const stock of stocks) {
+  const perCompany = await mapWithConcurrency(secFilers(stocks), 4, async (stock) => {
     const ticker = normalizeTicker(stock.ticker);
     const company = tickerMap.get(ticker);
-    if (!company?.cik) continue;
+    if (!company?.cik) return null;
     try {
-      const submissions = await fetchJson(`${SUBMISSIONS_URL}/CIK${company.cik}.json`);
+      const submissions = await getSubmissions(company.cik);
       const { tenQDates, events: rows } = buildEntriesFromSubmissions(submissions, ticker, stock.name || company.name);
       const est = estimateNext(tenQDates);
       const recent = submissions?.filings?.recent;
       const lastFilingUrl = recent?.accessionNumber?.[0]
         ? buildDocUrl(submissions?.cik, recent.accessionNumber[0], recent.primaryDocument?.[0])
         : "";
-      calendar.push({
-        id: `earn:${ticker}`,
-        entityType: "earningsCalendar",
-        ticker,
-        companyName: stock.name || company.name,
-        lastReported: est?.lastReported || null,
-        lastForm: est?.lastForm || null,
-        estimatedNext: est?.estimatedNext || null,
-        lastFilingUrl,
-      });
-      events.push(...rows);
+      return {
+        calendar: {
+          id: `earn:${ticker}`,
+          entityType: "earningsCalendar",
+          ticker,
+          companyName: stock.name || company.name,
+          lastReported: est?.lastReported || null,
+          lastForm: est?.lastForm || null,
+          estimatedNext: est?.estimatedNext || null,
+          lastFilingUrl,
+        },
+        events: rows,
+      };
     } catch (error) {
       console.warn(`[earnings] ${ticker}:`, error?.message || error);
+      return null;
     }
-    await new Promise((r) => setTimeout(r, 140));
-  }
+  });
+  const calendar = perCompany.filter(Boolean).map((row) => row.calendar);
+  const events = perCompany.filter(Boolean).flatMap((row) => row.events);
 
   const sortedEvents = events
     .filter((e) => e.filedAt)
     .sort((a, b) => new Date(b.filedAt).getTime() - new Date(a.filedAt).getTime())
-    .slice(0, 40);
+    .slice(0, 60);
 
   const payload = { calendar, events: sortedEvents };
   await writeTerminalCache(CACHE_KEY, payload);

@@ -27,7 +27,9 @@ export default function KpiBand({ onDeskChange }) {
 
   const stats = useMemo(() => {
     const entities = snapshot?.entities || {};
-    const instruments = (entities.marketInstruments || []).filter((m) => m.price > 0);
+    // Operating companies only — ETFs and physical trusts hold the same names
+    // and would double-count in the basket and breadth.
+    const instruments = (entities.marketInstruments || []).filter((m) => m.price > 0 && m.group !== "Funds");
     const basketDay = mean(instruments.map((m) => m.pct));
     const basketMonth = mean(instruments.map((m) => historyChange(m.history, 21)));
     const advancers = instruments.filter((m) => m.pct > 0).length;

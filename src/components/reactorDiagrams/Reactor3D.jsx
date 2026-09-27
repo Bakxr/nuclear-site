@@ -1,831 +1,387 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { getReactorHotspots } from "./reactorHotspots.js";
-import { getReactorViewerConfig } from "./viewerConfig.js";
+import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
+import { buildReactorScene } from "./three/build.js";
+import { SCHEMATICS } from "./schematic/layouts.jsx";
+import { FLUID } from "./schematic/kit.jsx";
 
 const MOBILE_BREAKPOINT = 640;
-const modelCache = new Map();
+// Camera looks from +z (group-local) where every model is cut away; the
+// group's base rotation turns the turbine hall (+x) toward screen-right.
+const VIEW_DIR = new THREE.Vector3(0, 0.36, 1).normalize();
+const BASE_YAW = 0.55;
+const HIDDEN_MARKERS = new Set(["containment", "condenser", "generator", "steamline", "building"]);
 
-function createMaterials() {
-  return {
-    vessel: new THREE.MeshStandardMaterial({ color: 0xb9b4a8, metalness: 0.8, roughness: 0.22 }),
-    vesselDark: new THREE.MeshStandardMaterial({ color: 0x88827a, metalness: 0.82, roughness: 0.2 }),
-    containment: new THREE.MeshStandardMaterial({ color: 0xd7ccb3, metalness: 0.04, roughness: 0.92, transparent: true, opacity: 0.22, side: THREE.DoubleSide }),
-    containmentSolid: new THREE.MeshStandardMaterial({ color: 0xc8b891, metalness: 0.04, roughness: 0.9 }),
-    fuel: new THREE.MeshStandardMaterial({ color: 0xffb13c, emissive: new THREE.Color(0xff6a00), emissiveIntensity: 1.35, metalness: 0.08, roughness: 0.62 }),
-    pipe: new THREE.MeshStandardMaterial({ color: 0x8b928f, metalness: 0.9, roughness: 0.16 }),
-    pipeDark: new THREE.MeshStandardMaterial({ color: 0x666d6c, metalness: 0.85, roughness: 0.22 }),
-    base: new THREE.MeshStandardMaterial({ color: 0x655d55, metalness: 0.08, roughness: 0.96 }),
-    concrete: new THREE.MeshStandardMaterial({ color: 0x7a756f, metalness: 0.02, roughness: 0.98 }),
-    ground: new THREE.MeshStandardMaterial({ color: 0x3f3b37, metalness: 0.0, roughness: 1.0 }),
-    water: new THREE.MeshStandardMaterial({ color: 0x4f7ea2, metalness: 0.12, roughness: 0.28, transparent: true, opacity: 0.52 }),
-    accent: new THREE.MeshStandardMaterial({ color: 0xd4a54a, metalness: 0.3, roughness: 0.35 }),
-    rodGuide: new THREE.MeshStandardMaterial({ color: 0x42464c, metalness: 0.74, roughness: 0.25 }),
-  };
-}
-
-function disposeResource(resource) {
-  if (!resource) return;
-  if (resource.geometry) resource.geometry.dispose();
-  if (resource.material) {
-    if (Array.isArray(resource.material)) resource.material.forEach((mat) => mat.dispose?.());
-    else resource.material.dispose?.();
-  }
-}
-
-function rod(group, geo, mat, count, positions) {
-  const mesh = new THREE.InstancedMesh(geo, mat, count);
-  const dummy = new THREE.Object3D();
-  positions.forEach((pos, index) => {
-    dummy.position.set(pos[0], pos[1] ?? 0, pos[2]);
-    dummy.rotation.set(0, 0, pos[3] ?? 0);
-    dummy.updateMatrix();
-    mesh.setMatrixAt(index, dummy.matrix);
-  });
-  mesh.instanceMatrix.needsUpdate = true;
-  group.add(mesh);
-  return mesh;
-}
-
-function tube(group, points, radius, mat, segments = 20, radialSegments = 8) {
-  const curve = new THREE.CatmullRomCurve3(points.map((point) => new THREE.Vector3(...point)));
-  const mesh = new THREE.Mesh(new THREE.TubeGeometry(curve, segments, radius, radialSegments, false), mat);
-  group.add(mesh);
-  return mesh;
-}
-
-function gridPositions(nx, nz, spacingX, spacingZ, yOffset = 0) {
-  const positions = [];
-  for (let x = 0; x < nx; x += 1) {
-    for (let z = 0; z < nz; z += 1) {
-      positions.push([(x - (nx - 1) / 2) * spacingX, yOffset, (z - (nz - 1) / 2) * spacingZ]);
-    }
-  }
-  return positions;
-}
-
-function addPedestal(group, materials, radius = 3.25, y = -2.25) {
-  const base = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius * 1.05, 0.26, 48), materials.concrete);
-  base.position.y = y;
-  group.add(base);
-  return base;
-}
-
-function addContainmentShell(group, materials, radius, height, y, options = {}) {
-  const shell = new THREE.Mesh(
-    new THREE.CylinderGeometry(radius, radius, height, options.radialSegments || 48, 1, true),
-    options.solid ? materials.containmentSolid : materials.containment,
-  );
-  shell.position.y = y;
-  group.add(shell);
-  if (!options.noDome) {
-    const dome = new THREE.Mesh(
-      new THREE.SphereGeometry(radius, options.radialSegments || 48, 24, 0, Math.PI * 2, 0, Math.PI / 2),
-      options.solid ? materials.containmentSolid : materials.containment,
-    );
-    dome.position.y = y + height / 2;
-    group.add(dome);
-  }
-}
-
-function buildPWR(group, materials) {
-  addPedestal(group, materials, 3.3, -2.2);
-  addContainmentShell(group, materials, 2.25, 3.9, -0.15);
-
-  const bioshield = new THREE.Mesh(new THREE.CylinderGeometry(1.72, 1.84, 3.5, 32, 1, true), materials.containmentSolid);
-  bioshield.position.y = -0.1;
-  group.add(bioshield);
-
-  const vessel = new THREE.Mesh(new THREE.CylinderGeometry(0.76, 0.76, 3.1, 32), materials.vessel);
-  const vesselTop = new THREE.Mesh(new THREE.SphereGeometry(0.76, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2), materials.vessel);
-  const vesselBottom = new THREE.Mesh(new THREE.SphereGeometry(0.76, 32, 16, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), materials.vessel);
-  vesselTop.position.y = 1.55;
-  vesselBottom.position.y = -1.55;
-  group.add(vessel, vesselTop, vesselBottom);
-
-  const coreBasket = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 2.15, 18), materials.vesselDark);
-  coreBasket.position.y = -0.15;
-  group.add(coreBasket);
-  rod(group, new THREE.CylinderGeometry(0.024, 0.024, 2.0, 6), materials.fuel, 100, gridPositions(10, 10, 0.062, 0.062, -0.12));
-  rod(group, new THREE.CylinderGeometry(0.018, 0.018, 1.25, 6), materials.rodGuide, 16, gridPositions(4, 4, 0.18, 0.18, 0.78));
-
-  for (const side of [-1, 1]) {
-    const sg = new THREE.Mesh(new THREE.CylinderGeometry(0.43, 0.47, 2.7, 24), materials.vessel);
-    sg.position.set(side * 1.95, 0.15, 0);
-    const sgTop = new THREE.Mesh(new THREE.SphereGeometry(0.43, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), materials.vessel);
-    sgTop.position.set(side * 1.95, 1.5, 0);
-    const sgBase = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.54, 0.3, 24), materials.vesselDark);
-    sgBase.position.set(side * 1.95, -1.37, 0);
-    const pump = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 16), materials.pipeDark);
-    pump.position.set(side * 1.55, -0.9, 1.05);
-    group.add(sg, sgTop, sgBase, pump);
-
-    tube(group, [[side * 0.78, 0.78, 0.16], [side * 1.18, 1.0, 0.35], [side * 1.95, 0.82, 0.12]], 0.11, materials.pipe);
-    tube(group, [[side * 1.92, -0.62, 0.12], [side * 1.5, -0.92, 0.74], [side * 0.68, -0.55, 0.45]], 0.11, materials.pipe);
-    tube(group, [[side * 1.45, -0.9, 0.98], [side * 1.45, -1.45, 0.98], [side * 0.72, -1.5, 0.35]], 0.08, materials.pipeDark, 18);
-  }
-
-  const pressurizer = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 1.35, 16), materials.vessel);
-  const pressurizerTop = new THREE.Mesh(new THREE.SphereGeometry(0.26, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), materials.vessel);
-  pressurizer.position.set(0.76, 2.08, 0.64);
-  pressurizerTop.position.set(0.76, 2.76, 0.64);
-  group.add(pressurizer, pressurizerTop);
-  tube(group, [[0.76, 1.42, 0.62], [0.72, 0.95, 0.48], [0.38, 0.6, 0.2]], 0.07, materials.pipeDark);
-
-  const serviceBridge = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.08, 0.24), materials.accent);
-  serviceBridge.position.set(0, 2.02, -0.7);
-  group.add(serviceBridge);
-}
-
-function buildBWR(group, materials) {
-  addPedestal(group, materials, 3.15, -2.25);
-
-  const drywell = new THREE.Mesh(new THREE.CylinderGeometry(1.95, 2.2, 3.4, 40, 1, true), materials.containment);
-  drywell.position.y = -0.15;
-  const drywellTop = new THREE.Mesh(new THREE.SphereGeometry(1.95, 40, 20, 0, Math.PI * 2, 0, Math.PI / 2), materials.containment);
-  drywellTop.position.y = 1.55;
-  const suppressionPool = new THREE.Mesh(new THREE.TorusGeometry(1.75, 0.42, 16, 48), materials.water);
-  suppressionPool.rotation.x = Math.PI / 2;
-  suppressionPool.position.y = -1.6;
-  group.add(drywell, drywellTop, suppressionPool);
-
-  const vessel = new THREE.Mesh(new THREE.CylinderGeometry(0.94, 0.94, 3.45, 32), materials.vessel);
-  const vesselTop = new THREE.Mesh(new THREE.SphereGeometry(0.94, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2), materials.vessel);
-  const vesselBottom = new THREE.Mesh(new THREE.SphereGeometry(0.94, 32, 16, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), materials.vessel);
-  vesselTop.position.y = 1.73;
-  vesselBottom.position.y = -1.73;
-  group.add(vessel, vesselTop, vesselBottom);
-
-  const shroud = new THREE.Mesh(new THREE.CylinderGeometry(0.63, 0.63, 2.55, 20), materials.vesselDark);
-  shroud.position.y = -0.32;
-  const steamDryer = new THREE.Mesh(new THREE.CylinderGeometry(0.58, 0.68, 0.45, 18), materials.vesselDark);
-  steamDryer.position.y = 1.02;
-  const separatorRing = new THREE.Mesh(new THREE.TorusGeometry(0.58, 0.08, 10, 32), materials.pipeDark);
-  separatorRing.position.y = 0.92;
-  group.add(shroud, steamDryer, separatorRing);
-  rod(group, new THREE.CylinderGeometry(0.024, 0.024, 2.0, 6), materials.fuel, 81, gridPositions(9, 9, 0.078, 0.078, -0.48));
-  rod(group, new THREE.CylinderGeometry(0.018, 0.018, 0.85, 6), materials.rodGuide, 9, gridPositions(3, 3, 0.22, 0.22, -1.18));
-
-  for (const side of [-1, 1]) {
-    tube(group, [[side * 0.34, 1.7, 0.1], [side * 0.72, 2.45, 0.28], [side * 1.45, 2.7, 0.1]], 0.11, materials.pipe, 18);
-    const turbineHeader = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.9, 10), materials.pipeDark);
-    turbineHeader.rotation.z = Math.PI / 2;
-    turbineHeader.position.set(side * 1.86, 2.75, 0.1);
-    group.add(turbineHeader);
-  }
-
-  for (const side of [-1, 1]) {
-    const recircPump = new THREE.Mesh(new THREE.SphereGeometry(0.23, 12, 12), materials.pipeDark);
-    recircPump.position.set(side * 1.18, -1.0, 1.1);
-    group.add(recircPump);
-    tube(group, [[side * 0.82, -0.95, 0.42], [side * 1.18, -1.0, 0.86], [side * 1.18, -1.05, 1.08]], 0.09, materials.pipe);
-    tube(group, [[side * 1.18, -1.05, 1.08], [side * 1.45, -1.42, 0.8], [side * 1.7, -1.55, 0.18]], 0.08, materials.pipeDark, 16);
-  }
-}
-
-function buildPHWR(group, materials) {
-  addPedestal(group, materials, 3.35, -2.35);
-
-  const calandria = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 4.15, 32), materials.vessel);
-  calandria.rotation.z = Math.PI / 2;
-  const moderator = new THREE.Mesh(new THREE.CylinderGeometry(1.42, 1.42, 4.3, 32, 1, true), materials.water);
-  moderator.rotation.z = Math.PI / 2;
-  group.add(calandria, moderator);
-
-  for (const x of [-2.1, 2.1]) {
-    const endShield = new THREE.Mesh(new THREE.CylinderGeometry(1.38, 1.38, 0.26, 32), materials.vesselDark);
-    endShield.rotation.z = Math.PI / 2;
-    endShield.position.x = x;
-    group.add(endShield);
-
-    const refueler = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.8, 14), materials.accent);
-    refueler.rotation.z = Math.PI / 2;
-    refueler.position.set(x + (x > 0 ? 0.55 : -0.55), 0.9, 0);
-    group.add(refueler);
-  }
-
-  const channelGeo = new THREE.CylinderGeometry(0.05, 0.05, 4.12, 8);
-  const channelPositions = [];
-  for (let y = -4; y <= 4; y += 1) {
-    for (let z = -4; z <= 4; z += 1) {
-      if (Math.abs(y) + Math.abs(z) <= 7) channelPositions.push([0, y * 0.13, z * 0.13, Math.PI / 2]);
-    }
-  }
-  rod(group, channelGeo, materials.pipe, channelPositions.length, channelPositions);
-
-  const fuelGeo = new THREE.CylinderGeometry(0.032, 0.032, 3.72, 6);
-  const fuelPositions = channelPositions.filter((_, index) => index % 2 === 0);
-  rod(group, fuelGeo, materials.fuel, fuelPositions.length, fuelPositions);
-
-  for (const y of [0.92, -0.92]) {
-    const header = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 4.55, 14), materials.pipeDark);
-    header.rotation.z = Math.PI / 2;
-    header.position.y = y;
-    group.add(header);
-    tube(group, [[-2.15, y, 0], [-2.7, y, 0.42], [-3.0, y + (y > 0 ? 0.35 : -0.35), 0]], 0.1, materials.water, 16);
-    tube(group, [[2.15, y, 0], [2.7, y, -0.42], [3.0, y + (y > 0 ? 0.35 : -0.35), 0]], 0.1, materials.water, 16);
-  }
-
-  const cradle = new THREE.Mesh(new THREE.BoxGeometry(4.9, 0.18, 1.95), materials.base);
-  cradle.position.y = -2.1;
-  group.add(cradle);
-  for (const x of [-1.65, 1.65]) {
-    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.55, 0.18), materials.base);
-    leg.position.set(x, -1.3, 0);
-    group.add(leg);
-  }
-}
-
-function buildVVER(group, materials) {
-  addPedestal(group, materials, 3.45, -2.2);
-  addContainmentShell(group, materials, 2.35, 3.95, -0.1, { radialSegments: 28 });
-  addContainmentShell(group, materials, 1.95, 3.5, -0.18, { radialSegments: 24 });
-
-  const vessel = new THREE.Mesh(new THREE.CylinderGeometry(0.82, 0.82, 3.2, 6), materials.vessel);
-  const vesselTop = new THREE.Mesh(new THREE.SphereGeometry(0.82, 8, 14, 0, Math.PI * 2, 0, Math.PI / 2), materials.vessel);
-  const vesselBottom = new THREE.Mesh(new THREE.SphereGeometry(0.82, 8, 14, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), materials.vessel);
-  vesselTop.position.y = 1.6;
-  vesselBottom.position.y = -1.6;
-  group.add(vessel, vesselTop, vesselBottom);
-
-  const hexRodGeo = new THREE.CylinderGeometry(0.025, 0.025, 2.05, 6);
-  const hexPositions = [[0, 0, 0]];
-  for (let ring = 1; ring <= 5; ring += 1) {
-    const count = ring * 6;
-    for (let index = 0; index < count; index += 1) {
-      const angle = (index / count) * Math.PI * 2;
-      const radius = ring * 0.11;
-      const x = radius * Math.cos(angle);
-      const z = radius * Math.sin(angle);
-      if (Math.sqrt(x * x + z * z) < 0.68) hexPositions.push([x, -0.05, z]);
-    }
-  }
-  rod(group, hexRodGeo, materials.fuel, hexPositions.length, hexPositions);
-  rod(group, new THREE.CylinderGeometry(0.018, 0.018, 1.2, 6), materials.rodGuide, 12, gridPositions(3, 4, 0.2, 0.18, 0.86));
-
-  for (let index = 0; index < 4; index += 1) {
-    const angle = (index * Math.PI) / 2 + Math.PI / 4;
-    const x = Math.cos(angle) * 2.02;
-    const z = Math.sin(angle) * 2.02;
-    const steamGenerator = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 2.15, 18), materials.vessel);
-    steamGenerator.rotation.z = Math.PI / 2;
-    steamGenerator.rotation.y = angle;
-    steamGenerator.position.set(x, 0.18, z);
-    const steamCap = new THREE.Mesh(new THREE.SphereGeometry(0.34, 18, 10), materials.vesselDark);
-    steamCap.scale.set(0.52, 0.52, 0.52);
-    steamCap.position.set(x, 0.18, z);
-    const pump = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 12), materials.pipeDark);
-    pump.position.set(Math.cos(angle) * 1.62, -1.0, Math.sin(angle) * 1.62);
-    group.add(steamGenerator, steamCap, pump);
-
-    tube(group, [[Math.cos(angle) * 0.82, 0.62, Math.sin(angle) * 0.82], [Math.cos(angle) * 1.35, 0.6, Math.sin(angle) * 1.35], [x, 0.2, z]], 0.085, materials.pipe);
-    tube(group, [[x, -0.18, z], [Math.cos(angle) * 1.48, -0.52, Math.sin(angle) * 1.48], [Math.cos(angle) * 0.82, -0.58, Math.sin(angle) * 0.82]], 0.085, materials.pipe);
-    tube(group, [[Math.cos(angle) * 1.52, -0.92, Math.sin(angle) * 1.52], [Math.cos(angle) * 1.22, -1.2, Math.sin(angle) * 1.22], [Math.cos(angle) * 0.8, -1.36, Math.sin(angle) * 0.8]], 0.065, materials.pipeDark, 14);
-  }
-}
-
-function buildSMR(group, materials) {
-  const ground = new THREE.Mesh(new THREE.CylinderGeometry(3.4, 3.4, 0.08, 40), materials.ground);
-  ground.position.y = -1.58;
-  group.add(ground);
-
-  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(1.12, 1.12, 2.2, 32, 1, true), materials.containment);
-  shaft.position.y = -2.55;
-  group.add(shaft);
-
-  const outerPool = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 3.75, 32, 1, true), materials.water);
-  const outerContainment = new THREE.Mesh(new THREE.CylinderGeometry(1.35, 1.35, 3.95, 32, 1, true), materials.containment);
-  const outerDome = new THREE.Mesh(new THREE.SphereGeometry(1.35, 32, 20, 0, Math.PI * 2, 0, Math.PI / 2), materials.containment);
-  outerDome.position.y = 1.97;
-  group.add(outerPool, outerContainment, outerDome);
-
-  const vessel = new THREE.Mesh(new THREE.CylinderGeometry(0.68, 0.68, 3.35, 32), materials.vessel);
-  const vesselTop = new THREE.Mesh(new THREE.SphereGeometry(0.68, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2), materials.vessel);
-  const vesselBottom = new THREE.Mesh(new THREE.SphereGeometry(0.68, 32, 16, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), materials.vessel);
-  vesselTop.position.y = 1.68;
-  vesselBottom.position.y = -1.68;
-  group.add(vessel, vesselTop, vesselBottom);
-
-  const annularSteamGen = new THREE.Mesh(new THREE.TorusGeometry(0.48, 0.1, 14, 38), materials.vesselDark);
-  annularSteamGen.position.y = 0.62;
-  group.add(annularSteamGen);
-  rod(group, new THREE.CylinderGeometry(0.024, 0.024, 1.6, 6), materials.fuel, 49, gridPositions(7, 7, 0.078, 0.078, -0.42));
-  rod(group, new THREE.CylinderGeometry(0.018, 0.018, 0.95, 6), materials.rodGuide, 9, gridPositions(3, 3, 0.18, 0.18, 0.48));
-
-  const deck = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 1.9, 0.12, 28), materials.concrete);
-  deck.position.y = -1.42;
-  group.add(deck);
-
-  for (const x of [-1.25, 1.25]) {
-    const module = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.38, 0.74), materials.concrete);
-    module.position.set(x, -1.18, 0.88);
-    group.add(module);
-    tube(group, [[x, -0.98, 0.55], [x, -0.42, 0.72], [x * 0.55, 0.15, 0.46]], 0.06, materials.pipeDark, 16);
-  }
-}
-
-function buildOther(group, materials) {
-  addPedestal(group, materials, 3.15, -2.25);
-  addContainmentShell(group, materials, 1.98, 4.1, -0.05, { radialSegments: 6, noDome: true });
-
-  const topCap = new THREE.Mesh(new THREE.CylinderGeometry(2.02, 2.02, 0.14, 6), materials.containmentSolid);
-  topCap.position.y = 2.02;
-  group.add(topCap);
-
-  const vessel = new THREE.Mesh(new THREE.CylinderGeometry(0.88, 0.88, 3.2, 6), materials.vessel);
-  const core = new THREE.Mesh(new THREE.CylinderGeometry(0.68, 0.68, 1.75, 6), materials.fuel);
-  core.position.y = -0.28;
-  const reflector = new THREE.Mesh(new THREE.TorusGeometry(0.82, 0.1, 10, 6), materials.vesselDark);
-  reflector.position.y = -0.25;
-  group.add(vessel, core, reflector);
-  rod(group, new THREE.CylinderGeometry(0.02, 0.02, 1.15, 6), materials.rodGuide, 7, gridPositions(1, 7, 0.18, 0.16, 0.55));
-
-  for (let index = 0; index < 6; index += 1) {
-    const angle = (index * Math.PI) / 3;
-    const x = Math.cos(angle) * 1.52;
-    const z = Math.sin(angle) * 1.52;
-    tube(group, [
-      [Math.cos(angle) * 0.88, 0.55, Math.sin(angle) * 0.88],
-      [x, 1.18, z],
-      [x, -1.08, z],
-      [Math.cos(angle) * 0.88, -0.58, Math.sin(angle) * 0.88],
-    ], 0.095, index % 2 === 0 ? materials.pipe : materials.water, 18, 10);
-  }
-
-  for (let index = 0; index < 3; index += 1) {
-    const angle = (index * Math.PI * 2) / 3 + Math.PI / 6;
-    const exchanger = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 1.35, 12), materials.vesselDark);
-    exchanger.position.set(Math.cos(angle) * 1.45, 0.15, Math.sin(angle) * 1.45);
-    const plume = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.1, 1.05, 8), materials.accent);
-    plume.position.set(Math.cos(angle) * 1.45, 1.15, Math.sin(angle) * 1.45);
-    group.add(exchanger, plume);
-  }
-}
-
-function buildProceduralReactor(group, type, materials) {
-  switch (type) {
-    case "PWR":
-      buildPWR(group, materials);
-      break;
-    case "BWR":
-      buildBWR(group, materials);
-      break;
-    case "PHWR":
-      buildPHWR(group, materials);
-      break;
-    case "VVER":
-      buildVVER(group, materials);
-      break;
-    case "SMR":
-      buildSMR(group, materials);
-      break;
-    default:
-      buildOther(group, materials);
-      break;
-  }
-}
-
-async function loadImportedModel(assetPath) {
-  if (!assetPath) return null;
-  if (modelCache.has(assetPath)) return modelCache.get(assetPath).clone(true);
-
-  const loader = new GLTFLoader();
-  const gltf = await loader.loadAsync(assetPath);
-  modelCache.set(assetPath, gltf.scene);
-  return gltf.scene.clone(true);
-}
-
-function applyTransform(target, transform) {
-  if (!target || !transform) return;
-  if (transform.position) target.position.set(...transform.position);
-  if (transform.rotation) target.rotation.set(...transform.rotation);
-  if (transform.scale) {
-    if (Array.isArray(transform.scale)) target.scale.set(...transform.scale);
-    else target.scale.setScalar(transform.scale);
-  }
+function prefersReducedMotion() {
+  return typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 }
 
 export default function Reactor3D({ type = "PWR" }) {
   const mountRef = useRef(null);
   const markerRefs = useRef({});
-  const selectedHotspotRef = useRef(null);
-  const dragStateRef = useRef({
-    active: false,
-    moved: false,
-    pointerId: null,
-    pointerType: "mouse",
-    prevX: 0,
-    prevY: 0,
-    vx: 0,
-  });
-  const [viewerMeta, setViewerMeta] = useState(() => ({
-    isMobileViewport: typeof window !== "undefined" ? window.innerWidth <= MOBILE_BREAKPOINT : false,
-    width: 680,
-  }));
-  const config = useMemo(
-    () => getReactorViewerConfig(type, viewerMeta.isMobileViewport),
-    [type, viewerMeta.isMobileViewport],
+  const selectedRef = useRef(null);
+  const [isMobile, setIsMobile] = useState(() => (typeof window !== "undefined" ? window.innerWidth <= MOBILE_BREAKPOINT : false));
+  const [selectedId, setSelectedId] = useState(null);
+  const [hoveredId, setHoveredId] = useState(null);
+
+  const design = SCHEMATICS[type] || SCHEMATICS.Other;
+  // Geometry is built once per design; the effect below owns GPU resources.
+  const model = useMemo(() => buildReactorScene(type), [type]);
+  // Markers for the reactor-side components only; the turbine hall and
+  // containment are covered by the schematic and would crowd the view.
+  const hotspots = useMemo(
+    () => model.hotspots.filter((h) => design.parts[h.id] && !HIDDEN_MARKERS.has(h.id)),
+    [model, design],
   );
-  const hotspots = useMemo(() => getReactorHotspots(type), [type]);
-  const [selectedHotspotId, setSelectedHotspotId] = useState(null);
-  const [hoveredHotspotId, setHoveredHotspotId] = useState(null);
-  const selectedHotspot = useMemo(
-    () => hotspots.find((hotspot) => hotspot.id === selectedHotspotId) || null,
-    [hotspots, selectedHotspotId],
-  );
-  const hintKey = `${type}-${viewerMeta.isMobileViewport ? "mobile" : "desktop"}`;
+  const height = isMobile ? 340 : 420;
+  const selected = useMemo(() => {
+    const spot = hotspots.find((h) => h.id === selectedId);
+    return spot ? { ...spot, ...(design.parts[spot.id] || { label: spot.id, description: "" }) } : null;
+  }, [hotspots, selectedId, design]);
 
   useEffect(() => {
-    selectedHotspotRef.current = selectedHotspot;
-  }, [selectedHotspot]);
+    selectedRef.current = selected;
+  }, [selected]);
 
   useEffect(() => {
     const container = mountRef.current;
     if (!container) return undefined;
 
-    const updateSize = () => {
-      const width = container.clientWidth || 680;
-      setViewerMeta((prev) => {
-        const isMobileViewport = width <= MOBILE_BREAKPOINT;
-        if (prev.width === width && prev.isMobileViewport === isMobileViewport) return prev;
-        return { width, isMobileViewport };
-      });
-    };
-
-    updateSize();
-    const observer = new ResizeObserver(updateSize);
-    observer.observe(container);
-    window.addEventListener("resize", updateSize);
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", updateSize);
-    };
-  }, []);
-
-  useEffect(() => {
-    const container = mountRef.current;
-    if (!container) return undefined;
-
-    const width = container.clientWidth || viewerMeta.width || 680;
-    const height = config.height;
-    let animationId = 0;
-    let disposed = false;
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
+    const reduced = prefersReducedMotion();
+    let width = container.clientWidth || 680;
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 1.75));
     renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, viewerMeta.isMobileViewport ? 1.35 : 1.8));
-    renderer.setClearColor(0x0d1520, 1);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = viewerMeta.isMobileViewport ? 1.02 : 1.1;
+    renderer.toneMappingExposure = 1.05;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.domElement.style.display = "block";
     renderer.domElement.style.touchAction = "pan-y";
     container.replaceChildren(renderer.domElement);
 
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x0d1520, viewerMeta.isMobileViewport ? 0.082 : 0.068);
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    const envTexture = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    scene.environment = envTexture;
+    scene.environmentIntensity = 0.55;
+    scene.fog = new THREE.Fog(0x0b1119, 16, 34);
 
-    const grid = new THREE.GridHelper(8, viewerMeta.isMobileViewport ? 12 : 16, 0x223448, 0x152030);
-    grid.position.y = -2.35;
-    scene.add(grid);
-
-    const camera = new THREE.PerspectiveCamera(viewerMeta.isMobileViewport ? 46 : 42, width / height, 0.1, 100);
-    camera.position.set(...config.camera.position);
-    camera.lookAt(...config.camera.lookAt);
-
-    scene.add(new THREE.AmbientLight(0xfff1e3, viewerMeta.isMobileViewport ? 0.82 : 0.72));
-    const keyLight = new THREE.DirectionalLight(0xfff8f0, 1.65);
-    keyLight.position.set(6, 10, 6);
-    scene.add(keyLight);
-    const fillLight = new THREE.DirectionalLight(0xd0e8ff, 0.38);
-    fillLight.position.set(-5, 2, -5);
-    scene.add(fillLight);
-    const rimLight = new THREE.DirectionalLight(0x4488bb, 0.42);
-    rimLight.position.set(0, -4, -6);
-    scene.add(rimLight);
-    const coreLight = new THREE.PointLight(0xff6a00, 3.1, 5.4);
-    coreLight.position.set(0, 0.15, 0);
+    scene.add(new THREE.HemisphereLight(0xdfe8f5, 0x201810, 0.55));
+    const key = new THREE.DirectionalLight(0xfff3e2, 1.6);
+    key.position.set(6, 10, 7);
+    scene.add(key);
+    const coreLight = new THREE.PointLight(0xff8a3a, 6, 4.5, 1.6);
+    coreLight.position.set(0, 1.5, 0.3);
     scene.add(coreLight);
 
     const group = new THREE.Group();
-    const materials = createMaterials();
-    group.rotation.y = Math.PI / 5;
+    group.add(model.root);
+    group.rotation.y = BASE_YAW;
     scene.add(group);
 
-    const renderFrame = () => renderer.render(scene, camera);
-    const hotspotVectors = hotspots.map((hotspot) => ({
-      ...hotspot,
-      anchorVector: new THREE.Vector3(...hotspot.anchor),
-    }));
-    const currentCameraPosition = new THREE.Vector3(...config.camera.position);
-    const currentLookAt = new THREE.Vector3(...config.camera.lookAt);
-    const defaultLookAt = new THREE.Vector3(...config.camera.lookAt);
-    const defaultCameraPosition = new THREE.Vector3(...config.camera.position);
+    // Frame the model: fit its bounding sphere to the view.
+    // The ground disc is scenery — leave it out of the framing box.
+    const box = new THREE.Box3();
+    model.root.children.forEach((child) => {
+      if (!child.userData.noBounds) box.expandByObject(child);
+    });
+    const sphere = box.getBoundingSphere(new THREE.Sphere());
+    const camera = new THREE.PerspectiveCamera(isMobile ? 40 : 34, width / height, 0.1, 100);
+    const center = sphere.center.clone();
+    // Fit whichever field of view is tighter (horizontal on narrow screens).
+    const vFov = THREE.MathUtils.degToRad(camera.fov);
+    const hFov = 2 * Math.atan(Math.tan(vFov / 2) * camera.aspect);
+    const fitDistance = (sphere.radius / Math.sin(Math.min(vFov, hFov) / 2)) * (isMobile ? 0.98 : 0.6);
+    const defaultTarget = center.clone();
+    const defaultPosition = center.clone().add(VIEW_DIR.clone().multiplyScalar(fitDistance));
+    camera.position.copy(defaultPosition);
+    camera.lookAt(defaultTarget);
+    const currentTarget = defaultTarget.clone();
 
-    const populateScene = async () => {
-      try {
-        if (config.renderMode === "imported" && config.assetPath) {
-          const importedScene = await loadImportedModel(config.assetPath);
-          if (disposed || !importedScene) return;
-          applyTransform(importedScene, config.transform);
-          group.add(importedScene);
-        } else {
-          buildProceduralReactor(group, type, materials);
-        }
-      } catch {
-        buildProceduralReactor(group, type, materials);
+    const anchors = hotspots.map((h) => ({ id: h.id, v: new THREE.Vector3(...h.anchor) }));
+
+    const syncMarkers = () => {
+      const tmp = new THREE.Vector3();
+      for (const { id, v } of anchors) {
+        const marker = markerRefs.current[id];
+        if (!marker) continue;
+        tmp.copy(v);
+        model.root.localToWorld(tmp);
+        tmp.project(camera);
+        const visible = tmp.z > -1 && tmp.z < 1 && Math.abs(tmp.x) < 1.05 && Math.abs(tmp.y) < 1.05;
+        marker.style.opacity = visible ? "1" : "0";
+        marker.style.pointerEvents = visible ? "auto" : "none";
+        marker.style.transform = `translate(${(tmp.x * 0.5 + 0.5) * width}px, ${(-tmp.y * 0.5 + 0.5) * height}px) translate(-50%, -50%)`;
       }
-      renderFrame();
     };
 
-    populateScene();
-
-    const syncMarkerPositions = () => {
-      hotspotVectors.forEach((hotspot) => {
-        const marker = markerRefs.current[hotspot.id];
-        if (!marker) return;
-
-        const projected = hotspot.anchorVector.clone();
-        group.localToWorld(projected);
-        projected.project(camera);
-
-        const isVisible = projected.z > -1 && projected.z < 1;
-        const x = (projected.x * 0.5 + 0.5) * width;
-        const y = (-projected.y * 0.5 + 0.5) * height;
-        marker.style.opacity = isVisible ? "1" : "0";
-        marker.style.pointerEvents = isVisible ? "auto" : "none";
-        marker.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`;
-      });
-    };
-
-    const dragState = dragStateRef.current;
-    const onPointerDown = (event) => {
-      dragState.active = true;
-      dragState.moved = false;
-      dragState.pointerId = event.pointerId;
-      dragState.pointerType = event.pointerType;
-      dragState.prevX = event.clientX;
-      dragState.prevY = event.clientY;
-      dragState.vx = 0;
+    // Drag to rotate (yaw) and tilt; vertical swipes on touch scroll the page.
+    const drag = { active: false, moved: false, id: null, type: "mouse", x: 0, y: 0, yaw: 0, tilt: 0, lastInteract: -Infinity };
+    const onDown = (event) => {
+      Object.assign(drag, { active: true, moved: false, id: event.pointerId, type: event.pointerType, x: event.clientX, y: event.clientY });
       renderer.domElement.style.cursor = "grabbing";
       renderer.domElement.setPointerCapture?.(event.pointerId);
     };
-
-    const onPointerMove = (event) => {
-      if (!dragState.active || dragState.pointerId !== event.pointerId) return;
-
-      const dx = event.clientX - dragState.prevX;
-      const dy = event.clientY - dragState.prevY;
-
-      if (dragState.pointerType === "touch" && !dragState.moved) {
+    const onMove = (event) => {
+      if (!drag.active || drag.id !== event.pointerId) return;
+      const dx = event.clientX - drag.x;
+      const dy = event.clientY - drag.y;
+      if (drag.type === "touch" && !drag.moved) {
         if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
         if (Math.abs(dy) > Math.abs(dx)) {
-          dragState.active = false;
-          renderer.domElement.releasePointerCapture?.(event.pointerId);
-          renderer.domElement.style.cursor = "grab";
+          drag.active = false;
           return;
         }
       }
-
-      dragState.moved = true;
-      dragState.vx = dx * (viewerMeta.isMobileViewport ? 0.008 : 0.011);
-      group.rotation.y += dragState.vx;
-      group.rotation.x = Math.max(-0.62, Math.min(0.62, group.rotation.x + dy * 0.0075));
-      dragState.prevX = event.clientX;
-      dragState.prevY = event.clientY;
-      if (dragState.pointerType === "touch") event.preventDefault();
+      drag.moved = true;
+      drag.yaw += dx * 0.009;
+      drag.tilt = THREE.MathUtils.clamp(drag.tilt + dy * 0.006, -0.35, 0.45);
+      drag.x = event.clientX;
+      drag.y = event.clientY;
+      drag.lastInteract = performance.now();
+      if (drag.type === "touch") event.preventDefault();
     };
-
-    const releasePointer = (event) => {
-      if (dragState.pointerId !== event.pointerId) return;
-      dragState.active = false;
-      dragState.pointerId = null;
+    const onUp = (event) => {
+      if (drag.id !== event.pointerId) return;
+      drag.active = false;
       renderer.domElement.style.cursor = "grab";
       renderer.domElement.releasePointerCapture?.(event.pointerId);
     };
+    const el = renderer.domElement;
+    el.addEventListener("pointerdown", onDown);
+    el.addEventListener("pointermove", onMove, { passive: false });
+    el.addEventListener("pointerup", onUp);
+    el.addEventListener("pointercancel", onUp);
+    el.addEventListener("pointerleave", onUp);
 
-    renderer.domElement.addEventListener("pointerdown", onPointerDown);
-    renderer.domElement.addEventListener("pointermove", onPointerMove, { passive: false });
-    renderer.domElement.addEventListener("pointerup", releasePointer);
-    renderer.domElement.addEventListener("pointercancel", releasePointer);
-    renderer.domElement.addEventListener("pointerleave", releasePointer);
+    // Only animate while on screen and the tab is visible.
+    let visible = true;
+    const io = typeof IntersectionObserver !== "undefined"
+      ? new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; })
+      : null;
+    io?.observe(container);
 
-    const animate = () => {
-      animationId = window.requestAnimationFrame(animate);
-      if (!dragState.active) {
-        group.rotation.y += viewerMeta.isMobileViewport ? 0.0026 : 0.0038;
-        dragState.vx *= 0.9;
+    const onResize = () => {
+      width = container.clientWidth || width;
+      renderer.setSize(width, height);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+    };
+    const ro = new ResizeObserver(onResize);
+    ro.observe(container);
+
+    const clock = new THREE.Clock();
+    let frame = 0;
+    const tmpPos = new THREE.Vector3();
+    const tmpTarget = new THREE.Vector3();
+    const render = () => {
+      frame = requestAnimationFrame(render);
+      if (!visible || document.hidden) return;
+      const t = clock.getElapsedTime();
+
+      // Idle: a gentle sway that keeps the cutaway facing the viewer.
+      const idle = performance.now() - drag.lastInteract > 2500 && !drag.active;
+      if (idle && !reduced) drag.yaw *= 0.985;
+      const sway = reduced ? 0 : Math.sin(t * 0.22) * 0.22;
+      group.rotation.y = BASE_YAW + drag.yaw + (idle ? sway : 0);
+      group.rotation.x = drag.tilt * 0.6;
+
+      const active = selectedRef.current;
+      if (active) {
+        tmpTarget.set(...active.anchor);
+        model.root.localToWorld(tmpTarget);
+        tmpPos.copy(tmpTarget).add(VIEW_DIR.clone().multiplyScalar(fitDistance * 0.45));
+      } else {
+        tmpTarget.copy(defaultTarget);
+        tmpPos.copy(defaultPosition);
       }
-      const activeHotspot = selectedHotspotRef.current;
-      const targetLookAt = activeHotspot?.camera?.lookAt
-        ? new THREE.Vector3(...activeHotspot.camera.lookAt)
-        : defaultLookAt;
-      const targetCameraPosition = activeHotspot?.camera?.offset
-        ? targetLookAt.clone().add(new THREE.Vector3(...activeHotspot.camera.offset))
-        : defaultCameraPosition;
-      currentLookAt.lerp(targetLookAt, 0.08);
-      currentCameraPosition.lerp(targetCameraPosition, 0.08);
-      camera.position.copy(currentCameraPosition);
-      camera.lookAt(currentLookAt);
-      coreLight.intensity = (viewerMeta.isMobileViewport ? 2.6 : 3.0) + Math.sin(performance.now() * 0.0018) * 0.75;
-      syncMarkerPositions();
+      currentTarget.lerp(tmpTarget, 0.07);
+      camera.position.lerp(tmpPos, 0.07);
+      camera.lookAt(currentTarget);
+
+      coreLight.intensity = 5 + Math.sin(t * 1.6) * (reduced ? 0 : 1.2);
+      model.update(t, { motion: !reduced });
+      syncMarkers();
       renderer.render(scene, camera);
     };
-    animate();
+    render();
 
     return () => {
-      disposed = true;
-      window.cancelAnimationFrame(animationId);
-      renderer.domElement.removeEventListener("pointerdown", onPointerDown);
-      renderer.domElement.removeEventListener("pointermove", onPointerMove);
-      renderer.domElement.removeEventListener("pointerup", releasePointer);
-      renderer.domElement.removeEventListener("pointercancel", releasePointer);
-      renderer.domElement.removeEventListener("pointerleave", releasePointer);
-
-      scene.traverse((obj) => {
-        if (obj.type !== "Scene") disposeResource(obj);
-      });
-      Object.values(materials).forEach((material) => material.dispose());
+      cancelAnimationFrame(frame);
+      io?.disconnect();
+      ro.disconnect();
+      el.removeEventListener("pointerdown", onDown);
+      el.removeEventListener("pointermove", onMove);
+      el.removeEventListener("pointerup", onUp);
+      el.removeEventListener("pointercancel", onUp);
+      el.removeEventListener("pointerleave", onUp);
+      group.remove(model.root);
+      envTexture.dispose();
+      pmrem.dispose();
       renderer.dispose();
       container.replaceChildren();
     };
-  }, [config, hotspots, type, viewerMeta.isMobileViewport, viewerMeta.width]);
+  }, [model, hotspots, isMobile, height]);
+
+  // Free the model's geometry/materials when the design changes or on unmount.
+  useEffect(() => () => model.dispose(), [model]);
+
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= MOBILE_BREAKPOINT);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  const panel = {
+    background: "rgba(7,11,17,0.8)",
+    border: "1px solid rgba(255,255,255,0.1)",
+    backdropFilter: "blur(12px)",
+    borderRadius: 12,
+  };
 
   return (
     <div style={{ position: "relative" }}>
       <div
         ref={mountRef}
+        role="img"
+        aria-label={`Interactive 3D cutaway of a ${design.title}. Drag to rotate; select a marker for details.`}
         style={{
           width: "100%",
-          height: config.height,
+          height,
           cursor: "grab",
           borderRadius: 10,
           overflow: "hidden",
-          background: "linear-gradient(180deg, rgba(18,28,39,0.96) 0%, rgba(9,13,20,1) 100%)",
+          background: "radial-gradient(ellipse 80% 70% at 45% 40%, #1a2635 0%, #0b1119 70%)",
         }}
       />
-      <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
-        {hotspots.map((hotspot) => {
-          const active = selectedHotspotId === hotspot.id;
-          const hovered = hoveredHotspotId === hotspot.id;
+
+      <div style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden", borderRadius: 10 }}>
+        {hotspots.map((spot) => {
+          const on = selectedId === spot.id;
+          const showLabel = !isMobile && (on || hoveredId === spot.id);
+          const info = design.parts[spot.id];
           return (
             <button
-              key={hotspot.id}
+              key={spot.id}
               ref={(node) => {
-                if (node) markerRefs.current[hotspot.id] = node;
-                else delete markerRefs.current[hotspot.id];
+                if (node) markerRefs.current[spot.id] = node;
+                else delete markerRefs.current[spot.id];
               }}
               type="button"
-              aria-label={hotspot.label}
+              aria-label={info?.label || spot.id}
+              aria-pressed={on}
               onClick={(event) => {
                 event.stopPropagation();
-                setSelectedHotspotId((current) => (current === hotspot.id ? null : hotspot.id));
+                setSelectedId((current) => (current === spot.id ? null : spot.id));
               }}
-              onMouseEnter={() => {
-                if (!viewerMeta.isMobileViewport) setHoveredHotspotId(hotspot.id);
-              }}
-              onMouseLeave={() => setHoveredHotspotId((current) => (current === hotspot.id ? null : current))}
+              onMouseEnter={() => setHoveredId(spot.id)}
+              onMouseLeave={() => setHoveredId((current) => (current === spot.id ? null : current))}
               style={{
                 position: "absolute",
                 left: 0,
                 top: 0,
-                pointerEvents: "auto",
-                width: active ? 18 : 16,
-                height: active ? 18 : 16,
+                width: on ? 20 : 16,
+                height: on ? 20 : 16,
+                padding: 0,
                 borderRadius: "50%",
-                border: `2px solid ${active ? "#f5d082" : "rgba(255,255,255,0.78)"}`,
-                background: active ? "rgba(212,165,74,0.96)" : "rgba(18,28,39,0.88)",
-                boxShadow: active
-                  ? "0 0 0 6px rgba(212,165,74,0.16), 0 0 24px rgba(212,165,74,0.45)"
-                  : "0 0 0 4px rgba(255,255,255,0.08)",
+                border: `2px solid ${on ? "#f5d082" : "rgba(255,255,255,0.85)"}`,
+                background: on ? "#d4a54a" : "rgba(10,16,24,0.85)",
+                boxShadow: on ? "0 0 0 6px rgba(212,165,74,0.2), 0 0 22px rgba(212,165,74,0.5)" : "0 0 0 4px rgba(255,255,255,0.08)",
                 opacity: 0,
                 cursor: "pointer",
-                transition: "width 0.2s ease, height 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, border-color 0.2s ease",
+                transition: "width .2s, height .2s, background .2s",
               }}
             >
-              <span style={{ position: "absolute", inset: 3, borderRadius: "50%", background: active ? "#10273a" : "rgba(212,165,74,0.9)" }} />
-              {!viewerMeta.isMobileViewport && (hovered || active) && (
+              <span style={{ position: "absolute", inset: 3, borderRadius: "50%", background: on ? "#10273a" : "#d4a54a" }} />
+              {showLabel ? (
                 <span
                   style={{
                     position: "absolute",
-                    top: -34,
+                    bottom: "calc(100% + 8px)",
                     left: "50%",
                     transform: "translateX(-50%)",
                     whiteSpace: "nowrap",
                     padding: "5px 9px",
                     borderRadius: 999,
-                    background: "rgba(7,11,17,0.86)",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    color: "rgba(255,255,255,0.9)",
-                    fontSize: 11,
+                    background: "rgba(7,11,17,0.9)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    color: "#fff",
+                    fontSize: 11.5,
                     lineHeight: 1,
                     fontFamily: "'DM Sans',sans-serif",
                   }}
                 >
-                  {hotspot.label}
+                  {info?.label}
                 </span>
-              )}
+              ) : null}
             </button>
           );
         })}
       </div>
-      {config.attribution && (
+
+      {selected ? (
         <div
           style={{
+            ...panel,
             position: "absolute",
-            top: 12,
-            left: 12,
-            maxWidth: viewerMeta.isMobileViewport ? "72%" : "52%",
-            fontSize: 10,
-            lineHeight: 1.45,
-            color: "rgba(255,255,255,0.62)",
-            background: "rgba(7,11,17,0.52)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            borderRadius: 10,
-            padding: "8px 10px",
-            backdropFilter: "blur(10px)",
+            ...(isMobile ? { left: 10, right: 10, bottom: 10 } : { right: 12, top: 12, width: 260 }),
+            padding: "12px 14px",
           }}
         >
-          Model source: {config.attribution.label}
-        </div>
-      )}
-      {!viewerMeta.isMobileViewport && selectedHotspot && (
-        <div
-          style={{
-            position: "absolute",
-            right: 12,
-            top: 12,
-            width: 232,
-            padding: "12px 13px",
-            borderRadius: 14,
-            background: "rgba(7,11,17,0.74)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            backdropFilter: "blur(12px)",
-            boxShadow: "0 20px 40px rgba(0,0,0,0.24)",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
-            <div style={{ fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(212,165,74,0.9)", fontWeight: 700 }}>Inside the reactor</div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
+            <div style={{ fontSize: 10.5, letterSpacing: "0.1em", textTransform: "uppercase", color: "#d4a54a", fontWeight: 700 }}>Inside the reactor</div>
             <button
               type="button"
-              onClick={() => setSelectedHotspotId(null)}
-              style={{ background: "transparent", border: 0, color: "rgba(255,255,255,0.56)", cursor: "pointer", fontSize: 14, lineHeight: 1 }}
+              aria-label="Close"
+              onClick={() => setSelectedId(null)}
+              style={{ background: "transparent", border: 0, color: "rgba(255,255,255,0.6)", cursor: "pointer", fontSize: 16, lineHeight: 1 }}
             >
               ×
             </button>
           </div>
-          <div style={{ fontSize: 15, color: "rgba(255,255,255,0.95)", fontWeight: 700, marginBottom: 6 }}>{selectedHotspot.label}</div>
-          <div style={{ fontSize: 12.5, lineHeight: 1.55, color: "rgba(255,255,255,0.72)" }}>{selectedHotspot.description}</div>
+          <div style={{ fontSize: 15, color: "#fff", fontWeight: 600, marginBottom: 5 }}>{selected.label}</div>
+          <div style={{ fontSize: 12.5, lineHeight: 1.55, color: "rgba(255,255,255,0.75)" }}>{selected.description}</div>
         </div>
-      )}
-      {viewerMeta.isMobileViewport && selectedHotspot && (
-        <div
-          style={{
-            position: "absolute",
-            left: 10,
-            right: 10,
-            bottom: 10,
-            padding: "12px 12px 13px",
-            borderRadius: 16,
-            background: "rgba(7,11,17,0.88)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            backdropFilter: "blur(12px)",
-            boxShadow: "0 18px 34px rgba(0,0,0,0.28)",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 6 }}>
-            <div style={{ fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(212,165,74,0.9)", fontWeight: 700 }}>Inside the reactor</div>
-            <button
-              type="button"
-              onClick={() => setSelectedHotspotId(null)}
-              style={{ background: "transparent", border: 0, color: "rgba(255,255,255,0.56)", cursor: "pointer", fontSize: 15, lineHeight: 1 }}
-            >
-              ×
-            </button>
-          </div>
-          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.95)", fontWeight: 700, marginBottom: 5 }}>{selectedHotspot.label}</div>
-          <div style={{ fontSize: 12, lineHeight: 1.5, color: "rgba(255,255,255,0.72)" }}>{selectedHotspot.description}</div>
-        </div>
-      )}
-      <div
-        key={hintKey}
+      ) : null}
+
+      <ul
+        aria-label="Legend"
         style={{
+          ...panel,
           position: "absolute",
-          bottom: viewerMeta.isMobileViewport && selectedHotspot ? 104 : viewerMeta.isMobileViewport ? 8 : 12,
-          left: "50%",
-          transform: "translateX(-50%)",
-          maxWidth: viewerMeta.isMobileViewport ? "90%" : "unset",
-          textAlign: "center",
-          fontSize: viewerMeta.isMobileViewport ? 10 : 11,
-          lineHeight: 1.3,
-          color: "rgba(255,255,255,0.48)",
-          fontFamily: "'DM Sans',sans-serif",
+          left: 12,
+          bottom: 12,
+          margin: 0,
+          padding: "8px 10px",
+          listStyle: "none",
+          display: isMobile ? "none" : "grid",
+          gap: 4,
           pointerEvents: "none",
-          opacity: 0,
-          whiteSpace: viewerMeta.isMobileViewport ? "normal" : "nowrap",
-          animation: "np-hint-fade 3s ease forwards",
+          font: "500 10.5px/1.2 'DM Sans',sans-serif",
+          color: "rgba(255,255,255,0.72)",
         }}
       >
-        Drag to rotate · {viewerMeta.isMobileViewport ? "swipe sideways on mobile" : `${type} reactor`}
+        {design.fluids.map((fluid) => (
+          <li key={fluid} style={{ display: "flex", alignItems: "center", gap: 7 }}>
+            <i style={{ width: 12, height: 4, borderRadius: 2, background: FLUID[fluid].color }} />
+            {FLUID[fluid].label}
+          </li>
+        ))}
+      </ul>
+
+      <div
+        style={{
+          position: "absolute",
+          bottom: 12,
+          right: 14,
+          fontSize: 11,
+          color: "rgba(255,255,255,0.5)",
+          fontFamily: "'DM Sans',sans-serif",
+          pointerEvents: "none",
+          whiteSpace: "nowrap",
+        }}
+      >
+        Drag to rotate · tap a marker for details
       </div>
     </div>
   );

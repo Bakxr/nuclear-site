@@ -117,7 +117,7 @@ export default function StockModal({ stock, onClose }) {
         </div>
 
         <p style={{ fontSize: 13, lineHeight: 1.6, color: "rgba(245,240,232,0.6)", margin: 0 }}>{stock.desc}</p>
-        <p style={{ fontSize: 10, color: "rgba(245,240,232,0.2)", marginTop: 16 }}>Data is illustrative only. Not financial advice.</p>
+        <p style={{ fontSize: 10, color: "rgba(245,240,232,0.2)", marginTop: 16 }}>Prices via Finnhub; daily history via Yahoo Finance. For information only — not investment advice.</p>
       </motion.div>
     </motion.div>
   );

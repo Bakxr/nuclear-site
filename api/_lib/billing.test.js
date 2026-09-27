@@ -23,7 +23,16 @@ vi.mock('./supabase.js', () => ({
   getSupabaseServiceClient: () => fakeClient(),
 }));
 
-const { syncMembershipFromSubscription } = await import('./billing.js');
+const stripeMock = {
+  customers: { update: vi.fn(async (id) => ({ id })), list: vi.fn(), create: vi.fn() },
+  subscriptions: { list: vi.fn(async () => ({ data: [] })) },
+  checkout: { sessions: { create: vi.fn(async () => ({ id: 'cs_1', url: 'https://checkout.example' })) } },
+};
+vi.mock('stripe', () => ({ default: vi.fn(function Stripe() { return stripeMock; }) }));
+
+process.env.STRIPE_SECRET_KEY = 'sk_test_x';
+process.env.STRIPE_PRICE_ANNUAL = 'price_year';
+const { createCheckoutSession, syncMembershipFromSubscription } = await import('./billing.js');
 
 function subscription(overrides = {}) {
   return {
@@ -72,5 +81,38 @@ describe('syncMembershipFromSubscription', () => {
 
     expect(upsert).not.toHaveBeenCalled();
     expect(result).toBe(membershipRow);
+  });
+});
+
+describe('createCheckoutSession trial', () => {
+  beforeEach(() => {
+    stripeMock.subscriptions.list.mockReset().mockResolvedValue({ data: [] });
+    stripeMock.checkout.sessions.create.mockClear();
+    upsert.mockReset();
+  });
+
+  it('gives a first-time customer a 7-day trial', async () => {
+    membershipRow = { user_id: 'user_1', stripe_customer_id: 'cus_1', terminal_access: false };
+    await createCheckoutSession({ interval: 'year', userId: 'user_1', email: 'a@b.co', siteUrl: 'https://site' });
+    const params = stripeMock.checkout.sessions.create.mock.calls[0][0];
+    expect(params.subscription_data.trial_period_days).toBe(7);
+    expect(params.payment_method_collection).toBe('always');
+  });
+
+  it('does not re-trial a customer who has subscribed before', async () => {
+    membershipRow = { user_id: 'user_1', stripe_customer_id: 'cus_1', stripe_subscription_id: 'sub_old', terminal_access: false };
+    await createCheckoutSession({ interval: 'year', userId: 'user_1', email: 'a@b.co', siteUrl: 'https://site' });
+    const params = stripeMock.checkout.sessions.create.mock.calls[0][0];
+    expect(params.subscription_data.trial_period_days).toBeUndefined();
+  });
+
+  it('does not trial a Stripe customer with past subscriptions even without a local record', async () => {
+    membershipRow = { user_id: 'user_1', stripe_customer_id: 'cus_1', terminal_access: false };
+    stripeMock.subscriptions.list
+      .mockResolvedValueOnce({ data: [] }) // active-subscription check
+      .mockResolvedValueOnce({ data: [{ id: 'sub_prev', status: 'canceled' }] }); // trial eligibility
+    await createCheckoutSession({ interval: 'year', userId: 'user_1', email: 'a@b.co', siteUrl: 'https://site' });
+    const params = stripeMock.checkout.sessions.create.mock.calls[0][0];
+    expect(params.subscription_data.trial_period_days).toBeUndefined();
   });
 });

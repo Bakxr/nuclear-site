@@ -44,8 +44,6 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        // Reactor schematics are only viewed in plant/learn modals — cache on first view instead of precaching.
-        globIgnores: ['reactor-schematics/**'],
         runtimeCaching: [
           {
             // Google Fonts stylesheet
@@ -62,11 +60,6 @@ export default defineConfig({
               expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 365 },
               cacheableResponse: { statuses: [0, 200] },
             },
-          },
-          {
-            urlPattern: /\/reactor-schematics\/.*\.webp$/,
-            handler: 'CacheFirst',
-            options: { cacheName: 'reactor-schematics', expiration: { maxEntries: 10 } },
           },
         ],
       },

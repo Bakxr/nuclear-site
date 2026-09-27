@@ -8,7 +8,7 @@ import useDialog from "../hooks/useDialog.js";
 const Reactor3D = lazy(() => import("./reactorDiagrams/Reactor3D.jsx"));
 
 function ReactorViewerFallback() {
-  return <div style={{ height: 320, background: "var(--np-surface-dim)" }} />;
+  return <div style={{ height: 420, background: "var(--np-surface-dim)" }} />;
 }
 
 export default function PlantModal({ plant, onClose }) {
@@ -265,7 +265,7 @@ export default function PlantModal({ plant, onClose }) {
                   <Reactor3D type={normalizedType} />
                 </Suspense>
               )
-              : <div style={{ padding: "0 20px 16px" }}><ReactorDiagram type={normalizedType} width={680} /></div>
+              : <ReactorDiagram type={normalizedType} bare />
             }
           </div>
 

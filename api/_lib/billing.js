@@ -4,6 +4,7 @@ import { getSupabaseServiceClient } from "./supabase.js";
 const MEMBERSHIP_TABLE = process.env.BILLING_MEMBERSHIPS_TABLE || "billing_memberships";
 const WEBHOOK_EVENTS_TABLE = process.env.STRIPE_WEBHOOK_EVENTS_TABLE || "stripe_webhook_events";
 const ACTIVE_SUBSCRIPTION_STATUSES = new Set(["active", "trialing", "past_due"]);
+export const TRIAL_DAYS = 7;
 
 let stripeClient = null;
 
@@ -143,6 +144,14 @@ export async function hasRecordedWebhookEvent(eventId) {
   return Boolean(data?.event_id);
 }
 
+// One trial per customer: only accounts that have never had a subscription.
+async function isTrialEligible(customerId, membership) {
+  if (membership?.stripe_subscription_id) return false;
+  const stripe = getStripe();
+  const previous = await stripe.subscriptions.list({ customer: customerId, status: "all", limit: 1 });
+  return previous.data.length === 0;
+}
+
 async function findActiveSubscriptionForCustomer(customerId) {
   if (!customerId) return null;
 
@@ -229,6 +238,8 @@ export async function createCheckoutSession({ interval, userId, email, siteUrl }
     throw new BillingError("This account already has an active terminal subscription. Access has been refreshed.", { status: 409 });
   }
 
+  const trial = await isTrialEligible(customerId, membership);
+
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
     customer: customerId,
@@ -242,12 +253,21 @@ export async function createCheckoutSession({ interval, userId, email, siteUrl }
         user_id: userId,
         email: email || "",
       },
+      ...(trial
+        ? {
+            trial_period_days: TRIAL_DAYS,
+            // Card is collected up front; if it's somehow missing at trial end, cancel rather than bill.
+            trial_settings: { end_behavior: { missing_payment_method: "cancel" } },
+          }
+        : {}),
     },
+    payment_method_collection: "always",
     metadata: {
       user_id: userId,
       email: email || "",
       plan_interval: planInterval,
       access_product: "terminal",
+      trial: trial ? String(TRIAL_DAYS) : "0",
     },
   });
 

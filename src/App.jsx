@@ -1,7 +1,7 @@
 import { lazy, Suspense, useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { motion, AnimatePresence, useInView, useScroll, useTransform, MotionConfig } from "framer-motion";
 import { LineChart, Line, ResponsiveContainer } from "recharts";
-import { STOCKS_BASE, NUCLEAR_SHARE, LEARN_FACTS, ENERGY_COMPARISON } from "./data/constants.js";
+import { FEATURED_STOCKS, NUCLEAR_SHARE, LEARN_FACTS, ENERGY_COMPARISON } from "./data/constants.js";
 import { NUCLEAR_PLANTS } from "./data/plants.js";
 import { SUPPLY_STAGE_COLORS, URANIUM_SUPPLY_SITES } from "./data/supplySites.js";
 import { fetchStockHistory, fetchMultipleQuotes } from "./services/stocksAPI.js";
@@ -23,7 +23,6 @@ import StockTicker from "./components/StockTicker.jsx";
 import SearchOverlay from "./components/SearchOverlay.jsx";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import LazySectionFallback from "./components/LazySectionFallback.jsx";
-import ReactorDiagram from "./components/reactorDiagrams/index.jsx";
 import useDialog from "./hooks/useDialog.js";
 import { normalizeReactorType } from "./services/plantAPI.js";
 import { groupPlantsByCountry } from "./utils/countries.js";
@@ -41,11 +40,29 @@ const Globe = lazy(() => import("./components/Globe.jsx"));
 const StockModal = lazy(() => import("./components/StockModal.jsx"));
 const PlantModal = lazy(() => import("./components/PlantModal.jsx"));
 const CountryModal = lazy(() => import("./components/CountryModal.jsx"));
-const Reactor3D = lazy(() => import("./components/reactorDiagrams/Reactor3D.jsx"));
 
 const NEWSLETTER_STORAGE_KEY = "np-newsletter-subscribed";
 const NEWSLETTER_POPUP_SHOWN_KEY = "np-newsletter-popup-shown";
 const NEWSLETTER_POPUP_DISMISSED_KEY = "np-newsletter-popup-dismissed";
+// Persisted dismissal so returning readers aren't asked every visit.
+const NEWSLETTER_POPUP_SNOOZE_KEY = "np-newsletter-popup-snoozed-until";
+const NEWSLETTER_POPUP_SNOOZE_MS = 14 * 24 * 60 * 60 * 1000;
+
+function popupRecentlyDismissed() {
+  try {
+    return Number(window.localStorage.getItem(NEWSLETTER_POPUP_SNOOZE_KEY) || 0) > Date.now();
+  } catch {
+    return false;
+  }
+}
+
+function snoozeNewsletterPopup() {
+  try {
+    window.localStorage.setItem(NEWSLETTER_POPUP_SNOOZE_KEY, String(Date.now() + NEWSLETTER_POPUP_SNOOZE_MS));
+  } catch {
+    // storage unavailable — session-level suppression still applies
+  }
+}
 const NEWSLETTER_FORM_DEFAULT = { email: "", website: "", status: "idle", error: "" };
 
 function NewsletterCapture({
@@ -567,7 +584,7 @@ export default function NuclearPulse() {
   const [newsLimit, setNewsLimit] = useState(6);
   const [plantFilter, setPlantFilter] = useState("All");
   const [showStats, setShowStats] = useState(false);
-  const [stocks, setStocks] = useState(() => STOCKS_BASE.map(s => ({ ...s, price: 0, change: 0, pct: 0, history: [] })));
+  const [stocks, setStocks] = useState(() => FEATURED_STOCKS.map(s => ({ ...s, price: 0, change: 0, pct: 0, history: [] })));
   const [stocksLoading, setStocksLoading] = useState(true);
   const [stocksError, setStocksError] = useState(false);
   const [stocksRetry, setStocksRetry] = useState(0);
@@ -692,6 +709,7 @@ export default function NuclearPulse() {
     setShowSubscribePopup(false);
     if (typeof window !== "undefined") {
       window.sessionStorage.setItem(NEWSLETTER_POPUP_DISMISSED_KEY, "1");
+      snoozeNewsletterPopup();
     }
   }, []);
   const closeAccountDialog = useCallback(() => {
@@ -703,6 +721,7 @@ export default function NuclearPulse() {
     if (isSubscribed) return;
     if (window.sessionStorage.getItem(NEWSLETTER_POPUP_SHOWN_KEY)) return;
     if (window.sessionStorage.getItem(NEWSLETTER_POPUP_DISMISSED_KEY)) return;
+    if (popupRecentlyDismissed()) return;
     window.sessionStorage.setItem(NEWSLETTER_POPUP_SHOWN_KEY, "1");
     setShowSubscribePopup(true);
   }, [isSubscribed]);
@@ -785,7 +804,7 @@ export default function NuclearPulse() {
 
   useEffect(() => {
     if (typeof window === "undefined" || isSubscribed) return undefined;
-    if (window.sessionStorage.getItem(NEWSLETTER_POPUP_SHOWN_KEY) || window.sessionStorage.getItem(NEWSLETTER_POPUP_DISMISSED_KEY)) return undefined;
+    if (window.sessionStorage.getItem(NEWSLETTER_POPUP_SHOWN_KEY) || window.sessionStorage.getItem(NEWSLETTER_POPUP_DISMISSED_KEY) || popupRecentlyDismissed()) return undefined;
 
     const timer = window.setTimeout(() => maybeOpenSubscribePopup(), 45000);
 
@@ -869,12 +888,12 @@ export default function NuclearPulse() {
 
       try {
         // Fetch quotes for all stocks in parallel
-        const tickers = STOCKS_BASE.map(s => s.ticker);
+        const tickers = FEATURED_STOCKS.map(s => s.ticker);
         const quotes = await fetchMultipleQuotes(tickers);
 
         // Merge base data with live quotes and history
         const stocksWithData = await Promise.all(
-          STOCKS_BASE.map(async (stock) => {
+          FEATURED_STOCKS.map(async (stock) => {
             const quote = quotes[stock.ticker];
             const currentPrice = quote?.price || 0;
 
@@ -915,7 +934,8 @@ export default function NuclearPulse() {
       try {
         const articles = await fetchNuclearNews();
         setNews(articles);
-        setNewsError(false);
+        // fetchNuclearNews resolves with the curated set when /api/news is down.
+        setNewsError(Boolean(articles[0]?._isFallback));
         setNewsLastUpdated(new Date());
       } catch {
         // Fall back to curated articles so the section is never empty
@@ -1014,7 +1034,7 @@ export default function NuclearPulse() {
     try {
       const articles = await fetchNuclearNews();
       setNews(articles);
-      setNewsError(false);
+      setNewsError(Boolean(articles[0]?._isFallback));
       setNewsLastUpdated(new Date());
     } catch {
       setNews(getInstantNews());
