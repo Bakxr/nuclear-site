@@ -172,15 +172,21 @@ export async function getOrCreateStripeCustomer({ userId, email }) {
   const normalisedEmail = email?.toLowerCase().trim() || null;
 
   if (membership?.stripe_customer_id) {
-    const customer = await stripe.customers.update(membership.stripe_customer_id, {
-      email: normalisedEmail || undefined,
-      metadata: {
-        user_id: userId,
-        email: normalisedEmail || "",
-      },
-    });
+    try {
+      const customer = await stripe.customers.update(membership.stripe_customer_id, {
+        email: normalisedEmail || undefined,
+        metadata: {
+          user_id: userId,
+          email: normalisedEmail || "",
+        },
+      });
 
-    return customer.id;
+      return customer.id;
+    } catch (error) {
+      // A customer saved under the other Stripe mode (test vs live) or since
+      // deleted: fall through and attach a fresh one.
+      if (error?.code !== "resource_missing") throw error;
+    }
   }
 
   let customer = null;

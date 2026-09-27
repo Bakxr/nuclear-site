@@ -115,4 +115,16 @@ describe('createCheckoutSession trial', () => {
     const params = stripeMock.checkout.sessions.create.mock.calls[0][0];
     expect(params.subscription_data.trial_period_days).toBeUndefined();
   });
+
+  it('replaces a stored customer that no longer exists in this Stripe mode', async () => {
+    membershipRow = { user_id: 'user_1', stripe_customer_id: 'cus_testmode', terminal_access: false };
+    stripeMock.customers.update.mockRejectedValueOnce(Object.assign(new Error('No such customer'), { code: 'resource_missing' }));
+    stripeMock.customers.list.mockResolvedValueOnce({ data: [] });
+    stripeMock.customers.create.mockResolvedValueOnce({ id: 'cus_live' });
+
+    await createCheckoutSession({ interval: 'year', userId: 'user_1', email: 'a@b.co', siteUrl: 'https://site' });
+
+    expect(upsert).toHaveBeenCalledWith(expect.objectContaining({ stripe_customer_id: 'cus_live' }));
+    expect(stripeMock.checkout.sessions.create.mock.calls[0][0].customer).toBe('cus_live');
+  });
 });

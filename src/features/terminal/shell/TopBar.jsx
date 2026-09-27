@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import AccountMenu from "./AccountMenu.jsx";
 import { DESKS } from "./desks.js";
 import { fmtAgo, fmtClock, usMarketSession } from "./format.js";
 
@@ -106,6 +107,7 @@ export default function TopBar({ desk, onDeskChange, onOpenSearch, onRefresh, re
         <button type="button" className="npt-icon-btn" onClick={onRefresh} data-busy={refreshing ? "true" : "false"} aria-label="Refresh data" title="Refresh data (R)">
           <RefreshIcon />
         </button>
+        <AccountMenu onSignedOut={onExit} />
         <button type="button" className="npt-icon-btn" onClick={onExit} aria-label="Back to editorial site" title="Back to editorial site">
           <ExitIcon />
         </button>
