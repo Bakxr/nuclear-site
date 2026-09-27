@@ -27,7 +27,9 @@ import useDialog from "./hooks/useDialog.js";
 import { normalizeReactorType } from "./services/plantAPI.js";
 import { groupPlantsByCountry } from "./utils/countries.js";
 import { NAV_ITEMS } from "./data/editorial.js";
-import { formatAccessDate, getAccountStatusMeta } from "./features/access/accountStatus.js";
+import { describePlan, formatAccessDate, getAccountStatusMeta } from "./features/access/accountStatus.js";
+import UserIcon from "./features/access/UserIcon.jsx";
+import useBillingPortal from "./features/access/useBillingPortal.js";
 import { useTerminalAccess } from "./features/access/context.jsx";
 import TerminalRouteView from "./features/terminal/TerminalRouteView.jsx";
 import { mergeTerminalSnapshots } from "./features/terminal/mergeSnapshots.js";
@@ -188,6 +190,7 @@ function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport
     verifyOtp,
   } = useTerminalAccess();
   const dialogRef = useDialog(isOpen, onClose);
+  const { openPortal, busy: portalBusy, error: portalError } = useBillingPortal();
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [otpSent, setOtpSent] = useState(false);
@@ -403,9 +406,9 @@ function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport
                   {accountMeta.detail}
                 </span>
               </div>
-              {membership?.subscription_status ? (
-                <div style={{ fontSize: 12.5, lineHeight: 1.6, color: "rgba(245,240,232,0.58)" }}>
-                  Stripe status: {membership.subscription_status}{membership.plan_interval ? ` | ${membership.plan_interval}` : ""}
+              {describePlan(membership) ? (
+                <div style={{ fontSize: 13, lineHeight: 1.6, color: "rgba(245,240,232,0.66)" }}>
+                  {describePlan(membership)}
                 </div>
               ) : null}
             </div>
@@ -531,6 +534,29 @@ function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport
                 >
                   {membership?.terminal_access ? "Open terminal" : "Open terminal plans"}
                 </button>
+                {membership?.stripe_customer_id ? (
+                  <button
+                    type="button"
+                    onClick={openPortal}
+                    disabled={portalBusy}
+                    style={{
+                      width: "100%",
+                      borderRadius: 14,
+                      border: "1px solid rgba(212,165,74,0.22)",
+                      background: "rgba(255,255,255,0.03)",
+                      color: "#f5f0e8",
+                      padding: "12px 16px",
+                      cursor: portalBusy ? "wait" : "pointer",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      letterSpacing: "0.08em",
+                      textTransform: "uppercase",
+                      opacity: portalBusy ? 0.7 : 1,
+                    }}
+                  >
+                    {portalBusy ? "Opening…" : "Billing & subscription"}
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   onClick={handleSignOut}
@@ -553,9 +579,9 @@ function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport
               </div>
             )}
 
-            {errorMessage ? (
+            {errorMessage || portalError ? (
               <div style={{ borderRadius: 16, border: "1px solid rgba(251,191,36,0.22)", background: "rgba(251,191,36,0.08)", padding: "13px 14px", fontSize: 12.5, lineHeight: 1.6, color: "#f6d98a" }}>
-                {errorMessage}
+                {errorMessage || portalError}
               </div>
             ) : null}
             {successMessage ? (
@@ -1312,39 +1338,43 @@ export default function NuclearPulse() {
             onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--np-accent-ink)"; e.currentTarget.style.borderColor = "rgba(212,165,74,0.45)"; }}
           >Terminal</button>
         </div>
-        <div className="np-nav-actions" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div className="np-nav-actions" style={{ display: "flex", alignItems: "center", gap: 10, marginLeft: isMobileViewport ? 0 : 14 }}>
           {!isMobileViewport ? (
             <button
               type="button"
               onClick={() => setShowAccountDialog(true)}
+              aria-label={user ? `Account (${accountStatusMeta.detail})` : "Sign in"}
+              title={user ? `${user.email} · ${accountStatusMeta.detail}` : "Sign in"}
               style={{
+                position: "relative",
                 display: "flex",
                 alignItems: "center",
-                gap: 10,
-                minWidth: 0,
-                maxWidth: 200,
+                justifyContent: "center",
+                gap: 8,
+                height: 36,
+                minWidth: 36,
                 flexShrink: 0,
                 whiteSpace: "nowrap",
                 borderRadius: 6,
                 border: "1px solid var(--np-hairline)",
                 background: "transparent",
-                color: "var(--np-text)",
-                padding: "7px 12px",
+                color: user ? "var(--np-text)" : "var(--np-text-muted)",
+                padding: user ? 0 : "0 12px",
                 cursor: "pointer",
+                fontSize: 12.5,
+                fontWeight: 600,
                 transition: "border-color 0.2s",
               }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = "var(--np-border-strong)"}
+              onMouseEnter={e => e.currentTarget.style.borderColor = "var(--np-accent)"}
               onMouseLeave={e => e.currentTarget.style.borderColor = "var(--np-hairline)"}
             >
-              <span style={{ width: 8, height: 8, borderRadius: "50%", background: accountStatusMeta.accent, flexShrink: 0 }} />
-              <span style={{ display: "grid", minWidth: 0, textAlign: "left" }}>
-                <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--np-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {accountStatusMeta.title}
-                </span>
-                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: accountStatusMeta.accent }}>
-                  {accountStatusMeta.detail}
-                </span>
-              </span>
+              <UserIcon size={16} />
+              {user ? (
+                <span aria-hidden="true" style={{
+                  position: "absolute", top: 5, right: 5, width: 7, height: 7, borderRadius: "50%",
+                  background: accountStatusMeta.accent, boxShadow: "0 0 0 2px var(--np-bg)",
+                }} />
+              ) : "Sign in"}
             </button>
           ) : null}
           <button

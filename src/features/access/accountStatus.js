@@ -5,6 +5,19 @@ export function formatAccessDate(value) {
   return date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 }
 
+// One-line, human-readable plan status for account menus.
+export function describePlan(membership) {
+  if (!membership?.subscription_status) return "";
+  const plan = membership.plan_interval === "year" ? "Annual plan" : membership.plan_interval === "month" ? "Monthly plan" : "Pro plan";
+  const end = formatAccessDate(membership.current_period_end);
+  const status = membership.subscription_status;
+  if (!membership.terminal_access) return status === "canceled" ? "Subscription ended" : "No active plan";
+  if (membership.cancel_at_period_end) return end ? `${plan} · access until ${end}` : plan;
+  if (status === "trialing") return end ? `Free trial · ends ${end}` : "Free trial";
+  if (status === "past_due") return "Payment failed · update your card";
+  return end ? `${plan} · renews ${end}` : plan;
+}
+
 export function truncateEmail(email, max = 28) {
   const value = String(email || "").trim();
   if (!value || value.length <= max) return value;
@@ -24,7 +37,7 @@ export function getAccountStatusMeta({ accessState, isConfigured, membershipLoad
     return {
       title: user?.email ? truncateEmail(user.email, 22) : "Account",
       detail: "Checking access",
-      accent: "#7dd3fc",
+      accent: "#b3a489",
     };
   }
 

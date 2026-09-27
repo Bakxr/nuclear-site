@@ -391,7 +391,7 @@ export default function TerminalAccessPage({ onExitTerminal }) {
               </button>
               {membership?.stripe_customer_id ? (
                 <button type="button" className="npt-btn" onClick={handleOpenPortal} disabled={billingBusy} style={{ justifyContent: "center" }}>
-                  Manage billing
+                  Billing &amp; subscription
                 </button>
               ) : null}
               <div className="npa-row-links">
