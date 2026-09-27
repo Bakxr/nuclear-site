@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
-import { getBrowserSupabaseClient } from "../../lib/supabaseClient.js";
+import { useBrowserSupabaseClient } from "../../lib/supabaseClient.js";
 import {
   addWatchEntry,
   bulkAddWatchEntries,
@@ -192,13 +192,7 @@ export function TerminalProvider({ snapshot, isMobileViewport, children }) {
   // source of truth and mirror it to the `terminal_watchlist` table whenever
   // the user is authenticated. For unauthenticated users the localStorage
   // cache above is the only persistence layer — everything below is additive.
-  const supabase = useMemo(() => {
-    try {
-      return getBrowserSupabaseClient() || null;
-    } catch {
-      return null;
-    }
-  }, []);
+  const supabase = useBrowserSupabaseClient();
   const [watchlistEntries, setWatchlistEntries] = useState([]);
   const watchlistEntriesRef = useRef([]);
   const watchedIdsRef = useRef(state.watchedIds);

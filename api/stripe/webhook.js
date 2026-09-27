@@ -1,4 +1,4 @@
-import { getStripe, hasRecordedWebhookEvent, recordWebhookEvent, syncMembershipFromSubscription, syncMembershipFromSubscriptionId } from "../_lib/billing.js";
+import { getStripe, hasRecordedWebhookEvent, recordWebhookEvent, syncMembershipFromSubscriptionId } from "../_lib/billing.js";
 import { sendEmail } from "../_lib/dispatch.js";
 import { readRawBody, setNoStore } from "../_lib/http.js";
 
@@ -93,7 +93,10 @@ export default async function handler(req, res) {
     }
 
     if (event.type === "customer.subscription.created" || event.type === "customer.subscription.updated" || event.type === "customer.subscription.deleted") {
-      await syncMembershipFromSubscription(event.data.object);
+      // Stripe doesn't guarantee delivery order, so a stale `updated` (active)
+      // can land after `deleted`. Sync from the live subscription, not the payload.
+      // Deleted subscriptions are still retrievable (status "canceled").
+      await syncMembershipFromSubscriptionId(event.data.object.id);
     }
 
     const recorded = await recordWebhookEvent(event);

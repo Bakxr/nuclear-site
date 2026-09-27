@@ -1,4 +1,4 @@
-import { createBillingPortalSession, createCheckoutSession } from "../_lib/billing.js";
+import { BillingError, createBillingPortalSession, createCheckoutSession } from "../_lib/billing.js";
 import { requireAuthenticatedUser } from "../_lib/auth.js";
 import { ensureAllowedOrigin, setNoStore } from "../_lib/http.js";
 
@@ -58,11 +58,15 @@ export default async function handler(req, res) {
   } catch (error) {
     const label = action === "portal" ? "create-portal-session" : "create-checkout-session";
     console.error(`[billing/${label}]`, error?.message || error);
-    const message = error?.message || (action === "portal"
-      ? "Could not open the billing portal."
-      : "Could not create a checkout session.");
-    const statusCode = /configuration is incomplete/i.test(message) ? 500 : 400;
+    if (error instanceof BillingError) {
+      return res.status(error.status).json({ error: error.message });
+    }
 
-    return res.status(statusCode).json({ error: message });
+    // Raw Stripe/Supabase messages can leak internals — keep them in the logs.
+    return res.status(502).json({
+      error: action === "portal"
+        ? "Could not open the billing portal."
+        : "Could not create a checkout session.",
+    });
   }
 }

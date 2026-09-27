@@ -23,13 +23,15 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Request rejected.' });
   }
 
-  if (!email || !EMAIL_RE.test(email)) {
+  const normalised = typeof email === 'string' ? email.toLowerCase().trim() : '';
+  if (!normalised || normalised.length > 254 || !EMAIL_RE.test(normalised)) {
     return res.status(400).json({ error: 'Please enter a valid email address.' });
   }
 
-  const normalised = email.toLowerCase().trim();
-  const rateLimitKey = `subscribe:${getClientAddress(req)}:${normalised}`;
-  if (!(await checkRateLimit(rateLimitKey, { limit: 4, windowMs: 10 * 60 * 1000 }))) {
+  const clientAddress = getClientAddress(req);
+  const allowed = await checkRateLimit(`subscribe-ip:${clientAddress}`, { limit: 20, windowMs: 60 * 60 * 1000 })
+    && await checkRateLimit(`subscribe:${clientAddress}:${normalised}`, { limit: 4, windowMs: 10 * 60 * 1000 });
+  if (!allowed) {
     return res.status(429).json({ error: 'Too many attempts. Please try again later.' });
   }
 

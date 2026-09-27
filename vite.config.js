@@ -9,7 +9,9 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules/three')) return 'three-vendor'
-          if (id.includes('node_modules/recharts') || id.includes('node_modules/d3')) return 'charts-vendor'
+          // Only recharts here — d3 (used by the lazy Globe) would otherwise ride along
+          // in this eagerly-preloaded chunk. Rollup places recharts' d3-* deps itself.
+          if (id.includes('node_modules/recharts')) return 'charts-vendor'
           if (id.includes('node_modules/framer-motion')) return 'motion-vendor'
         },
       },
@@ -23,7 +25,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
+      includeAssets: ['apple-touch-icon.png'],
       manifest: {
         name: 'Nuclear Pulse',
         short_name: 'Nuclear Pulse',
@@ -42,18 +44,29 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // Reactor schematics are only viewed in plant/learn modals — cache on first view instead of precaching.
+        globIgnores: ['reactor-schematics/**'],
         runtimeCaching: [
           {
-            // Cache Google Fonts
+            // Google Fonts stylesheet
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: { cacheName: 'google-fonts-cache', expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 } },
+            handler: 'StaleWhileRevalidate',
+            options: { cacheName: 'google-fonts-stylesheets', expiration: { maxEntries: 10 } },
           },
           {
-            // Cache Finnhub API (1 hour)
-            urlPattern: /^https:\/\/finnhub\.io\/.*/i,
-            handler: 'NetworkFirst',
-            options: { cacheName: 'finnhub-cache', expiration: { maxEntries: 20, maxAgeSeconds: 3600 } },
+            // Google Fonts font files (immutable, versioned URLs)
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts-webfonts',
+              expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            urlPattern: /\/reactor-schematics\/.*\.webp$/,
+            handler: 'CacheFirst',
+            options: { cacheName: 'reactor-schematics', expiration: { maxEntries: 10 } },
           },
         ],
       },

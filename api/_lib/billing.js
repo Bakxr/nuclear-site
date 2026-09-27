@@ -7,6 +7,16 @@ const ACTIVE_SUBSCRIPTION_STATUSES = new Set(["active", "trialing", "past_due"])
 
 let stripeClient = null;
 
+// Errors whose message is safe to show the user. Anything else (Stripe,
+// Supabase, network) is logged server-side and replaced with a generic message.
+export class BillingError extends Error {
+  constructor(message, { status = 400 } = {}) {
+    super(message);
+    this.name = "BillingError";
+    this.status = status;
+  }
+}
+
 function getStripeSecretKey() {
   return process.env.STRIPE_SECRET_KEY?.trim() || "";
 }
@@ -14,7 +24,7 @@ function getStripeSecretKey() {
 export function getStripe() {
   const secretKey = getStripeSecretKey();
   if (!secretKey) {
-    throw new Error("Stripe configuration is incomplete.");
+    throw new BillingError("Stripe configuration is incomplete.", { status: 500 });
   }
 
   if (!stripeClient) {
@@ -202,12 +212,12 @@ export async function createCheckoutSession({ interval, userId, email, siteUrl }
   const planInterval = normalizeInterval(interval);
   const priceId = getPriceIdForInterval(planInterval);
   if (!planInterval || !priceId) {
-    throw new Error("Stripe price configuration is incomplete.");
+    throw new BillingError("Stripe price configuration is incomplete.", { status: 500 });
   }
 
   const membership = await getMembershipForUser(userId);
   if (membership?.terminal_access) {
-    throw new Error("This account already has active terminal access.");
+    throw new BillingError("This account already has active terminal access.", { status: 409 });
   }
 
   const stripe = getStripe();
@@ -216,7 +226,7 @@ export async function createCheckoutSession({ interval, userId, email, siteUrl }
 
   if (existingActiveSubscription) {
     await syncMembershipFromSubscription(existingActiveSubscription, { userId, email });
-    throw new Error("This account already has an active terminal subscription. Access has been refreshed.");
+    throw new BillingError("This account already has an active terminal subscription. Access has been refreshed.", { status: 409 });
   }
 
   const session = await stripe.checkout.sessions.create({
@@ -256,7 +266,7 @@ export async function createCheckoutSession({ interval, userId, email, siteUrl }
 export async function createBillingPortalSession({ userId, siteUrl }) {
   const membership = await getMembershipForUser(userId);
   if (!membership?.stripe_customer_id) {
-    throw new Error("No Stripe customer is linked to this account yet.");
+    throw new BillingError("No Stripe customer is linked to this account yet.", { status: 404 });
   }
 
   const stripe = getStripe();
@@ -281,6 +291,21 @@ export async function syncMembershipFromSubscription(subscription, options = {})
     throw new Error("Stripe subscription is missing the linked Supabase user id.");
   }
 
+  const grantsAccess = hasTerminalAccessStatus(subscription.status);
+  if (!grantsAccess) {
+    // A superseded subscription (e.g. an old one cancelled after re-subscribing)
+    // must not revoke access granted by the member's current subscription.
+    const existing = await getMembershipForUser(userId);
+    if (
+      existing?.terminal_access
+      && existing.stripe_subscription_id
+      && existing.stripe_subscription_id !== subscription.id
+    ) {
+      console.info("[billing] ignoring inactive superseded subscription", subscription.id);
+      return existing;
+    }
+  }
+
   const firstItem = subscription.items?.data?.[0] || null;
   const price = firstItem?.price || null;
   const periodEndUnix = subscription.current_period_end || firstItem?.current_period_end || null;
@@ -292,7 +317,7 @@ export async function syncMembershipFromSubscription(subscription, options = {})
     stripe_price_id: price?.id || null,
     plan_interval: price?.recurring?.interval || null,
     subscription_status: subscription.status || "inactive",
-    terminal_access: hasTerminalAccessStatus(subscription.status),
+    terminal_access: grantsAccess,
     current_period_end: toIsoFromUnix(periodEndUnix),
     cancel_at_period_end: Boolean(subscription.cancel_at_period_end),
     ...(options.checkoutSessionId ? { last_checkout_session_id: options.checkoutSessionId } : {}),

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import * as THREE from "three";
-import * as d3 from "d3";
+import { geoEquirectangular, geoGraticule, geoPath } from "d3";
 import { STATUS_COLORS, STATUS_COLORS_HEX } from "../data/constants.js";
 import { SUPPLY_STAGE_COLORS } from "../data/supplySites.js";
 
@@ -294,8 +294,8 @@ export default function Globe({
     texCanvas.width = 2048;
     texCanvas.height = 1024;
     const ctx = texCanvas.getContext("2d");
-    const projection = d3.geoEquirectangular().fitSize([2048, 1024], { type: "Sphere" });
-    const path = d3.geoPath(projection, ctx);
+    const projection = geoEquirectangular().fitSize([2048, 1024], { type: "Sphere" });
+    const path = geoPath(projection, ctx);
 
     // Track globe mesh for cleanup
     let globeGeom = null;
@@ -319,7 +319,7 @@ export default function Globe({
 
         ctx.strokeStyle = "rgba(126,168,192,0.04)";
         ctx.lineWidth = 0.6;
-        const graticule = d3.geoGraticule().step([15, 15])();
+        const graticule = geoGraticule().step([15, 15])();
         ctx.beginPath();
         path(graticule);
         ctx.stroke();

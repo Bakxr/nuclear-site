@@ -7,7 +7,15 @@ const requireAuthenticatedUser = vi.fn();
 const ensureAllowedOrigin = vi.fn(() => true);
 const setNoStore = vi.fn();
 
+class BillingError extends Error {
+  constructor(message, { status = 400 } = {}) {
+    super(message);
+    this.status = status;
+  }
+}
+
 vi.mock('../_lib/billing.js', () => ({
+  BillingError,
   createCheckoutSession,
   createBillingPortalSession,
 }));
@@ -61,5 +69,29 @@ describe('/api/billing/session', () => {
       sessionId: 'cs_123',
       url: 'https://checkout.example/session',
     });
+  });
+
+  it('passes user-facing billing errors through with their status', async () => {
+    requireAuthenticatedUser.mockResolvedValue({ user: { id: 'user_123', email: 'a@b.co' } });
+    createCheckoutSession.mockRejectedValue(
+      new BillingError('This account already has active terminal access.', { status: 409 }),
+    );
+
+    const res = createMockRes();
+    await handler(createMockReq({ method: 'POST', body: { action: 'checkout', interval: 'year' } }), res);
+
+    expect(res.statusCode).toBe(409);
+    expect(res.body).toEqual({ error: 'This account already has active terminal access.' });
+  });
+
+  it('does not leak raw upstream error messages', async () => {
+    requireAuthenticatedUser.mockResolvedValue({ user: { id: 'user_123', email: 'a@b.co' } });
+    createBillingPortalSession.mockRejectedValue(new Error('relation "billing_memberships" does not exist'));
+
+    const res = createMockRes();
+    await handler(createMockReq({ method: 'POST', body: { action: 'portal' } }), res);
+
+    expect(res.statusCode).toBe(502);
+    expect(res.body).toEqual({ error: 'Could not open the billing portal.' });
   });
 });

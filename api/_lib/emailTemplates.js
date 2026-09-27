@@ -6,7 +6,7 @@
 // single column, max ~600px, system fonts, all critical info above the
 // fold, plus an unsubscribe link.
 
-import { createUnsubscribeToken } from "./unsubscribe.js";
+import { buildUnsubscribeHeaders, createUnsubscribeToken } from "./unsubscribe.js";
 
 const SITE_URL = process.env.SITE_URL?.trim() || "https://atomic-energy.vercel.app";
 
@@ -42,6 +42,10 @@ function buildUnsubLink(email) {
   if (!email) return `${SITE_URL}`;
   const token = createUnsubscribeToken(email);
   return `${SITE_URL}/api/unsubscribe?token=${encodeURIComponent(token)}`;
+}
+
+function unsubHeaders(email) {
+  return email ? buildUnsubscribeHeaders(buildUnsubLink(email)) : {};
 }
 
 function shell({ title, dateLine, greetingName, bodyHtml, unsubEmail, footerNote }) {
@@ -203,7 +207,7 @@ export function buildDailyEmail({ user, email, movers = [], filings = [], operat
     uranium ? { label: "Uranium", text: `Spot ${formatPrice(uranium.price ?? uranium.value)} ${formatPercent(uranium.pct ?? uranium.changePct ?? 0)}` } : null,
   ]);
 
-  return { subject, html, text };
+  return { subject, html, text, headers: unsubHeaders(email) };
 }
 
 // ---------------- WEEKLY ----------------
@@ -239,7 +243,7 @@ export function buildWeeklyEmail({ email, headlines = [], movers = [], uranium =
     uranium ? { label: "Uranium", text: `Spot ${formatPrice(uranium.price ?? uranium.value)}` } : null,
   ]);
 
-  return { subject, html, text };
+  return { subject, html, text, headers: unsubHeaders(email) };
 }
 
 // ---------------- ALERT ----------------
@@ -284,5 +288,5 @@ export function buildAlertEmail({ alert, observed, email, user }) {
 
   const text = `${alert.target_label}\n${alert.alert_type} ${direction} ${thresholdStr}${observedStr ? `\nObserved: ${observedStr}` : ""}\n\nOpen ${SITE_URL}/terminal`;
 
-  return { subject, html, text };
+  return { subject, html, text, headers: unsubHeaders(email) };
 }

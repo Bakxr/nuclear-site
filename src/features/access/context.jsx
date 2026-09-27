@@ -1,6 +1,10 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, startTransition, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { getBrowserSupabaseClient } from "../../lib/supabaseClient.js";
+import {
+  isBrowserSupabaseConfigured,
+  loadBrowserSupabaseClient,
+  useBrowserSupabaseClient,
+} from "../../lib/supabaseClient.js";
 
 const AccessContext = createContext(null);
 const DEFAULT_AUTH_REDIRECT_URL = "https://atomic-energy.vercel.app/";
@@ -32,10 +36,10 @@ function getOtpEmailRedirectUrl() {
 }
 
 export function AccessProvider({ children }) {
-  const supabase = useMemo(() => getBrowserSupabaseClient(), []);
+  const supabase = useBrowserSupabaseClient();
   const [session, setSession] = useState(null);
   const [membership, setMembership] = useState(null);
-  const [authReady, setAuthReady] = useState(() => !supabase);
+  const [authReady, setAuthReady] = useState(() => !isBrowserSupabaseConfigured);
   const [membershipLoading, setMembershipLoading] = useState(false);
   const [membershipError, setMembershipError] = useState("");
 
@@ -116,11 +120,18 @@ export function AccessProvider({ children }) {
     return membership?.terminal_access ? "active" : "inactive";
   }, [authReady, membership, membershipLoading, session]);
 
+  // User-triggered actions can fire before the lazily-loaded client resolves.
+  const requireClient = useCallback(async () => {
+    const client = supabase || await loadBrowserSupabaseClient();
+    if (!client) throw new Error("Supabase browser auth is not configured.");
+    return client;
+  }, [supabase]);
+
   const sendOtp = useCallback(async (email) => {
-    if (!supabase) throw new Error("Supabase browser auth is not configured.");
+    const client = await requireClient();
     const normalisedEmail = email.toLowerCase().trim();
     await postJson("/api/auth/request-otp", { email: normalisedEmail });
-    const { error } = await supabase.auth.signInWithOtp({
+    const { error } = await client.auth.signInWithOtp({
       email: normalisedEmail,
       options: {
         shouldCreateUser: false,
@@ -133,11 +144,11 @@ export function AccessProvider({ children }) {
     }
 
     return normalisedEmail;
-  }, [supabase]);
+  }, [requireClient]);
 
   const verifyOtp = useCallback(async (email, token) => {
-    if (!supabase) throw new Error("Supabase browser auth is not configured.");
-    const { data, error } = await supabase.auth.verifyOtp({
+    const client = await requireClient();
+    const { data, error } = await client.auth.verifyOtp({
       email: email.toLowerCase().trim(),
       token: token.trim(),
       type: "email",
@@ -149,7 +160,7 @@ export function AccessProvider({ children }) {
 
     setSession(data.session || null);
     return data.session || null;
-  }, [supabase]);
+  }, [requireClient]);
 
   const refreshMembership = useCallback(async () => {
     if (!supabase || !session?.user) {
@@ -177,21 +188,23 @@ export function AccessProvider({ children }) {
   }, [session, supabase]);
 
   const getAccessToken = useCallback(async () => {
-    if (!supabase) return "";
-    const { data } = await supabase.auth.getSession();
+    const client = supabase || await loadBrowserSupabaseClient().catch(() => null);
+    if (!client) return "";
+    const { data } = await client.auth.getSession();
     return data.session?.access_token || "";
   }, [supabase]);
 
   const signOut = useCallback(async () => {
-    if (!supabase) return;
-    await supabase.auth.signOut();
+    const client = supabase || await loadBrowserSupabaseClient().catch(() => null);
+    if (!client) return;
+    await client.auth.signOut();
     setMembership(null);
   }, [supabase]);
 
   const value = {
     accessState,
     authReady,
-    isConfigured: Boolean(supabase),
+    isConfigured: isBrowserSupabaseConfigured,
     membership,
     membershipError,
     membershipLoading,

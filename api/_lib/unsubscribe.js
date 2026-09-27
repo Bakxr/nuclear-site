@@ -26,6 +26,16 @@ export function createUnsubscribeToken(email, timestamp = Date.now()) {
   return `${encoded}.${signature}`;
 }
 
+// RFC 2369 / RFC 8058 headers so Gmail/Yahoo show a native one-click unsubscribe.
+// The POST handler in api/unsubscribe.js accepts the one-click request.
+export function buildUnsubscribeHeaders(unsubscribeUrl) {
+  if (!unsubscribeUrl) return {};
+  return {
+    "List-Unsubscribe": `<${unsubscribeUrl}>`,
+    "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+  };
+}
+
 export function verifyUnsubscribeToken(token, maxAgeMs = DEFAULT_MAX_AGE_MS) {
   const secret = getSecret();
   if (!secret || !token || typeof token !== "string" || !token.includes(".")) {

@@ -7,6 +7,7 @@
 // Auth: Vercel passes `Authorization: Bearer <CRON_SECRET>`. If the env
 // var is unset we refuse to run.
 
+import crypto from "node:crypto";
 import { getSupabaseServiceClient } from "../_lib/supabase.js";
 import { getTerminalSnapshot } from "../_lib/terminalSnapshot.js";
 import { setNoStore } from "../_lib/http.js";
@@ -24,8 +25,10 @@ import { buildSnapshotIndex, evaluateAlert } from "../_lib/alerts.js";
 function isAuthorized(req) {
   const secret = process.env.CRON_SECRET?.trim();
   if (!secret) return false;
-  const header = req.headers.authorization || req.headers.Authorization || "";
-  return header === `Bearer ${secret}`;
+  const header = String(req.headers.authorization || req.headers.Authorization || "");
+  const expected = Buffer.from(`Bearer ${secret}`, "utf8");
+  const provided = Buffer.from(header, "utf8");
+  return provided.length === expected.length && crypto.timingSafeEqual(provided, expected);
 }
 
 function todayKey() {
@@ -58,13 +61,30 @@ async function runDaily({ supabase, snapshot, dryRun }) {
   }
   const rows = memberships.data || [];
 
+  // Members who clicked unsubscribe are recorded as inactive in `subscribers`
+  // (api/unsubscribe.js) — honour that for the daily brief too.
+  const memberEmails = rows.map((m) => m.email?.toLowerCase().trim()).filter(Boolean);
+  let optedOut = new Set();
+  if (memberEmails.length) {
+    const optOuts = await supabase
+      .from("subscribers")
+      .select("email")
+      .eq("active", false)
+      .in("email", memberEmails);
+    if (optOuts.error) {
+      // Fail closed: better to skip a day than email people who opted out.
+      return { error: optOuts.error.message, sent: 0, skipped: 0, failed: 0 };
+    }
+    optedOut = new Set((optOuts.data || []).map((row) => row.email));
+  }
+
   let sent = 0;
   let skipped = 0;
   let failed = 0;
   const day = todayKey();
 
   for (const m of rows) {
-    if (!m.email) {
+    if (!m.email || optedOut.has(m.email.toLowerCase().trim())) {
       skipped += 1;
       continue;
     }

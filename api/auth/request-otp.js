@@ -4,6 +4,8 @@ import { getSupabaseServiceClient, hasSupabaseServiceConfig } from "../_lib/supa
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const OTP_REQUEST_LIMIT = { limit: 4, windowMs: 10 * 60 * 1000 };
+// Per-IP ceiling across all emails — each new email provisions a Supabase user.
+const OTP_IP_LIMIT = { limit: 20, windowMs: 60 * 60 * 1000 };
 
 function normalizeEmail(email) {
   return String(email || "").toLowerCase().trim();
@@ -46,7 +48,13 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Please enter a valid email address." });
   }
 
-  const rateLimitKey = `auth-request-otp:${getClientAddress(req)}:${normalizedEmail}`;
+  const clientAddress = getClientAddress(req);
+  if (!(await checkRateLimit(`auth-request-otp-ip:${clientAddress}`, OTP_IP_LIMIT))) {
+    setRetryAfter(res, OTP_IP_LIMIT.windowMs / 1000);
+    return res.status(429).json({ error: "Too many attempts. Please try again later." });
+  }
+
+  const rateLimitKey = `auth-request-otp:${clientAddress}:${normalizedEmail}`;
   if (!(await checkRateLimit(rateLimitKey, OTP_REQUEST_LIMIT))) {
     setRetryAfter(res, OTP_REQUEST_LIMIT.windowMs / 1000);
     return res.status(429).json({ error: "Too many attempts. Please try again later." });

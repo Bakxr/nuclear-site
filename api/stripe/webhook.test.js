@@ -159,7 +159,7 @@ describe('/api/stripe/webhook', () => {
     expect(payload.subject).toContain('buyer@example.com');
     expect(payload.text).toContain('19.00 USD');
     expect(payload.text).toContain('month');
-    expect(syncMembershipFromSubscription).toHaveBeenCalledWith(event.data.object);
+    expect(syncMembershipFromSubscriptionId).toHaveBeenCalledWith('sub_123');
     expect(res.statusCode).toBe(200);
     expect(res.body).toEqual({ received: true });
   });
@@ -197,7 +197,7 @@ describe('/api/stripe/webhook', () => {
     await handler(req, res);
 
     expect(sendEmail).not.toHaveBeenCalled();
-    expect(syncMembershipFromSubscription).toHaveBeenCalledWith(event.data.object);
+    expect(syncMembershipFromSubscriptionId).toHaveBeenCalledWith('sub_123');
     expect(res.statusCode).toBe(200);
     expect(res.body).toEqual({ received: true });
   });
@@ -239,5 +239,26 @@ describe('/api/stripe/webhook', () => {
     expect(sendEmail).toHaveBeenCalledTimes(1);
     expect(res.statusCode).toBe(200);
     expect(res.body).toEqual({ received: true });
+  });
+
+  it('syncs subscription events from the live subscription, not the payload', async () => {
+    const event = {
+      id: 'evt_sub_updated',
+      type: 'customer.subscription.updated',
+      data: { object: { id: 'sub_456', status: 'active', metadata: { user_id: 'user_123' } } },
+    };
+
+    getStripe.mockReturnValue({ webhooks: { constructEvent: vi.fn(() => event) } });
+    readRawBody.mockResolvedValue(Buffer.from('payload'));
+    hasRecordedWebhookEvent.mockResolvedValue(false);
+    recordWebhookEvent.mockResolvedValue(true);
+
+    const res = createMockRes();
+    await handler({ method: 'POST', headers: { 'stripe-signature': 'sig' } }, res);
+
+    expect(syncMembershipFromSubscriptionId).toHaveBeenCalledWith('sub_456');
+    expect(syncMembershipFromSubscription).not.toHaveBeenCalled();
+    expect(sendEmail).not.toHaveBeenCalled();
+    expect(res.statusCode).toBe(200);
   });
 });

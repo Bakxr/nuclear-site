@@ -71,6 +71,15 @@ tests/              Vitest setup
 
 ## Recent work
 
+- 2026-09-26: Billing/email/perf pass —
+  - Stripe `customer.subscription.*` events re-fetch the live subscription (out-of-order safety), and a cancelled *superseded* subscription no longer revokes access.
+  - `BillingError` marks user-safe messages; anything else from `api/billing/session` is generic (502).
+  - Unsubscribe is now GET = confirm page, POST = opt-out (mail-scanner safe, RFC 8058 one-click). It upserts `subscribers.active=false`, and the daily member brief skips those emails.
+  - All sends carry `List-Unsubscribe` headers.
+  - Per-IP rate limits on OTP and subscribe.
+  - Supabase client is lazy-loaded (`useBrowserSupabaseClient`), off the entry bundle.
+  - Reactor schematics converted to WebP and runtime-cached, not precached (precache 10.4 MB → 2 MB).
+  - Browser-side RSS/CORS-proxy news path removed — `/api/news` or the curated fallback only.
 - 2026-05-13: Security pass — locked down `revalidate` token requirement, rewrote `request-otp` to drop user enumeration, replaced in-memory rate limiter with Supabase-backed limiter, tightened `/api/market/quotes`, fixed `news.js` error leak, switched unsubscribe HMAC to dedicated `UNSUBSCRIBE_SECRET`, added in-flight dedup for terminal snapshot.
 
 ## When you change things

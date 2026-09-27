@@ -22,14 +22,14 @@ export function hasDispatchConfig() {
   return Boolean(process.env.RESEND_API_KEY?.trim() && process.env.NEWSLETTER_FROM?.trim() && process.env.CRON_SECRET?.trim());
 }
 
-export async function sendEmail({ to, subject, html, text }) {
+export async function sendEmail({ to, subject, html, text, headers }) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), RESEND_TIMEOUT_MS);
   try {
     const resend = getResend();
     // The Resend SDK doesn't accept a signal directly, but we wrap with
     // Promise.race so we still time out cleanly.
-    const op = resend.emails.send({ from: getFrom(), to, subject, html, text });
+    const op = resend.emails.send({ from: getFrom(), to, subject, html, text, headers });
     const timeout = new Promise((_resolve, reject) => {
       controller.signal.addEventListener("abort", () => reject(new Error("Resend send timed out")));
     });

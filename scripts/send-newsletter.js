@@ -8,7 +8,7 @@ import { NUCLEAR_PLANTS } from '../src/data/plants.js';
 import { URANIUM_SUPPLY_SITES } from '../src/data/supplySites.js';
 import { COUNTRY_PROFILES } from '../src/data/countryProfiles.js';
 import { ENERGY_COMPARISON, NUCLEAR_SHARE, STOCKS_BASE } from '../src/data/constants.js';
-import { createUnsubscribeToken } from '../api/_lib/unsubscribe.js';
+import { buildUnsubscribeHeaders, createUnsubscribeToken } from '../api/_lib/unsubscribe.js';
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -752,6 +752,9 @@ async function main() {
       to: email,
       subject: issue.subject,
       html,
+      headers: buildUnsubscribeHeaders(
+        `${SITE_URL}/api/unsubscribe?token=${encodeURIComponent(createUnsubscribeToken(email))}`,
+      ),
     });
 
     if (error) {

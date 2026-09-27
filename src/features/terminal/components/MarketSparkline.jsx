@@ -2,6 +2,8 @@
 // Renders a single-stroke path of `history[].p` (Polymarket Yes-price series),
 // colored green/red based on net direction.
 
+import { useId } from "react";
+
 function buildPath(points, width, height, pad) {
   if (!points.length) return "";
   const w = width - pad * 2;
@@ -41,6 +43,8 @@ export default function MarketSparkline({
   fill = false,
   ariaLabel = "Yes-price sparkline",
 }) {
+  // useId output can contain characters that break url(#id) refs — strip them.
+  const reactId = useId().replace(/[^a-zA-Z0-9_-]/g, "");
   if (!Array.isArray(history) || history.length === 0) {
     return (
       <div
@@ -65,7 +69,7 @@ export default function MarketSparkline({
   if (points.length === 0) return null;
   const direction = points[points.length - 1] - points[0];
   const tone = stroke || (direction > 0 ? "#4caf72" : direction < 0 ? "#e25960" : "#7da8c0");
-  const id = `spk-${Math.random().toString(36).slice(2, 8)}`;
+  const id = `spk-${reactId}`;
   const path = buildPath(points, width, height, pad);
   return (
     <svg

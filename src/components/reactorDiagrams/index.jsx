@@ -15,12 +15,12 @@ const DIAGRAMS = {
 };
 
 const SCHEMATIC_IMAGES = {
-  PWR: "/reactor-schematics/PWR.png",
-  BWR: "/reactor-schematics/BWR.png",
-  PHWR: "/reactor-schematics/PWR%20CANDU.png",
-  VVER: "/reactor-schematics/VVER.png",
-  SMR: "/reactor-schematics/SMR.png",
-  Other: "/reactor-schematics/Advanced.png",
+  PWR: "/reactor-schematics/PWR.webp",
+  BWR: "/reactor-schematics/BWR.webp",
+  PHWR: "/reactor-schematics/PWR-CANDU.webp",
+  VVER: "/reactor-schematics/VVER.webp",
+  SMR: "/reactor-schematics/SMR.webp",
+  Other: "/reactor-schematics/Advanced.webp",
 };
 
 export default function ReactorDiagram({ type, width = 680 }) {
@@ -32,6 +32,10 @@ export default function ReactorDiagram({ type, width = 680 }) {
       <img
         src={imageSrc}
         alt={`${type} reactor schematic`}
+        width={1360}
+        height={907}
+        loading="lazy"
+        decoding="async"
         style={{ display: "block", width: "100%", maxWidth: width, height: "auto", margin: "0 auto", borderRadius: 8 }}
         onError={(event) => {
           event.currentTarget.style.display = "none";
