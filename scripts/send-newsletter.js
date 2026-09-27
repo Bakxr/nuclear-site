@@ -15,7 +15,7 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY;
 const FINNHUB_KEY = process.env.FINNHUB_API_KEY || process.env.VITE_FINNHUB_API_KEY;
 const FROM = process.env.NEWSLETTER_FROM || 'Nuclear Pulse <onboarding@resend.dev>';
-const SITE_URL = process.env.SITE_URL || 'https://atomic-energy.vercel.app';
+const SITE_URL = process.env.SITE_URL || 'https://thenuclearpulse.com';
 
 const resend = new Resend(RESEND_API_KEY);
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);

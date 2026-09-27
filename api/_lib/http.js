@@ -12,6 +12,9 @@ export function getAllowedOrigins() {
   const configured = splitOrigins(process.env.ALLOWED_ORIGINS || "");
   const defaults = [
     siteUrl,
+    "https://thenuclearpulse.com",
+    "https://www.thenuclearpulse.com",
+    // Old address; redirects to the domain but keep it allowed during the switch.
     "https://atomic-energy.vercel.app",
     "http://localhost:5173",
     "http://127.0.0.1:5173",

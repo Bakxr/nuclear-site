@@ -18,7 +18,7 @@ export async function fetchQuote(ticker) {
   }
 
   const response = await fetch(`${BASE_URL}/quote?symbol=${encodeURIComponent(ticker)}&token=${apiKey}`, {
-    headers: { accept: "application/json", "user-agent": "NuclearPulseBot/1.0 (+https://atomic-energy.vercel.app)" },
+    headers: { accept: "application/json", "user-agent": "NuclearPulseBot/1.0 (+https://thenuclearpulse.com)" },
   });
 
   if (!response.ok) {

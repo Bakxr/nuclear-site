@@ -9,7 +9,7 @@ const OPERATING_URL =
 const UNDER_CONSTRUCTION_URL =
   "https://pris.iaea.org/PRIS/WorldStatistics/UnderConstructionReactorsByCountry.aspx";
 
-const USER_AGENT = "NuclearPulseBot/1.0 (+https://atomic-energy.vercel.app)";
+const USER_AGENT = "NuclearPulseBot/1.0 (+https://thenuclearpulse.com)";
 
 async function fetchWithTimeout(url) {
   const controller = new AbortController();

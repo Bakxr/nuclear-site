@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://atomic-energy.vercel.app/sitemap.xml
+Sitemap: https://thenuclearpulse.com/sitemap.xml

@@ -9,7 +9,7 @@ const FETCH_TIMEOUT_MS = 10_000;
 const SPROTT_URL = "https://sprott.com/api/FinancialData/v1/BullionCalculatorData";
 const SPUT_FUND_INDEX = 4;
 
-const USER_AGENT = "NuclearPulseBot/1.0 (+https://atomic-energy.vercel.app)";
+const USER_AGENT = "NuclearPulseBot/1.0 (+https://thenuclearpulse.com)";
 
 async function fetchWithTimeout(url, options = {}) {
   const controller = new AbortController();

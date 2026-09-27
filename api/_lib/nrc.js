@@ -53,7 +53,7 @@ export async function fetchNrcPlantStatus() {
   const response = await fetch(NRC_PLANT_STATUS_URL, {
     headers: {
       accept: "application/rss+xml, application/xml, text/xml;q=0.9, */*;q=0.8",
-      "user-agent": "NuclearPulseBot/1.0 (+https://atomic-energy.vercel.app)",
+      "user-agent": "NuclearPulseBot/1.0 (+https://thenuclearpulse.com)",
     },
   });
 

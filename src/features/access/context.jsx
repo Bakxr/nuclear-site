@@ -7,7 +7,7 @@ import {
 } from "../../lib/supabaseClient.js";
 
 const AccessContext = createContext(null);
-const DEFAULT_AUTH_REDIRECT_URL = "https://atomic-energy.vercel.app/";
+const DEFAULT_AUTH_REDIRECT_URL = "https://thenuclearpulse.com/";
 
 async function postJson(url, body) {
   const response = await fetch(url, {

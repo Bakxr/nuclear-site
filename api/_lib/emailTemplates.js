@@ -8,7 +8,7 @@
 
 import { buildUnsubscribeHeaders, createUnsubscribeToken } from "./unsubscribe.js";
 
-const SITE_URL = process.env.SITE_URL?.trim() || "https://atomic-energy.vercel.app";
+const SITE_URL = process.env.SITE_URL?.trim() || "https://thenuclearpulse.com";
 
 function escapeHtml(value) {
   return String(value ?? "")

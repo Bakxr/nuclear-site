@@ -239,7 +239,7 @@ function parseFeed(xml, feed) {
 async function fetchFeed(feed) {
   const res = await fetch(feed.url, {
     headers: {
-      "user-agent": "NuclearPulseBot/1.0 (+https://atomic-energy.vercel.app)",
+      "user-agent": "NuclearPulseBot/1.0 (+https://thenuclearpulse.com)",
       accept: "application/rss+xml, application/xml, text/xml;q=0.9, */*;q=0.8",
     },
   });

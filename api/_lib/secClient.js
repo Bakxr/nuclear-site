@@ -22,7 +22,7 @@ const state = globalThis.__npSecClient ?? {
 globalThis.__npSecClient = state;
 
 export function getSecUserAgent() {
-  return process.env.SEC_USER_AGENT || "NuclearPulseBot admin@atomic-energy.vercel.app";
+  return process.env.SEC_USER_AGENT || "NuclearPulseBot support@thenuclearpulse.com";
 }
 
 export function padCik(value) {

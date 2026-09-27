@@ -18,7 +18,7 @@ async function fetchWithTimeout(url) {
       signal: controller.signal,
       headers: {
         accept: "application/rss+xml,text/xml,application/xml",
-        "user-agent": "NuclearPulseBot/1.0 (+https://atomic-energy.vercel.app)",
+        "user-agent": "NuclearPulseBot/1.0 (+https://thenuclearpulse.com)",
       },
     });
     if (!res.ok) throw new Error(`nrc-dockets:${res.status}`);
