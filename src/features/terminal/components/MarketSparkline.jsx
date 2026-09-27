@@ -68,7 +68,7 @@ export default function MarketSparkline({
     .filter((v) => Number.isFinite(v));
   if (points.length === 0) return null;
   const direction = points[points.length - 1] - points[0];
-  const tone = stroke || (direction > 0 ? "#4caf72" : direction < 0 ? "#e25960" : "#7da8c0");
+  const tone = stroke || (direction > 0 ? "#4ade80" : direction < 0 ? "#f87171" : "#b3a489");
   const id = `spk-${reactId}`;
   const path = buildPath(points, width, height, pad);
   return (

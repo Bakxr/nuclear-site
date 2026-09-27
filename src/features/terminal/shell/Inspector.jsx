@@ -53,7 +53,7 @@ function PriceChart({ history }) {
     return <div className="npt-empty" style={{ minHeight: 90 }}><strong>No price history</strong></div>;
   }
   const up = data.at(-1).price >= data[0].price;
-  const stroke = up ? "#3ecf8e" : "#f0616d";
+  const stroke = up ? "#4ade80" : "#f87171";
   const change = historyChange(data);
 
   return (
@@ -78,10 +78,10 @@ function PriceChart({ history }) {
             <XAxis dataKey="date" hide />
             <YAxis domain={["auto", "auto"]} hide />
             <Tooltip
-              cursor={{ stroke: "rgba(148,163,184,0.35)", strokeWidth: 1 }}
-              contentStyle={{ background: "#111720", border: "1px solid rgba(148,163,184,0.2)", borderRadius: 6, fontFamily: "DM Mono, monospace", fontSize: 11, padding: "6px 8px" }}
-              labelStyle={{ color: "#8d99a8" }}
-              itemStyle={{ color: "#e6ebf1", padding: 0 }}
+              cursor={{ stroke: "rgba(245, 240, 232, 0.28)", strokeWidth: 1 }}
+              contentStyle={{ background: "#1f1b15", border: "1px solid rgba(245, 240, 232, 0.16)", borderRadius: 6, fontFamily: "DM Mono, monospace", fontSize: 11, padding: "6px 8px" }}
+              labelStyle={{ color: "#b3a489" }}
+              itemStyle={{ color: "#f5f0e8", padding: 0 }}
               formatter={(value) => [fmtPrice(value), "Close"]}
             />
             <Area type="monotone" dataKey="price" stroke={stroke} strokeWidth={1.5} fill="url(#npt-insp-grad)" isAnimationActive={false} />

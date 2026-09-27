@@ -26,9 +26,9 @@ function createMaterials() {
     concrete: std({ color: 0x6c675f, roughness: 0.94, metalness: 0, side: THREE.DoubleSide }),
     concreteDark: std({ color: 0x6d6860, roughness: 0.95, metalness: 0 }),
     steel: std({ color: 0xc3c7cc, roughness: 0.3, metalness: 0.85, side: THREE.DoubleSide }),
-    steelDark: std({ color: 0x5f656d, roughness: 0.38, metalness: 0.8 }),
+    steelDark: std({ color: 0x6a655c, roughness: 0.38, metalness: 0.8 }),
     paint: std({ color: 0xcfc9bd, roughness: 0.5, metalness: 0.08, side: THREE.DoubleSide }),
-    paintBlue: std({ color: 0x40607f, roughness: 0.45, metalness: 0.2 }),
+    paintBlue: std({ color: 0x7a5a34, roughness: 0.45, metalness: 0.2 }),
     graphite: std({ color: 0x34343a, roughness: 0.85, metalness: 0.1, side: THREE.DoubleSide }),
     fuel: std({ color: 0xffa640, emissive: 0xff7a1a, emissiveIntensity: 1.15, roughness: 0.55, metalness: 0 }),
     pebble: std({ color: 0x2b2b2f, emissive: 0xff8a2a, emissiveIntensity: 0.55, roughness: 0.6 }),
@@ -36,7 +36,7 @@ function createMaterials() {
     heatGlow: new THREE.MeshBasicMaterial({ color: 0xff8a2a, transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending, depthWrite: false }),
     water: new THREE.MeshStandardMaterial({ color: 0x2f78b8, roughness: 0.08, metalness: 0.1, transparent: true, opacity: 0.3, depthWrite: false }),
     heavyWater: new THREE.MeshStandardMaterial({ color: 0x6f8cff, roughness: 0.1, metalness: 0.1, transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide }),
-    ground: std({ color: 0x0e141c, roughness: 1, metalness: 0 }),
+    ground: std({ color: 0x120f0b, roughness: 1, metalness: 0 }),
     gold: std({ color: 0xd4a54a, roughness: 0.35, metalness: 0.6 }),
     fluidPipe,
     fluidBead,
@@ -125,7 +125,7 @@ class Kit {
     disc.rotation.x = -Math.PI / 2;
     disc.position.y = -0.01;
     disc.userData.noBounds = true;
-    const grid = this.add(new THREE.PolarGridHelper(radius, 16, 8, 64, 0x1c2735, 0x151e29));
+    const grid = this.add(new THREE.PolarGridHelper(radius, 16, 8, 64, 0x2a231a, 0x1d1812));
     grid.position.y = 0.001;
     grid.userData.noBounds = true;
     return disc;

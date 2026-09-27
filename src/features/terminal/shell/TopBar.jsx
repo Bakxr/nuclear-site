@@ -9,10 +9,10 @@ const STALE_AFTER_MS = 30 * 60 * 1000;
 function AtomMark() {
   return (
     <svg className="npt-brand-mark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="2.2" fill="#e0a84e" />
-      <ellipse cx="12" cy="12" rx="10" ry="4" stroke="#e0a84e" strokeWidth="1.2" opacity="0.9" />
-      <ellipse cx="12" cy="12" rx="10" ry="4" stroke="#e0a84e" strokeWidth="1.2" opacity="0.55" transform="rotate(60 12 12)" />
-      <ellipse cx="12" cy="12" rx="10" ry="4" stroke="#e0a84e" strokeWidth="1.2" opacity="0.35" transform="rotate(-60 12 12)" />
+      <circle cx="12" cy="12" r="2.2" fill="#d4a54a" />
+      <ellipse cx="12" cy="12" rx="10" ry="4" stroke="#d4a54a" strokeWidth="1.2" opacity="0.9" />
+      <ellipse cx="12" cy="12" rx="10" ry="4" stroke="#d4a54a" strokeWidth="1.2" opacity="0.55" transform="rotate(60 12 12)" />
+      <ellipse cx="12" cy="12" rx="10" ry="4" stroke="#d4a54a" strokeWidth="1.2" opacity="0.35" transform="rotate(-60 12 12)" />
     </svg>
   );
 }

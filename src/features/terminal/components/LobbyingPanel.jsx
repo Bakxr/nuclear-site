@@ -31,7 +31,7 @@ export default function LobbyingPanel() {
       ]}
     >
       <div style={{ display: "grid", gap: 6 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 90px 80px 50px", gap: 8, padding: "0 10px 6px", borderBottom: "1px solid rgba(51,66,86,0.92)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 90px 80px 50px", gap: 8, padding: "0 10px 6px", borderBottom: "1px solid rgba(245, 240, 232, 0.12)" }}>
           <div style={terminalTableHeaderStyle("left", "cyan")}>Client / Registrant</div>
           <div style={terminalTableHeaderStyle("left", "cyan")}>Period</div>
           <div style={terminalTableHeaderStyle("right", "cyan")}>Spend</div>

@@ -77,7 +77,7 @@ function ProductPreview() {
             {Array.from({ length: 6 }, (_, i) => (
               <div key={i} className="npa-pv-row">
                 <b>{tickers[i]}</b>
-                <svg viewBox="0 0 72 20" width="64" height="18"><path d={spark} fill="none" stroke={i % 3 === 1 ? "#f0616d" : "#3ecf8e"} strokeWidth="1.4" transform={i % 2 ? "scale(1,-1) translate(0,-20)" : undefined} /></svg>
+                <svg viewBox="0 0 72 20" width="64" height="18"><path d={spark} fill="none" stroke={i % 3 === 1 ? "#f87171" : "#4ade80"} strokeWidth="1.4" transform={i % 2 ? "scale(1,-1) translate(0,-20)" : undefined} /></svg>
               </div>
             ))}
           </div>
@@ -258,10 +258,10 @@ export default function TerminalAccessPage({ onExitTerminal }) {
       <header className="npa-top">
         <button type="button" className="npt-brand" onClick={onExitTerminal} aria-label="Back to Nuclear Pulse">
           <svg className="npt-brand-mark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <circle cx="12" cy="12" r="2.2" fill="#e0a84e" />
-            <ellipse cx="12" cy="12" rx="10" ry="4" stroke="#e0a84e" strokeWidth="1.2" opacity="0.9" />
-            <ellipse cx="12" cy="12" rx="10" ry="4" stroke="#e0a84e" strokeWidth="1.2" opacity="0.55" transform="rotate(60 12 12)" />
-            <ellipse cx="12" cy="12" rx="10" ry="4" stroke="#e0a84e" strokeWidth="1.2" opacity="0.35" transform="rotate(-60 12 12)" />
+            <circle cx="12" cy="12" r="2.2" fill="#d4a54a" />
+            <ellipse cx="12" cy="12" rx="10" ry="4" stroke="#d4a54a" strokeWidth="1.2" opacity="0.9" />
+            <ellipse cx="12" cy="12" rx="10" ry="4" stroke="#d4a54a" strokeWidth="1.2" opacity="0.55" transform="rotate(60 12 12)" />
+            <ellipse cx="12" cy="12" rx="10" ry="4" stroke="#d4a54a" strokeWidth="1.2" opacity="0.35" transform="rotate(-60 12 12)" />
           </svg>
           <span className="npt-brand-word">Nuclear <em>Pulse</em></span>
           <span className="npt-pro">PRO</span>

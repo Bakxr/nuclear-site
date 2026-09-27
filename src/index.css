@@ -116,21 +116,22 @@ html {
    chunk (features/terminal/shell/terminal.css); these tokens stay global so
    the access gate and loading states, which render first, share the palette. */
 .np-terminal-shell {
-  --np-terminal-bg: #07090c;
-  --np-terminal-panel: #0c1016;
-  --np-terminal-panel-alt: #111720;
-  --np-terminal-border: rgba(148, 163, 184, 0.11);
-  --np-terminal-border-soft: rgba(224, 168, 78, 0.18);
-  --np-terminal-text: #e6ebf1;
-  --np-terminal-muted: #8d99a8;
-  --np-terminal-subtle: #5d6876;
-  --np-terminal-amber: #e0a84e;
-  --np-terminal-cyan: #6cb4d8;
-  --np-terminal-green: #3ecf8e;
-  --np-terminal-red: #f0616d;
-  --np-terminal-yellow: #e8b44c;
-  --np-terminal-success: #3ecf8e;
-  --np-terminal-danger: #f0616d;
+  /* Same warm palette as the editorial site's dark mode (see :root.dark). */
+  --np-terminal-bg: #0e0b08;
+  --np-terminal-panel: #17140f;
+  --np-terminal-panel-alt: #1f1b15;
+  --np-terminal-border: rgba(245, 240, 232, 0.09);
+  --np-terminal-border-soft: rgba(212, 165, 74, 0.18);
+  --np-terminal-text: #f5f0e8;
+  --np-terminal-muted: #b3a489;
+  --np-terminal-subtle: #8b7d65;
+  --np-terminal-amber: #d4a54a;
+  --np-terminal-cyan: #8fb8ad;
+  --np-terminal-green: #4ade80;
+  --np-terminal-red: #f87171;
+  --np-terminal-yellow: #e0b25a;
+  --np-terminal-success: #4ade80;
+  --np-terminal-danger: #f87171;
   min-height: 100vh;
   background: var(--np-terminal-bg);
   color: var(--np-terminal-text);

@@ -134,7 +134,7 @@ export default function MarketFocusDrawer() {
         width: "min(480px, 96vw)",
         zIndex: 80,
         background: "rgba(8,12,17,0.97)",
-        borderLeft: "1px solid rgba(125,139,156,0.18)",
+        borderLeft: "1px solid rgba(245, 240, 232, 0.126)",
         boxShadow: "-10px 0 30px rgba(0,0,0,0.4)",
         display: "flex",
         flexDirection: "column",
@@ -143,7 +143,7 @@ export default function MarketFocusDrawer() {
         fontFamily: "'DM Sans',sans-serif",
       }}
     >
-      <div style={{ padding: "16px 18px 12px", borderBottom: "1px solid rgba(125,139,156,0.12)" }}>
+      <div style={{ padding: "16px 18px 12px", borderBottom: "1px solid rgba(245, 240, 232, 0.084)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start" }}>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
             <span style={terminalTagStyle({ tone: sourceTone, compact: true })}>{sourceBadge}</span>
@@ -166,7 +166,7 @@ export default function MarketFocusDrawer() {
       </div>
 
       <div style={{ flex: 1, overflowY: "auto" }}>
-        <div style={{ padding: "14px 18px", borderBottom: "1px solid rgba(125,139,156,0.08)" }}>
+        <div style={{ padding: "14px 18px", borderBottom: "1px solid rgba(245, 240, 232, 0.056)" }}>
           <div style={terminalLabelStyle("amber")}>Yes price history</div>
           <div style={{ height: 180, marginTop: 10 }}>
             {chartData.length === 0 ? (
@@ -178,8 +178,8 @@ export default function MarketFocusDrawer() {
                 <AreaChart data={chartData} margin={{ top: 4, right: 32, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="mfd-gold" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#d8a04a" stopOpacity={0.55} />
-                      <stop offset="100%" stopColor="#d8a04a" stopOpacity={0.05} />
+                      <stop offset="0%" stopColor="#d4a54a" stopOpacity={0.55} />
+                      <stop offset="100%" stopColor="#d4a54a" stopOpacity={0.05} />
                     </linearGradient>
                   </defs>
                   <XAxis dataKey="tLabel" tick={{ fontSize: 10, fill: "rgba(237,241,245,0.55)" }} axisLine={false} tickLine={false} minTickGap={28} />
@@ -194,24 +194,24 @@ export default function MarketFocusDrawer() {
                     tickFormatter={(v) => `${Math.round(v * 100)}`}
                   />
                   <Tooltip
-                    contentStyle={{ background: "rgba(10,14,19,0.95)", border: "1px solid rgba(125,139,156,0.18)", borderRadius: 2, fontSize: 11 }}
+                    contentStyle={{ background: "rgba(16, 13, 9, 0.95)", border: "1px solid rgba(245, 240, 232, 0.126)", borderRadius: 2, fontSize: 11 }}
                     formatter={(v) => [`${Math.round(v * 100)}%`, "Yes"]}
                   />
-                  <Area type="monotone" dataKey="p" stroke="#d8a04a" strokeWidth={1.6} fill="url(#mfd-gold)" isAnimationActive={false} />
+                  <Area type="monotone" dataKey="p" stroke="#d4a54a" strokeWidth={1.6} fill="url(#mfd-gold)" isAnimationActive={false} />
                 </AreaChart>
               </ResponsiveContainer>
             )}
           </div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0,1fr))", borderBottom: "1px solid rgba(125,139,156,0.08)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0,1fr))", borderBottom: "1px solid rgba(245, 240, 232, 0.056)" }}>
           {[
             { label: "Volume", value: fmtVolume(market.volume) },
             { label: "Yes", value: fmtPct(market.yesPrice), tone: "positive" },
             { label: "No", value: fmtPct(market.noPrice), tone: "danger" },
             { label: "Days", value: days != null ? `${days}d` : "—" },
           ].map((s) => (
-            <div key={s.label} style={{ padding: "12px 14px", borderRight: "1px solid rgba(125,139,156,0.08)" }}>
+            <div key={s.label} style={{ padding: "12px 14px", borderRight: "1px solid rgba(245, 240, 232, 0.056)" }}>
               <div style={terminalLabelStyle()}>{s.label}</div>
               <div style={{ ...terminalValueStyle({ tone: s.tone || "default", size: 14 }), marginTop: 4, fontFamily: "'DM Mono',monospace" }}>{s.value}</div>
             </div>
@@ -219,7 +219,7 @@ export default function MarketFocusDrawer() {
         </div>
 
         {description ? (
-          <div style={{ padding: "14px 18px", borderBottom: "1px solid rgba(125,139,156,0.08)" }}>
+          <div style={{ padding: "14px 18px", borderBottom: "1px solid rgba(245, 240, 232, 0.056)" }}>
             <div style={terminalLabelStyle("cyan")}>Resolution criteria</div>
             <div style={{ fontSize: 12, lineHeight: 1.55, marginTop: 6, color: "rgba(237,241,245,0.85)" }}>
               {descTrim}{!expanded && description.length > 260 ? "…" : ""}
@@ -263,7 +263,7 @@ export default function MarketFocusDrawer() {
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: 8, padding: "12px 18px", borderTop: "1px solid rgba(125,139,156,0.12)" }}>
+      <div style={{ display: "flex", gap: 8, padding: "12px 18px", borderTop: "1px solid rgba(245, 240, 232, 0.084)" }}>
         <button
           type="button"
           onClick={() => toggleWatch(market.id)}

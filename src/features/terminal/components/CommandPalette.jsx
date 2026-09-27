@@ -110,7 +110,7 @@ const rowBaseStyle = {
 };
 
 const rowActiveStyle = {
-  background: "rgba(216,160,74,0.08)",
+  background: "rgba(212, 165, 74, 0.08)",
 };
 
 const primaryStyle = {

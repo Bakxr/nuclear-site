@@ -36,10 +36,10 @@ export default function GlobePanel({ GlobeComponent }) {
   const reactorsLayer = activeLayer === "reactors";
 
   const legend = activeLayer === "markets"
-    ? [{ label: "Polymarket", color: "#e0a84e" }, { label: "Kalshi", color: "#6cb4d8" }]
+    ? [{ label: "Polymarket", color: "#d4a54a" }, { label: "Kalshi", color: "#8fb8ad" }]
     : reactorsLayer
       ? Object.entries(STATUS_COLORS).map(([label, color]) => ({ label, color }))
-      : [...new Set(mapItems.map((item) => item.stage))].slice(0, 5).map((stage) => ({ label: stage, color: SUPPLY_STAGE_COLORS[stage] || "#6cb4d8" }));
+      : [...new Set(mapItems.map((item) => item.stage))].slice(0, 5).map((stage) => ({ label: stage, color: SUPPLY_STAGE_COLORS[stage] || "#8fb8ad" }));
 
   const count = activeLayer === "markets" ? anchoredMarkets.length : mapItems.length;
   const countries = new Set((activeLayer === "markets" ? anchoredMarkets.map((m) => m.anchor?.anchorEntity?.country) : mapItems.map((m) => m.country)).filter(Boolean)).size;

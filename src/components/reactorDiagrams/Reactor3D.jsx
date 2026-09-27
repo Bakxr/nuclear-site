@@ -64,9 +64,9 @@ export default function Reactor3D({ type = "PWR" }) {
     const envTexture = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
     scene.environment = envTexture;
     scene.environmentIntensity = 0.55;
-    scene.fog = new THREE.Fog(0x0b1119, 16, 34);
+    scene.fog = new THREE.Fog(0x0e0b08, 16, 34);
 
-    scene.add(new THREE.HemisphereLight(0xdfe8f5, 0x201810, 0.55));
+    scene.add(new THREE.HemisphereLight(0xf3e7d3, 0x201810, 0.55));
     const key = new THREE.DirectionalLight(0xfff3e2, 1.6);
     key.position.set(6, 10, 7);
     scene.add(key);
@@ -233,7 +233,7 @@ export default function Reactor3D({ type = "PWR" }) {
   }, []);
 
   const panel = {
-    background: "rgba(7,11,17,0.8)",
+    background: "rgba(16, 13, 9, 0.8)",
     border: "1px solid rgba(255,255,255,0.1)",
     backdropFilter: "blur(12px)",
     borderRadius: 12,
@@ -251,7 +251,7 @@ export default function Reactor3D({ type = "PWR" }) {
           cursor: "grab",
           borderRadius: 10,
           overflow: "hidden",
-          background: "radial-gradient(ellipse 80% 70% at 45% 40%, #1a2635 0%, #0b1119 70%)",
+          background: "radial-gradient(ellipse 80% 70% at 45% 40%, #221c14 0%, #0e0b08 70%)",
         }}
       />
 
@@ -285,14 +285,14 @@ export default function Reactor3D({ type = "PWR" }) {
                 padding: 0,
                 borderRadius: "50%",
                 border: `2px solid ${on ? "#f5d082" : "rgba(255,255,255,0.85)"}`,
-                background: on ? "#d4a54a" : "rgba(10,16,24,0.85)",
+                background: on ? "#d4a54a" : "rgba(16, 13, 9, 0.85)",
                 boxShadow: on ? "0 0 0 6px rgba(212,165,74,0.2), 0 0 22px rgba(212,165,74,0.5)" : "0 0 0 4px rgba(255,255,255,0.08)",
                 opacity: 0,
                 cursor: "pointer",
                 transition: "width .2s, height .2s, background .2s",
               }}
             >
-              <span style={{ position: "absolute", inset: 3, borderRadius: "50%", background: on ? "#10273a" : "#d4a54a" }} />
+              <span style={{ position: "absolute", inset: 3, borderRadius: "50%", background: on ? "#1a140c" : "#d4a54a" }} />
               {showLabel ? (
                 <span
                   style={{
@@ -303,7 +303,7 @@ export default function Reactor3D({ type = "PWR" }) {
                     whiteSpace: "nowrap",
                     padding: "5px 9px",
                     borderRadius: 999,
-                    background: "rgba(7,11,17,0.9)",
+                    background: "rgba(16, 13, 9, 0.9)",
                     border: "1px solid rgba(255,255,255,0.1)",
                     color: "#fff",
                     fontSize: 11.5,

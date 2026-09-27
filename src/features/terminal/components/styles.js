@@ -27,16 +27,16 @@ function resolveTone(tone = "default") {
   if (tone === "amber" || tone === "accent") {
     return {
       border: color.accent,
-      borderSoft: "rgba(216,160,74,0.32)",
-      background: "rgba(216,160,74,0.08)",
+      borderSoft: "rgba(212, 165, 74, 0.32)",
+      background: "rgba(212, 165, 74, 0.08)",
       color: color.accent,
     };
   }
   if (tone === "cyan" || tone === "info") {
     return {
       border: color.info,
-      borderSoft: "rgba(126,168,192,0.32)",
-      background: "rgba(126,168,192,0.06)",
+      borderSoft: "rgba(143, 184, 173, 0.32)",
+      background: "rgba(143, 184, 173, 0.06)",
       color: color.info,
     };
   }
@@ -87,7 +87,7 @@ export function terminalButtonStyle(active = false, { compact = false, tone = "d
     gap: 6,
     minHeight: compact ? 22 : 26,
     border: `1px solid ${active ? color.accent : color.border}`,
-    background: active ? "rgba(216,160,74,0.14)" : "transparent",
+    background: active ? "rgba(212, 165, 74, 0.14)" : "transparent",
     color: active ? color.accent : palette.color,
     borderRadius: radius.md,
     padding: compact ? "3px 7px" : "4px 9px",

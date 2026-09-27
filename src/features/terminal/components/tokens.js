@@ -10,11 +10,11 @@ export const color = {
   bgRaised: "var(--np-terminal-panel-alt)",
   panel: "var(--np-terminal-panel)",
   border: "var(--np-terminal-border)",
-  borderStrong: "rgba(125,139,156,0.28)",
+  borderStrong: "rgba(245, 240, 232, 0.196)",
   text: "var(--np-terminal-text)",
   textMuted: "var(--np-terminal-muted)",
   textFaint: "var(--np-terminal-subtle)",
-  accent: "var(--np-terminal-amber)",       // gold ~ #d8a04a — single primary accent
+  accent: "var(--np-terminal-amber)",       // gold ~ #d4a54a — single primary accent
   positive: "var(--np-terminal-green)",     // up move
   negative: "var(--np-terminal-red)",       // down move
   warning: "var(--np-terminal-yellow)",     // amber alert
