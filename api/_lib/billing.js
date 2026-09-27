@@ -291,15 +291,28 @@ export async function createCheckoutSession({ interval, userId, email, siteUrl }
 
 export async function createBillingPortalSession({ userId, siteUrl }) {
   const membership = await getMembershipForUser(userId);
-  if (!membership?.stripe_customer_id) {
-    throw new BillingError("No Stripe customer is linked to this account yet.", { status: 404 });
-  }
+  const noBilling = new BillingError("There's no billing on this account yet. Start a plan from the terminal page.", { status: 404 });
+  if (!membership?.stripe_customer_id) throw noBilling;
 
   const stripe = getStripe();
-  return stripe.billingPortal.sessions.create({
-    customer: membership.stripe_customer_id,
-    return_url: `${siteUrl}/terminal?billing=return`,
-  });
+  try {
+    return await stripe.billingPortal.sessions.create({
+      customer: membership.stripe_customer_id,
+      return_url: `${siteUrl}/terminal?billing=return`,
+    });
+  } catch (error) {
+    if (error?.code !== "resource_missing") throw error;
+    // Customer from the other Stripe mode (test vs live) or deleted: unlink it
+    // so the billing button stops showing for this account.
+    await upsertMembership({
+      user_id: userId,
+      stripe_customer_id: null,
+      subscription_status: membership.subscription_status,
+      terminal_access: membership.terminal_access,
+      cancel_at_period_end: membership.cancel_at_period_end,
+    });
+    throw noBilling;
+  }
 }
 
 export async function syncMembershipFromSubscription(subscription, options = {}) {

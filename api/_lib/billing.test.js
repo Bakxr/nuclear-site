@@ -24,6 +24,7 @@ vi.mock('./supabase.js', () => ({
 }));
 
 const stripeMock = {
+  billingPortal: { sessions: { create: vi.fn() } },
   customers: { update: vi.fn(async (id) => ({ id })), list: vi.fn(), create: vi.fn() },
   subscriptions: { list: vi.fn(async () => ({ data: [] })) },
   checkout: { sessions: { create: vi.fn(async () => ({ id: 'cs_1', url: 'https://checkout.example' })) } },
@@ -32,7 +33,7 @@ vi.mock('stripe', () => ({ default: vi.fn(function Stripe() { return stripeMock;
 
 process.env.STRIPE_SECRET_KEY = 'sk_test_x';
 process.env.STRIPE_PRICE_ANNUAL = 'price_year';
-const { createCheckoutSession, syncMembershipFromSubscription } = await import('./billing.js');
+const { BillingError, createBillingPortalSession, createCheckoutSession, syncMembershipFromSubscription } = await import('./billing.js');
 
 function subscription(overrides = {}) {
   return {
@@ -126,5 +127,21 @@ describe('createCheckoutSession trial', () => {
 
     expect(upsert).toHaveBeenCalledWith(expect.objectContaining({ stripe_customer_id: 'cus_live' }));
     expect(stripeMock.checkout.sessions.create.mock.calls[0][0].customer).toBe('cus_live');
+  });
+});
+
+describe('createBillingPortalSession', () => {
+  beforeEach(() => upsert.mockReset());
+
+  it('unlinks a customer that does not exist in this Stripe mode and explains', async () => {
+    membershipRow = { user_id: 'user_1', stripe_customer_id: 'cus_testmode', subscription_status: 'active', terminal_access: true, cancel_at_period_end: false };
+    stripeMock.billingPortal.sessions.create.mockRejectedValueOnce(Object.assign(new Error('No such customer'), { code: 'resource_missing' }));
+
+    const attempt = createBillingPortalSession({ userId: 'user_1', siteUrl: 'https://site' });
+
+    await expect(attempt).rejects.toBeInstanceOf(BillingError);
+    await expect(attempt).rejects.toMatchObject({ status: 404 });
+    // Unlinks the customer without touching access.
+    expect(upsert.mock.calls[0][0]).toMatchObject({ user_id: 'user_1', stripe_customer_id: null, terminal_access: true, subscription_status: 'active' });
   });
 });
