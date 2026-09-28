@@ -312,7 +312,10 @@ async function runXDrafts({ supabase, snapshot, dryRun }) {
   const owner = process.env.OWNER_EMAIL?.trim();
   if (!owner) return { skipped: "OWNER_EMAIL not set" };
 
-  const dispatchKey = `${todayKey()}-xdrafts`;
+  // Keyed by the owner's (Eastern) date, not UTC, so an evening send
+  // can't count as the next morning's email.
+  const easternDay = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Toronto" }).format(new Date());
+  const dispatchKey = `${easternDay}-xdrafts-et`;
   if (await alreadyDispatched(supabase, { email: owner, dispatch_key: dispatchKey })) return { skipped: "already sent today" };
 
   const fleet = await fetchNrcFleetStatus().catch(() => null);
