@@ -1,6 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { ensureAllowedOrigin, getClientAddress } from "./_lib/http.js";
 import { checkRateLimit } from "./_lib/rateLimit.js";
+import { sendEmail } from "./_lib/dispatch.js";
+import { buildWelcomeEmail } from "./_lib/emailTemplates.js";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -35,6 +37,14 @@ export default async function handler(req, res) {
     return res.status(429).json({ error: 'Too many attempts. Please try again later.' });
   }
 
+  // Only people joining (or rejoining) get a welcome email, never repeat sign-ups.
+  const { data: existing } = await supabase
+    .from('subscribers')
+    .select('active')
+    .eq('email', normalised)
+    .maybeSingle();
+  const isNewSignup = !existing?.active;
+
   // Upsert: if email already exists, re-activate it (handles re-subscribe after unsubscribe)
   const { error } = await supabase
     .from('subscribers')
@@ -43,6 +53,12 @@ export default async function handler(req, res) {
   if (error) {
     console.error('[subscribe]', error.message);
     return res.status(500).json({ error: 'Something went wrong. Please try again.' });
+  }
+
+  if (isNewSignup && process.env.RESEND_API_KEY?.trim()) {
+    // A failed welcome email must never fail the sign-up itself.
+    const result = await sendEmail({ to: normalised, ...buildWelcomeEmail({ email: normalised }) });
+    if (!result.ok) console.error('[subscribe] welcome email failed:', result.error);
   }
 
   return res.status(200).json({ success: true });

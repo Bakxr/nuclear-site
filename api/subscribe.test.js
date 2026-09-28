@@ -19,13 +19,25 @@ vi.mock('./_lib/rateLimit.js', () => ({
   checkRateLimit,
 }));
 
+vi.mock('./_lib/dispatch.js', () => ({
+  sendEmail,
+}));
+
 const upsert = vi.fn();
+const sendEmail = vi.fn(async () => ({ ok: true }));
+let existingRow = null;
 
 function mockSupabaseClient() {
   upsert.mockReset();
   upsert.mockResolvedValue({ error: null });
+  existingRow = null;
   mockCreateClient.mockReset();
-  mockCreateClient.mockReturnValue({ from: () => ({ upsert }) });
+  mockCreateClient.mockReturnValue({
+    from: () => ({
+      upsert,
+      select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: existingRow, error: null }) }) }),
+    }),
+  });
 }
 
 const { default: handler } = await import('./subscribe.js');
@@ -37,7 +49,10 @@ describe('/api/subscribe', () => {
     process.env = { ...OLD_ENV };
     process.env.SUPABASE_URL = 'https://example.supabase.co';
     process.env.SUPABASE_SERVICE_KEY = 'service-key';
+    process.env.RESEND_API_KEY = 're_test';
+    process.env.UNSUBSCRIBE_SECRET = 'test-secret';
     delete process.env.SUPABASE_ANON_KEY;
+    sendEmail.mockClear();
     ensureAllowedOrigin.mockReturnValue(true);
     checkRateLimit.mockResolvedValue(true);
     mockSupabaseClient();
@@ -94,5 +109,37 @@ describe('/api/subscribe', () => {
 
     expect(res.statusCode).toBe(429);
     expect(upsert).not.toHaveBeenCalled();
+  });
+
+  it('sends a welcome email to a new subscriber', async () => {
+    const res = createMockRes();
+    await handler(createMockReq({ method: 'POST', body: { email: 'new@example.com' } }), res);
+
+    expect(res.statusCode).toBe(200);
+    expect(sendEmail).toHaveBeenCalledTimes(1);
+    expect(sendEmail.mock.calls[0][0]).toMatchObject({
+      to: 'new@example.com',
+      subject: 'Welcome to Nuclear Pulse',
+      text: expect.stringContaining('Hit reply'),
+      headers: expect.objectContaining({ 'List-Unsubscribe': expect.any(String) }),
+    });
+  });
+
+  it('does not re-send the welcome email to someone already subscribed', async () => {
+    existingRow = { active: true };
+    const res = createMockRes();
+    await handler(createMockReq({ method: 'POST', body: { email: 'old@example.com' } }), res);
+
+    expect(res.statusCode).toBe(200);
+    expect(sendEmail).not.toHaveBeenCalled();
+  });
+
+  it('still subscribes when the welcome email fails', async () => {
+    sendEmail.mockResolvedValueOnce({ ok: false, error: 'resend down' });
+    const res = createMockRes();
+    await handler(createMockReq({ method: 'POST', body: { email: 'new2@example.com' } }), res);
+
+    expect(res.statusCode).toBe(200);
+    expect(upsert).toHaveBeenCalled();
   });
 });

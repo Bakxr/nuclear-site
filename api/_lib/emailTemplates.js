@@ -246,6 +246,55 @@ export function buildWeeklyEmail({ email, headlines = [], movers = [], uranium =
   return { subject, html, text, headers: unsubHeaders(email) };
 }
 
+// ---------------- WELCOME ----------------
+
+export function buildWelcomeEmail({ email }) {
+  const subject = "Welcome to Nuclear Pulse";
+  const p = (text) => `<p style="font-size:15px;line-height:1.65;color:rgba(245,240,232,0.82);margin:0 0 16px;">${text}</p>`;
+  const link = (path, label) => `<a href="${SITE_URL}${path}" style="color:#d4a54a;">${label}</a>`;
+
+  const bodyHtml = [
+    p("Thanks for subscribing. Every Sunday you'll get one short email: the week's most important nuclear news, the uranium price, and the stocks that moved most."),
+    moduleBlock("While you wait for Sunday", `<div style="font-size:14px;line-height:1.8;color:#f5f0e8;">
+      ${link("/", "The reactor globe")}: every plant on Earth, clickable<br/>
+      ${link("/uranium-stocks", "Uranium and nuclear stocks")}: 39 names with live prices<br/>
+      ${link("/reactor-outages", "US reactor outages today")}: straight from the NRC<br/>
+      ${link("/smr-tracker", "SMR tracker")}: which small reactors are real
+    </div>`),
+    p(`If you want the full picture every day, the ${link("/terminal", "Nuclear Pulse terminal")} adds insider buying from SEC filings, daily status for every US reactor, and prediction-market odds. The first 7 days are free.`),
+    p("One question: what part of nuclear do you follow most closely? Hit reply and tell me. I read every reply, and it shapes what goes into the briefing."),
+    `<p style="font-size:15px;line-height:1.65;color:rgba(245,240,232,0.82);margin:0;">Adam<br/>Nuclear Pulse</p>`,
+  ].join("");
+
+  const html = shell({
+    title: subject,
+    bodyHtml,
+    unsubEmail: email,
+    footerNote: "You're receiving this because you subscribed at thenuclearpulse.com.",
+  });
+
+  const text = [
+    "Thanks for subscribing. Every Sunday you'll get one short email: the week's most important nuclear news, the uranium price, and the stocks that moved most.",
+    "",
+    "While you wait for Sunday:",
+    `- The reactor globe: ${SITE_URL}/`,
+    `- Uranium and nuclear stocks: ${SITE_URL}/uranium-stocks`,
+    `- US reactor outages today: ${SITE_URL}/reactor-outages`,
+    `- SMR tracker: ${SITE_URL}/smr-tracker`,
+    "",
+    `The Nuclear Pulse terminal adds insider buying, daily reactor status and prediction-market odds. First 7 days free: ${SITE_URL}/terminal`,
+    "",
+    "One question: what part of nuclear do you follow most closely? Hit reply and tell me. I read every reply.",
+    "",
+    "Adam",
+    "Nuclear Pulse",
+    "",
+    `Unsubscribe: ${buildUnsubLink(email)}`,
+  ].join("\n");
+
+  return { subject, html, text, headers: unsubHeaders(email) };
+}
+
 // ---------------- ALERT ----------------
 
 export function buildAlertEmail({ alert, observed, email, user }) {
