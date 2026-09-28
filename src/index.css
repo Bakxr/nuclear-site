@@ -400,6 +400,19 @@ video {
     display: flex;
     align-items: center;
     justify-content: center;
+    /* A full thumb-sized target; flex was squeezing it to ~15px wide. */
+    flex: 0 0 44px;
+    width: 44px !important;
+    min-width: 44px !important;
+    height: 44px !important;
+    padding: 0;
+    border: 1px solid var(--np-hairline);
+    border-radius: 8px;
+  }
+  .np-hamburger svg {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
   }
   .np-mobile-menu {
     display: flex;
@@ -680,10 +693,9 @@ video {
   .np-nav-actions {
     gap: 8px !important;
   }
-  .np-nav-actions > button,
-  .np-hamburger {
-    width: 36px !important;
-    height: 36px !important;
+  .np-nav-actions > button {
+    width: 40px !important;
+    height: 40px !important;
   }
   .np-search-shell {
     width: 100%;
