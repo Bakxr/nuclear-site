@@ -25,7 +25,9 @@ import {
 
 // Stop starting new batches after this long; vercel.json caps the function at 60s.
 const SEND_BUDGET_MS = 45 * 1000;
-import { buildDailyEmail, buildWeeklyEmail, buildAlertEmail } from "../_lib/emailTemplates.js";
+import { buildDailyEmail, buildWeeklyEmail, buildAlertEmail, buildXDraftsEmail } from "../_lib/emailTemplates.js";
+import { buildXDrafts, xIntentUrl } from "../_lib/socialDrafts.js";
+import { fetchNrcFleetStatus } from "../_lib/nrcFleet.js";
 import { buildSnapshotIndex, evaluateAlert } from "../_lib/alerts.js";
 
 function isAuthorized(req) {
@@ -304,6 +306,26 @@ async function runAlerts({ supabase, snapshot, dryRun }) {
   return { fired, skipped, failed, total: rows.length };
 }
 
+// Emails the owner today's ready-to-post X drafts (free alternative to the
+// paid X API). At most once per day.
+async function runXDrafts({ supabase, snapshot, dryRun }) {
+  const owner = process.env.OWNER_EMAIL?.trim();
+  if (!owner) return { skipped: "OWNER_EMAIL not set" };
+
+  const dispatchKey = `${todayKey()}-xdrafts`;
+  if (await alreadyDispatched(supabase, { email: owner, dispatch_key: dispatchKey })) return { skipped: "already sent today" };
+
+  const fleet = await fetchNrcFleetStatus().catch(() => null);
+  const drafts = buildXDrafts({ snapshot, fleet });
+  if (!drafts.length) return { skipped: "no data for drafts" };
+  if (dryRun) return { drafts: drafts.map((d) => d.text) };
+
+  const result = await sendEmail({ to: owner, ...buildXDraftsEmail({ drafts, intentUrl: xIntentUrl }) });
+  if (!result.ok) return { error: result.error };
+  await recordDispatch(supabase, { user_id: null, email: owner, dispatch_type: "xdrafts", dispatch_key: dispatchKey });
+  return { sent: drafts.length };
+}
+
 export default async function handler(req, res) {
   setNoStore(res);
 
@@ -317,7 +339,7 @@ export default async function handler(req, res) {
   const job = String(req.query?.job || "").toLowerCase();
   const dryRun = String(req.query?.dryRun || "") === "true";
 
-  if (!["daily", "weekly", "alerts"].includes(job)) {
+  if (!["daily", "weekly", "alerts", "xdrafts"].includes(job)) {
     return res.status(400).json({ error: "Unknown job." });
   }
 
@@ -345,10 +367,15 @@ export default async function handler(req, res) {
       const result = await runAlerts({ supabase, snapshot, dryRun });
       return res.status(200).json({ job, dryRun, ...result });
     }
-    // daily: run daily then chain alerts (Hobby cron cap workaround)
+    if (job === "xdrafts") {
+      const result = await runXDrafts({ supabase, snapshot, dryRun });
+      return res.status(200).json({ job, dryRun, ...result });
+    }
+    // daily: run daily, then alerts and X drafts (Hobby cron cap workaround)
     const daily = await runDaily({ supabase, snapshot, dryRun });
     const alerts = await runAlerts({ supabase, snapshot, dryRun });
-    return res.status(200).json({ job: "daily", dryRun, daily, alerts });
+    const xdrafts = await runXDrafts({ supabase, snapshot, dryRun }).catch((err) => ({ error: err?.message || String(err) }));
+    return res.status(200).json({ job: "daily", dryRun, daily, alerts, xdrafts });
   } catch (err) {
     console.error("[cron/dispatch] handler failed", err?.message || err);
     return res.status(500).json({ error: "Dispatch failed." });

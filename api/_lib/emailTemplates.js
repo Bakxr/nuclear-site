@@ -295,6 +295,26 @@ export function buildWelcomeEmail({ email }) {
   return { subject, html, text, headers: unsubHeaders(email) };
 }
 
+// ---------------- X DRAFTS (owner only) ----------------
+
+export function buildXDraftsEmail({ drafts, intentUrl }) {
+  const subject = `X drafts for today (${drafts.length})`;
+  const blocks = drafts.map((d) => moduleBlock(d.kind, `
+    <div style="font-size:14px;line-height:1.6;color:#f5f0e8;white-space:pre-wrap;">${escapeHtml(d.text)}</div>
+    <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;">
+      <a href="${escapeHtml(intentUrl(d.text))}" style="display:inline-block;padding:9px 16px;border-radius:4px;background:#d4a54a;color:#111;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">Post on X</a>
+      <span style="font-size:11px;color:rgba(245,240,232,0.4);">${d.text.length}/280</span>
+    </div>`)).join("");
+
+  const html = shell({
+    title: subject,
+    bodyHtml: `<p style="font-size:14px;line-height:1.6;color:rgba(245,240,232,0.72);margin:0 0 18px;">Pick one (or two, a few hours apart). "Post on X" opens X with the text filled in; check it reads right, then post.</p>${blocks}`,
+    footerNote: "Owner-only email from the Nuclear Pulse morning job.",
+  });
+  const text = drafts.map((d) => `== ${d.kind.toUpperCase()} ==\n${d.text}\nPost: ${intentUrl(d.text)}`).join("\n\n");
+  return { subject, html, text };
+}
+
 // ---------------- ALERT ----------------
 
 export function buildAlertEmail({ alert, observed, email, user }) {
