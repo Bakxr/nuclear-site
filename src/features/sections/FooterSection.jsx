@@ -73,6 +73,9 @@ export default function FooterSection() {
         }}>
           <div>
             © {year} Nuclear Pulse · For informational purposes only, not investment advice ·{" "}
+            <a className="np-footer-link" href="/uranium-stocks">Uranium stocks</a> ·{" "}
+            <a className="np-footer-link" href="/smr-tracker">SMR tracker</a> ·{" "}
+            <a className="np-footer-link" href="/reactor-outages">Reactor outages</a> ·{" "}
             <a className="np-footer-link" href="/legal/terms.html">Terms</a> ·{" "}
             <a className="np-footer-link" href="/legal/privacy.html">Privacy</a> ·{" "}
             <a className="np-footer-link" href="/legal/refunds.html">Refunds</a> ·{" "}

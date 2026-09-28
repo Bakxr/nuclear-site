@@ -46,6 +46,8 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         // Social preview image: fetched by link unfurlers, not needed offline.
         globIgnores: ['og.png'],
+        // Static pages (legal, SEO guides) must load from the server, not the SPA shell.
+        navigateFallbackDenylist: [/^\/api\//, /^\/legal\//, /^\/uranium-stocks/, /^\/smr-tracker/, /^\/reactor-outages/],
         runtimeCaching: [
           {
             // Google Fonts stylesheet
