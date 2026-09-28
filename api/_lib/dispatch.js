@@ -43,6 +43,53 @@ export async function sendEmail({ to, subject, html, text, headers }) {
   }
 }
 
+// Resend's batch endpoint takes at most 100 emails per request.
+export const BATCH_SIZE = 100;
+
+export function chunk(items, size = BATCH_SIZE) {
+  const out = [];
+  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
+  return out;
+}
+
+// Sends up to BATCH_SIZE emails in one request. `idempotencyKey` makes a
+// retried chunk (e.g. a re-run cron) a no-op on Resend's side.
+export async function sendEmailBatch(messages, { idempotencyKey } = {}) {
+  if (!messages.length) return { ok: true, ids: [] };
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), RESEND_TIMEOUT_MS);
+  try {
+    const resend = getResend();
+    const from = getFrom();
+    const payload = messages.map(({ to, subject, html, text, headers }) => ({ from, to, subject, html, text, headers }));
+    const op = resend.batch.send(payload, idempotencyKey ? { idempotencyKey } : undefined);
+    const timeout = new Promise((_resolve, reject) => {
+      controller.signal.addEventListener("abort", () => reject(new Error("Resend batch send timed out")));
+    });
+    const { data, error } = await Promise.race([op, timeout]);
+    if (error) return { ok: false, error: error.message || String(error) };
+    return { ok: true, ids: (data?.data || []).map((row) => row.id) };
+  } catch (err) {
+    return { ok: false, error: err?.message || String(err) };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// Every dispatch_key already logged from a list, in one query per 100 keys.
+export async function dispatchedKeys(supabase, keys) {
+  const found = new Set();
+  for (const part of chunk(keys, 100)) {
+    const { data, error } = await supabase
+      .from("terminal_dispatch_log")
+      .select("dispatch_key")
+      .in("dispatch_key", part);
+    if (error) throw new Error(error.message);
+    for (const row of data || []) found.add(row.dispatch_key);
+  }
+  return found;
+}
+
 // Idempotent log insert. Returns true if newly recorded, false if the
 // (user_id, dispatch_key) row already existed.
 export async function recordDispatch(supabase, row) {

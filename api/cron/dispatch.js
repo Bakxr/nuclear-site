@@ -18,7 +18,13 @@ import {
   recordDispatch,
   alreadyDispatched,
   sendEmail,
+  sendEmailBatch,
+  dispatchedKeys,
+  chunk,
 } from "../_lib/dispatch.js";
+
+// Stop starting new batches after this long; vercel.json caps the function at 60s.
+const SEND_BUDGET_MS = 45 * 1000;
 import { buildDailyEmail, buildWeeklyEmail, buildAlertEmail } from "../_lib/emailTemplates.js";
 import { buildSnapshotIndex, evaluateAlert } from "../_lib/alerts.js";
 
@@ -78,62 +84,57 @@ async function runDaily({ supabase, snapshot, dryRun }) {
     optedOut = new Set((optOuts.data || []).map((row) => row.email));
   }
 
-  let sent = 0;
-  let skipped = 0;
-  let failed = 0;
   const day = todayKey();
-
+  let skipped = 0;
+  const pending = [];
   for (const m of rows) {
     if (!m.email || optedOut.has(m.email.toLowerCase().trim())) {
       skipped += 1;
       continue;
     }
-    try {
-      const dispatchKey = `${day}-daily-${m.user_id}`;
-      if (await alreadyDispatched(supabase, { user_id: m.user_id, dispatch_key: dispatchKey })) {
-        skipped += 1;
-        continue;
-      }
+    pending.push({ ...m, dispatchKey: `${day}-daily-${m.user_id}` });
+  }
 
-      const watchlist = await supabase
-        .from("terminal_watchlist")
-        .select("entity_id, entity_label")
-        .eq("user_id", m.user_id);
+  const done = await dispatchedKeys(supabase, pending.map((p) => p.dispatchKey));
+  const todo = pending.filter((p) => !done.has(p.dispatchKey));
+  skipped += pending.length - todo.length;
 
-      const personalized = personalizeDaily(snapshot, watchlist.data || []);
-      const email = buildDailyEmail({
-        user: { id: m.user_id },
-        email: m.email,
-        ...personalized,
-      });
+  if (dryRun) {
+    console.log(`[cron/daily] would send ${todo.length} emails in ${chunk(todo).length} batch(es)`);
+    return { sent: todo.length, skipped, failed: 0, total: rows.length };
+  }
 
-      if (dryRun) {
-        console.log(`[cron/daily] would send to ${m.email}: ${email.subject}`);
-        sent += 1;
-        continue;
-      }
-
-      const result = await sendEmail({ to: m.email, ...email });
-      if (!result.ok) {
-        failed += 1;
-        console.error(`[cron/daily] send failed for ${m.email}: ${result.error}`);
-        continue;
-      }
-
-      await recordDispatch(supabase, {
-        user_id: m.user_id,
-        email: m.email,
-        dispatch_type: "daily",
-        dispatch_key: dispatchKey,
-      });
-      sent += 1;
-    } catch (err) {
-      failed += 1;
-      console.error(`[cron/daily] error for ${m.user_id}:`, err?.message || err);
+  // All watchlists in one query, grouped per member.
+  const watchByUser = new Map();
+  if (todo.length) {
+    const { data: watchRows, error } = await supabase
+      .from("terminal_watchlist")
+      .select("user_id, entity_id, entity_label")
+      .in("user_id", todo.map((p) => p.user_id));
+    if (error) return { error: error.message, sent: 0, skipped, failed: 0 };
+    for (const row of watchRows || []) {
+      if (!watchByUser.has(row.user_id)) watchByUser.set(row.user_id, []);
+      watchByUser.get(row.user_id).push(row);
     }
   }
 
-  return { sent, skipped, failed, total: rows.length };
+  const result = await sendInBatches({
+    supabase,
+    items: todo,
+    label: "daily",
+    batchKey: (index) => `${day}-daily-batch-${index}-${todo.length}`,
+    build: (p) => ({
+      to: p.email,
+      ...buildDailyEmail({
+        user: { id: p.user_id },
+        email: p.email,
+        ...personalizeDaily(snapshot, watchByUser.get(p.user_id) || []),
+      }),
+    }),
+    logRow: (p) => ({ user_id: p.user_id, email: p.email, dispatch_type: "daily", dispatch_key: p.dispatchKey }),
+  });
+
+  return { ...result, skipped, total: rows.length };
 }
 
 async function runWeekly({ supabase, snapshot, dryRun }) {
@@ -150,51 +151,68 @@ async function runWeekly({ supabase, snapshot, dryRun }) {
   const week = isoWeekKey();
   const personalized = personalizeWeekly(snapshot);
 
-  let sent = 0;
   let skipped = 0;
-  let failed = 0;
-
+  const pending = [];
   for (const s of rows) {
-    if (!s.email) {
+    const email = s.email?.toLowerCase().trim();
+    if (!email) {
       skipped += 1;
       continue;
     }
-    try {
-      const dispatchKey = `${week}-weekly-${s.email}`;
-      if (await alreadyDispatched(supabase, { email: s.email, dispatch_key: dispatchKey })) {
-        skipped += 1;
-        continue;
-      }
-
-      const email = buildWeeklyEmail({ email: s.email, ...personalized });
-
-      if (dryRun) {
-        console.log(`[cron/weekly] would send to ${s.email}: ${email.subject}`);
-        sent += 1;
-        continue;
-      }
-
-      const result = await sendEmail({ to: s.email, ...email });
-      if (!result.ok) {
-        failed += 1;
-        console.error(`[cron/weekly] send failed for ${s.email}: ${result.error}`);
-        continue;
-      }
-
-      await recordDispatch(supabase, {
-        user_id: null,
-        email: s.email,
-        dispatch_type: "weekly",
-        dispatch_key: dispatchKey,
-      });
-      sent += 1;
-    } catch (err) {
-      failed += 1;
-      console.error(`[cron/weekly] error for ${s.email}:`, err?.message || err);
-    }
+    pending.push({ email, dispatchKey: `${week}-weekly-${email}` });
   }
 
-  return { sent, skipped, failed, total: rows.length };
+  // One lookup for the whole list instead of one query per subscriber.
+  const done = await dispatchedKeys(supabase, pending.map((p) => p.dispatchKey));
+  const todo = pending.filter((p) => !done.has(p.dispatchKey));
+  skipped += pending.length - todo.length;
+
+  if (dryRun) {
+    console.log(`[cron/weekly] would send ${todo.length} emails in ${chunk(todo).length} batch(es)`);
+    return { sent: todo.length, skipped, failed: 0, total: rows.length };
+  }
+
+  const result = await sendInBatches({
+    supabase,
+    items: todo,
+    label: "weekly",
+    batchKey: (index) => `${week}-weekly-batch-${index}-${todo.length}`,
+    build: (p) => ({ to: p.email, ...buildWeeklyEmail({ email: p.email, ...personalized }) }),
+    logRow: (p) => ({ user_id: null, email: p.email, dispatch_type: "weekly", dispatch_key: p.dispatchKey }),
+  });
+
+  return { ...result, skipped, total: rows.length };
+}
+
+// Sends `items` in batches of up to 100 and logs each delivered email.
+// Stops early rather than letting the function hit its time limit; the
+// next run picks up whoever is left because they have no log row yet.
+async function sendInBatches({ supabase, items, label, batchKey, build, logRow }) {
+  const started = Date.now();
+  let sent = 0;
+  let failed = 0;
+  let deferred = 0;
+
+  const batches = chunk(items);
+  for (let i = 0; i < batches.length; i += 1) {
+    if (Date.now() - started > SEND_BUDGET_MS) {
+      deferred = batches.slice(i).reduce((sum, part) => sum + part.length, 0);
+      console.warn(`[cron/${label}] time budget reached; ${deferred} left for the next run`);
+      break;
+    }
+    const part = batches[i];
+    const result = await sendEmailBatch(part.map(build), { idempotencyKey: batchKey(i) });
+    if (!result.ok) {
+      failed += part.length;
+      console.error(`[cron/${label}] batch ${i + 1}/${batches.length} failed: ${result.error}`);
+      continue;
+    }
+    const { error } = await supabase.from("terminal_dispatch_log").insert(part.map(logRow));
+    if (error) console.error(`[cron/${label}] dispatch log insert failed: ${error.message}`);
+    sent += part.length;
+  }
+
+  return { sent, failed, deferred };
 }
 
 async function runAlerts({ supabase, snapshot, dryRun }) {
