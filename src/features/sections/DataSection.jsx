@@ -267,7 +267,7 @@ export default function DataSection({
                                 transition={{ duration: 0.24, ease: "easeInOut" }}
                                 style={{ overflow: "hidden" }}
                               >
-                                <div style={{ padding: "0 8px 18px 56px", display: "grid", gap: 14 }}>
+                                <div className="np-data-expanded" style={{ padding: "14px 8px 20px 56px", display: "grid", gap: 14 }}>
                                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                                     {(plantsByCountry[normalizeCountryName(c.country)] || []).map((p) => (
                                       <button
