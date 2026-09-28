@@ -2,6 +2,8 @@
 // fleet report. Emailed to the owner each morning to post by hand (free);
 // the same drafts can feed the paid X API later.
 
+import { snapshotStocks } from "./dispatch.js";
+
 const X_LIMIT = 280;
 const SITE = "thenuclearpulse.com";
 
@@ -24,9 +26,7 @@ function clip(text) {
 }
 
 export function moversDraft(snapshot) {
-  const stocks = (snapshot?.entities?.stocks || [])
-    .map((s) => ({ ticker: s.ticker, pct: s.changePct ?? s.pct }))
-    .filter((s) => s.ticker && Number.isFinite(s.pct));
+  const stocks = snapshotStocks(snapshot).map((s) => ({ ticker: s.ticker, pct: s.changePct ?? s.pct }));
   if (stocks.length < 3) return null;
 
   const byMove = [...stocks].sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct)).slice(0, 4);

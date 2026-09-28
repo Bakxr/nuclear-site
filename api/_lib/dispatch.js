@@ -120,14 +120,27 @@ export async function alreadyDispatched(supabase, { user_id, email, dispatch_key
   return Array.isArray(data) && data.length > 0;
 }
 
+// Priced stocks from the snapshot. The terminal snapshot keeps them under
+// entities.marketInstruments (a missing quote comes through as price 0).
+export function snapshotStocks(snapshot) {
+  const list = snapshot?.entities?.marketInstruments || snapshot?.entities?.stocks || [];
+  return list.filter((s) => s.ticker && Number(s.price) > 0 && Number.isFinite(s.changePct ?? s.pct));
+}
+
 // Build the per-user daily personalization view from the shared snapshot.
 export function personalizeDaily(snapshot, watchlistRows) {
-  const watchedIds = new Set((watchlistRows || []).map((r) => r.entity_id));
+  // Watchlist rows store terminal entity ids ("market:ccj", "company:ccj");
+  // also match on the bare ticker so movers and filings line up.
+  const watchedIds = new Set();
+  for (const row of watchlistRows || []) {
+    if (!row.entity_id) continue;
+    watchedIds.add(row.entity_id);
+    const [prefix, rest] = row.entity_id.split(":");
+    if (rest && (prefix === "market" || prefix === "company")) watchedIds.add(rest.toUpperCase());
+  }
   const watchedLabels = (watchlistRows || []).map((r) => r.entity_label).filter(Boolean);
 
-  const stocks = snapshot?.entities?.stocks || [];
-  const allMovers = stocks
-    .filter((s) => Number.isFinite(s.changePct ?? s.pct))
+  const allMovers = snapshotStocks(snapshot)
     .map((s) => ({ ticker: s.ticker, name: s.name, price: s.price, pct: s.changePct ?? s.pct }))
     .sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct));
 
@@ -152,9 +165,7 @@ export function personalizeDaily(snapshot, watchlistRows) {
 }
 
 export function personalizeWeekly(snapshot) {
-  const stocks = snapshot?.entities?.stocks || [];
-  const movers = stocks
-    .filter((s) => Number.isFinite(s.changePct ?? s.pct))
+  const movers = snapshotStocks(snapshot)
     .map((s) => ({ ticker: s.ticker, name: s.name, price: s.price, pct: s.changePct ?? s.pct }))
     .sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct))
     .slice(0, 3);

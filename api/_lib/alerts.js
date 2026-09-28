@@ -6,13 +6,18 @@
 
 function buildPriceIndex(snapshot) {
   const map = new Map();
-  const stocks = snapshot?.entities?.stocks || [];
+  // The terminal snapshot keeps stocks under marketInstruments.
+  const stocks = snapshot?.entities?.marketInstruments || snapshot?.entities?.stocks || [];
   for (const stock of stocks) {
     if (!stock?.ticker) continue;
-    map.set(stock.ticker, {
+    const observed = {
       price: Number(stock.price) || null,
       pct: Number(stock.changePct ?? stock.pct ?? stock.changePercent) || 0,
-    });
+    };
+    // Alerts may target the ticker ("CCJ") or the terminal entity id ("market:ccj").
+    map.set(stock.ticker, observed);
+    map.set(`market:${stock.ticker.toLowerCase()}`, observed);
+    if (stock.id) map.set(stock.id, observed);
   }
   // Uranium can also be a target.
   const uranium = snapshot?.entities?.uranium;

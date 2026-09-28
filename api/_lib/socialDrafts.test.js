@@ -5,12 +5,14 @@ const NOW = Date.parse('2026-09-28T10:30:00Z');
 
 const snapshot = {
   entities: {
-    stocks: [
-      { ticker: 'OKLO', changePct: 6.24 },
-      { ticker: 'SMR', changePct: -4.1 },
-      { ticker: 'CCJ', changePct: -0.06 },
-      { ticker: 'LEU', changePct: 2.5 },
-      { ticker: 'NNE', changePct: 1.2 },
+    // Shape of the real terminal snapshot; NOQUOTE mimics a missing quote.
+    marketInstruments: [
+      { ticker: 'OKLO', price: 38, pct: 6.24 },
+      { ticker: 'SMR', price: 8.4, pct: -4.1 },
+      { ticker: 'CCJ', price: 88, pct: -0.06 },
+      { ticker: 'LEU', price: 147, pct: 2.5 },
+      { ticker: 'NNE', price: 17, pct: 1.2 },
+      { ticker: 'NOQUOTE', price: 0, pct: 0 },
     ],
     uranium: { price: 82.5 },
     insiderTrades: [
@@ -71,5 +73,26 @@ describe('X drafts', () => {
 
   it('builds a prefilled X compose link', () => {
     expect(xIntentUrl('Hi & bye')).toBe('https://x.com/intent/post?text=Hi%20%26%20bye');
+  });
+});
+
+describe('snapshot stock lookups used by emails and alerts', async () => {
+  const { personalizeDaily, personalizeWeekly } = await import('./dispatch.js');
+  const { buildSnapshotIndex, evaluateAlert } = await import('./alerts.js');
+
+  it('weekly movers come from marketInstruments and skip missing quotes', () => {
+    const { movers } = personalizeWeekly(snapshot);
+    expect(movers.map((m) => m.ticker)).toEqual(['OKLO', 'SMR', 'LEU']);
+  });
+
+  it('daily brief matches watchlist entity ids like market:ccj', () => {
+    const { movers } = personalizeDaily(snapshot, [{ entity_id: 'market:ccj', entity_label: 'Cameco' }]);
+    expect(movers[0].ticker).toBe('CCJ');
+  });
+
+  it('price alerts fire for a ticker or a terminal entity id', () => {
+    const index = buildSnapshotIndex(snapshot);
+    expect(evaluateAlert({ alert_type: 'percent_rise', target_id: 'OKLO', threshold: 5 }, index)?.fired).toBe(true);
+    expect(evaluateAlert({ alert_type: 'price_rise', target_id: 'market:leu', threshold: 140 }, index)?.fired).toBe(true);
   });
 });
