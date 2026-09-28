@@ -449,9 +449,10 @@ function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport
                   <input
                     type="text"
                     inputMode="numeric"
+                    autoComplete="one-time-code"
                     value={code}
                     onChange={(event) => setCode(event.target.value)}
-                    placeholder="6-digit code"
+                    placeholder="8-digit code"
                     disabled={authBusy}
                     style={{
                       width: "100%",

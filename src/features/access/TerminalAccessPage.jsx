@@ -352,14 +352,14 @@ export default function TerminalAccessPage({ onExitTerminal }) {
               </label>
               {otpSent ? (
                 <label className="npa-field">
-                  <span>6-digit code</span>
+                  <span>8-digit code</span>
                   <input
                     type="text"
                     inputMode="numeric"
                     autoComplete="one-time-code"
                     value={code}
                     onChange={(event) => setCode(event.target.value)}
-                    placeholder="••••••"
+                    placeholder="••••••••"
                     disabled={authBusy}
                     autoFocus
                     style={{ letterSpacing: "0.3em" }}
