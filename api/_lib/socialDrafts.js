@@ -85,8 +85,18 @@ export function oddsDraft(snapshot) {
   return { kind: "Market odds", text: clip(withLink(text)) };
 }
 
+// Suggested posting windows (Eastern time), keyed by draft kind.
+export const POST_TIMES = {
+  "Market movers": "8:00–8:30am ET · pre-market, weekdays only",
+  "Reactor status": "9:00–10:00am ET · weekends 10–11am",
+  "Insider buy": "12:00–1:00pm ET",
+  "Market odds": "6:00–8:00pm ET",
+};
+
 export function buildXDrafts({ snapshot, fleet, now } = {}) {
-  return [moversDraft(snapshot), fleetDraft(fleet), insiderDraft(snapshot, { now }), oddsDraft(snapshot)].filter(Boolean);
+  return [moversDraft(snapshot), fleetDraft(fleet), insiderDraft(snapshot, { now }), oddsDraft(snapshot)]
+    .filter(Boolean)
+    .map((draft) => ({ ...draft, postAt: POST_TIMES[draft.kind] || "" }));
 }
 
 export function xIntentUrl(text) {
