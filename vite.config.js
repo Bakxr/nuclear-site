@@ -44,6 +44,8 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // Social preview image: fetched by link unfurlers, not needed offline.
+        globIgnores: ['og.png'],
         runtimeCaching: [
           {
             // Google Fonts stylesheet
