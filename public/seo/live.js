@@ -17,10 +17,24 @@
   var tickerCells = document.querySelectorAll("[data-price]");
   if (tickerCells.length) {
     var tickers = Array.prototype.map.call(tickerCells, function (el) { return el.getAttribute("data-price"); });
-    fetch("/api/market/quotes?tickers=" + encodeURIComponent(tickers.join(",")))
-      .then(function (res) { return res.ok ? res.json() : null; })
-      .then(function (payload) {
-        var quotes = (payload && payload.quotes) || {};
+    // /api/market/quotes accepts at most 20 symbols per request.
+    var requests = [];
+    for (var i = 0; i < tickers.length; i += 20) {
+      requests.push(
+        fetch("/api/market/quotes?tickers=" + encodeURIComponent(tickers.slice(i, i + 20).join(",")))
+          .then(function (res) { return res.ok ? res.json() : null; })
+          .catch(function () { return null; })
+      );
+    }
+    Promise.all(requests)
+      .then(function (parts) {
+        var quotes = {};
+        var payload = null;
+        parts.forEach(function (part) {
+          if (!part) return;
+          payload = part;
+          Object.keys(part.quotes || {}).forEach(function (key) { quotes[key] = part.quotes[key]; });
+        });
         tickerCells.forEach(function (el) {
           var q = quotes[el.getAttribute("data-price")];
           if (!q) return;
