@@ -1,0 +1,206 @@
+{
+  "argentina:carem": {
+    "name": "CAREM-25",
+    "lat": -33.97,
+    "lng": -59.21,
+    "wiki": "CAREM"
+  },
+  "argentina:embalse": {
+    "name": "Embalse",
+    "lat": -32.23,
+    "lng": -64.44,
+    "wiki": "Embalse Nuclear Power Station"
+  },
+  "armenia:armenian": {
+    "name": "Armenian",
+    "lat": 40.18,
+    "lng": 44.15,
+    "wiki": "Armenian Nuclear Power Plant"
+  },
+  "belarus:belarusian": {
+    "name": "Belarusian (Astravets)",
+    "lat": 54.76,
+    "lng": 26.09,
+    "wiki": "Astravets Nuclear Power Plant"
+  },
+  "bulgaria:kozloduy": {
+    "name": "Kozloduy",
+    "lat": 43.75,
+    "lng": 23.77,
+    "wiki": "Kozloduy Nuclear Power Plant"
+  },
+  "china:jinqimen": {
+    "name": "Jinqimen",
+    "lat": 29.06,
+    "lng": 121.94,
+    "wiki": "Jinqimen Nuclear Power Plant"
+  },
+  "china:linglong": {
+    "name": "Linglong One (ACP100)",
+    "lat": 19.46,
+    "lng": 108.91,
+    "wiki": "Changjiang Nuclear Power Plant"
+  },
+  "china:lufeng": {
+    "name": "Lufeng",
+    "lat": 22.75,
+    "lng": 115.8,
+    "wiki": "Lufeng Nuclear Power Plant"
+  },
+  "china:sanao": {
+    "name": "San'ao",
+    "lat": 27.2,
+    "lng": 120.51,
+    "wiki": "San'ao Nuclear Power Plant"
+  },
+  "china:shidaobay": {
+    "name": "Shidao Bay (HTR-PM)",
+    "lat": 36.97,
+    "lng": 122.53,
+    "wiki": "Shidao Bay Nuclear Power Plant"
+  },
+  "china:xuwei": {
+    "name": "Xuwei",
+    "lat": 34.63,
+    "lng": 119.51,
+    "wiki": "Xuwei Nuclear Power Plant"
+  },
+  "china:zhaoyuan": {
+    "name": "Zhaoyuan",
+    "lat": 37.49,
+    "lng": 120.35,
+    "wiki": "Zhaoyuan Nuclear Power Plant"
+  },
+  "finland:loviisa": {
+    "name": "Loviisa",
+    "lat": 60.37,
+    "lng": 26.35,
+    "wiki": "Loviisa Nuclear Power Plant"
+  },
+  "india:kaiga": {
+    "name": "Kaiga",
+    "lat": 14.87,
+    "lng": 74.44,
+    "wiki": "Kaiga Atomic Power Station"
+  },
+  "india:madras": {
+    "name": "Madras",
+    "lat": 12.56,
+    "lng": 80.18,
+    "wiki": "Madras Atomic Power Station"
+  },
+  "india:narora": {
+    "name": "Narora",
+    "lat": 28.16,
+    "lng": 78.41,
+    "wiki": "Narora Atomic Power Station"
+  },
+  "india:pfbr": {
+    "name": "PFBR (Kalpakkam)",
+    "lat": 12.55,
+    "lng": 80.17,
+    "wiki": "Prototype Fast Breeder Reactor"
+  },
+  "iran:bushehr": {
+    "name": "Bushehr",
+    "lat": 28.83,
+    "lng": 50.89,
+    "wiki": "Bushehr Nuclear Power Plant"
+  },
+  "mexico:lagunaverde": {
+    "name": "Laguna Verde",
+    "lat": 19.72,
+    "lng": -96.41,
+    "wiki": "Laguna Verde Nuclear Power Station"
+  },
+  "netherlands:borssele": {
+    "name": "Borssele",
+    "lat": 51.43,
+    "lng": 3.72,
+    "wiki": "Borssele Nuclear Power Station"
+  },
+  "pakistan:chasnupp": {
+    "name": "Chashma Nuclear Power Complex",
+    "lat": 32.39,
+    "lng": 71.46,
+    "wiki": "Chashma Nuclear Power Complex"
+  },
+  "russia:beloyarsk": {
+    "name": "Beloyarsk",
+    "lat": 56.84,
+    "lng": 61.32,
+    "wiki": "Beloyarsk Nuclear Power Station"
+  },
+  "russia:brestod": {
+    "name": "BREST-OD-300 (Seversk)",
+    "lat": 56.6,
+    "lng": 84.88,
+    "wiki": "BREST (reactor)"
+  },
+  "russia:leningrad": {
+    "name": "Leningrad I",
+    "lat": 59.85,
+    "lng": 29.05,
+    "wiki": "Leningrad Nuclear Power Plant"
+  },
+  "slovenia:krsko": {
+    "name": "Krško",
+    "lat": 45.94,
+    "lng": 15.52,
+    "wiki": "Krško Nuclear Power Plant"
+  },
+  "southkorea:kori": {
+    "name": "Kori",
+    "lat": 35.32,
+    "lng": 129.29,
+    "wiki": "Kori Nuclear Power Plant"
+  },
+  "southkorea:saeul": {
+    "name": "Kori",
+    "lat": 35.32,
+    "lng": 129.29,
+    "wiki": "Kori Nuclear Power Plant"
+  },
+  "southkorea:shinwolsong": {
+    "name": "Wolseong",
+    "lat": 35.72,
+    "lng": 129.48,
+    "wiki": "Wolseong Nuclear Power Plant"
+  },
+  "spain:trillo": {
+    "name": "Trillo",
+    "lat": 40.7,
+    "lng": -2.62,
+    "wiki": "Trillo Nuclear Power Plant"
+  },
+  "spain:vandellos": {
+    "name": "Vandellòs",
+    "lat": 40.95,
+    "lng": 0.87,
+    "wiki": "Vandellòs Nuclear Power Plant"
+  },
+  "switzerland:beznau": {
+    "name": "Beznau",
+    "lat": 47.55,
+    "lng": 8.23,
+    "wiki": "Beznau Nuclear Power Plant"
+  },
+  "uk:hartlepoola": {
+    "name": "Hartlepool",
+    "lat": 54.64,
+    "lng": -1.18,
+    "wiki": "Hartlepool nuclear power station"
+  },
+  "uk:heyshama": {
+    "name": "Heysham",
+    "lat": 54.03,
+    "lng": -2.92,
+    "wiki": "Heysham nuclear power station"
+  },
+  "uk:heyshamb": {
+    "name": "Heysham",
+    "lat": 54.03,
+    "lng": -2.92,
+    "wiki": "Heysham nuclear power station"
+  }
+}

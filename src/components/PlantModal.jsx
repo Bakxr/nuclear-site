@@ -56,7 +56,10 @@ export default function PlantModal({ plant, onClose }) {
   const infoCards = [
     { label: "Net Capacity", val: `${plant.capacity.toLocaleString()} MW` },
     { label: "Reactor Type", val: plant.type },
-    { label: "Reactors", val: plant.reactors },
+    { label: "Reactors", val: plant.reactors, sub: plant.source === "iaea" ? "IAEA PRIS" : undefined },
+    ...(plant.underConstruction
+      ? [{ label: "Under Construction", val: `+${plant.underConstruction.reactors} reactor${plant.underConstruction.reactors > 1 ? "s" : ""}`, sub: `${plant.underConstruction.capacity.toLocaleString()} MW more` }]
+      : []),
     { label: "Annual Output", val: `~${annualTWh} TWh`, sub: "at 90% capacity factor" },
     { label: "Est. Homes Powered", val: `~${homesPerYear.toLocaleString()}k`, sub: "per year" },
     { label: "CO\u2082 Avoided", val: `~${co2Avoided} Mt`, sub: "vs. gas generation" },

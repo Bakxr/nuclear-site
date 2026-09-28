@@ -25,7 +25,8 @@ import {
 
 // Stop starting new batches after this long; vercel.json caps the function at 60s.
 const SEND_BUDGET_MS = 45 * 1000;
-import { buildDailyEmail, buildWeeklyEmail, buildAlertEmail, buildXDraftsEmail } from "../_lib/emailTemplates.js";
+import { buildDailyEmail, buildWeeklyEmail, buildAlertEmail, buildXDraftsEmail, buildPlantChangesEmail } from "../_lib/emailTemplates.js";
+import { diffStations, fetchPrisReactors, groupStations, summarizeStations } from "../_lib/plantRegistry.js";
 import { buildXDrafts, xIntentUrl } from "../_lib/socialDrafts.js";
 import { fetchNrcFleetStatus } from "../_lib/nrcFleet.js";
 import { buildSnapshotIndex, evaluateAlert } from "../_lib/alerts.js";
@@ -329,6 +330,51 @@ async function runXDrafts({ supabase, snapshot, dryRun }) {
   return { sent: drafts.length };
 }
 
+// Headlines that usually mean a reactor milestone (the IAEA lags the news).
+const MILESTONE_RE = /first (nuclear )?concrete|construction (start|begins|began)|begins construction|connected to the grid|grid connection|first criticality|reaches criticality|enters commercial operation|permanently shut|shut down for good/i;
+
+// Compares IAEA PRIS with the live site's plant data. On any change: emails
+// the owner and rebuilds the site (the build pulls fresh PRIS data).
+async function runPlantRefresh({ supabase, snapshot, dryRun }) {
+  const owner = process.env.OWNER_EMAIL?.trim();
+  const easternDay = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Toronto" }).format(new Date());
+  const dispatchKey = `${easternDay}-plants`;
+  if (owner && await alreadyDispatched(supabase, { email: owner, dispatch_key: dispatchKey })) return { skipped: "already ran today" };
+
+  const siteUrl = process.env.SITE_URL?.trim() || "https://thenuclearpulse.com";
+  const [reactors, liveMeta] = await Promise.all([
+    fetchPrisReactors(),
+    fetch(`${siteUrl}/data/plants-meta.json`, { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+  ]);
+  const current = summarizeStations(groupStations(reactors));
+  const changes = liveMeta?.stations ? diffStations(liveMeta.stations, current) : [];
+  const needsDeploy = !liveMeta?.stations || changes.length > 0;
+
+  const cutoff = Date.now() - 36 * 60 * 60 * 1000;
+  const headlines = (snapshot?.entities?.newsArticles || [])
+    .filter((a) => {
+      const when = Date.parse(a.pubDate || a.publishedAt || a.updatedAt || "");
+      return MILESTONE_RE.test(a.title || "") && (!Number.isFinite(when) || when >= cutoff);
+    })
+    .slice(0, 6)
+    .map((a) => ({ title: a.title, source: a.sourceName || a.source, url: a.url || a.link }));
+
+  if (dryRun) return { changes: changes.map((c) => c.text), headlines: headlines.map((h) => h.title), needsDeploy };
+
+  let deployTriggered = false;
+  const hook = process.env.VERCEL_DEPLOY_HOOK_URL?.trim();
+  if (needsDeploy && hook) {
+    deployTriggered = await fetch(hook, { method: "POST" }).then((r) => r.ok).catch(() => false);
+  }
+
+  if (owner && (changes.length || headlines.length)) {
+    const result = await sendEmail({ to: owner, ...buildPlantChangesEmail({ changes, headlines, deployTriggered }) });
+    if (!result.ok) return { error: result.error, changes: changes.length, deployTriggered };
+  }
+  if (owner) await recordDispatch(supabase, { user_id: null, email: owner, dispatch_type: "plants", dispatch_key: dispatchKey });
+  return { changes: changes.length, headlines: headlines.length, deployTriggered };
+}
+
 export default async function handler(req, res) {
   setNoStore(res);
 
@@ -342,7 +388,7 @@ export default async function handler(req, res) {
   const job = String(req.query?.job || "").toLowerCase();
   const dryRun = String(req.query?.dryRun || "") === "true";
 
-  if (!["daily", "weekly", "alerts", "xdrafts"].includes(job)) {
+  if (!["daily", "weekly", "alerts", "xdrafts", "plants"].includes(job)) {
     return res.status(400).json({ error: "Unknown job." });
   }
 
@@ -370,6 +416,10 @@ export default async function handler(req, res) {
       const result = await runAlerts({ supabase, snapshot, dryRun });
       return res.status(200).json({ job, dryRun, ...result });
     }
+    if (job === "plants") {
+      const result = await runPlantRefresh({ supabase, snapshot, dryRun });
+      return res.status(200).json({ job, dryRun, ...result });
+    }
     if (job === "xdrafts") {
       const result = await runXDrafts({ supabase, snapshot, dryRun });
       return res.status(200).json({ job, dryRun, ...result });
@@ -378,7 +428,8 @@ export default async function handler(req, res) {
     const daily = await runDaily({ supabase, snapshot, dryRun });
     const alerts = await runAlerts({ supabase, snapshot, dryRun });
     const xdrafts = await runXDrafts({ supabase, snapshot, dryRun }).catch((err) => ({ error: err?.message || String(err) }));
-    return res.status(200).json({ job: "daily", dryRun, daily, alerts, xdrafts });
+    const plants = await runPlantRefresh({ supabase, snapshot, dryRun }).catch((err) => ({ error: err?.message || String(err) }));
+    return res.status(200).json({ job: "daily", dryRun, daily, alerts, xdrafts, plants });
   } catch (err) {
     console.error("[cron/dispatch] handler failed", err?.message || err);
     return res.status(500).json({ error: "Dispatch failed." });

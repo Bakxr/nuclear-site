@@ -295,6 +295,30 @@ export function buildWelcomeEmail({ email }) {
   return { subject, html, text, headers: unsubHeaders(email) };
 }
 
+// ---------------- PLANT CHANGES (owner only) ----------------
+
+export function buildPlantChangesEmail({ changes = [], headlines = [], deployTriggered = false }) {
+  const subject = changes.length
+    ? `Plant data: ${changes.length} change${changes.length > 1 ? "s" : ""} from the IAEA`
+    : "Plant data: milestones in the news";
+  const changeList = bulletList(changes.map((c) => ({ title: c.text })));
+  const newsList = bulletList(headlines.map((h) => ({ title: h.title, meta: h.source, url: h.url })));
+  const bodyHtml = [
+    changes.length ? moduleBlock("IAEA PRIS changes since yesterday", changeList) : "",
+    changes.length
+      ? `<p style="font-size:13px;line-height:1.6;color:rgba(245,240,232,0.6);margin:0 0 18px;">${deployTriggered ? "The site is rebuilding with this data now; it will be live in about a minute." : "The site could not be rebuilt automatically; it will pick these up on the next deploy."}</p>`
+      : "",
+    headlines.length ? moduleBlock("Milestones in the news (the IAEA may not have updated yet)", newsList) : "",
+    `<p style="font-size:13px;line-height:1.6;color:rgba(245,240,232,0.6);margin:0;">Each of these is a ready-made post: "First concrete at …", "… connected to the grid".</p>`,
+  ].join("");
+  const html = shell({ title: subject, bodyHtml, footerNote: "Owner-only email from the Nuclear Pulse morning job." });
+  const text = [
+    ...(changes.length ? ["IAEA PRIS CHANGES", ...changes.map((c) => `- ${c.text}`), ""] : []),
+    ...(headlines.length ? ["IN THE NEWS", ...headlines.map((h) => `- ${h.title} (${h.source || ""}) ${h.url || ""}`)] : []),
+  ].join("\n");
+  return { subject, html, text };
+}
+
 // ---------------- X DRAFTS (owner only) ----------------
 
 export function buildXDraftsEmail({ drafts, intentUrl }) {

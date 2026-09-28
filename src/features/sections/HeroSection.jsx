@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { NUCLEAR_PLANTS } from "../../data/plants.js";
+import { NUCLEAR_PLANTS, PRIS_WORLD_STATS } from "../../data/plants.js";
 import { EASE, wordReveal } from "./animations.js";
 import CountUp from "./CountUp.jsx";
 
@@ -12,9 +12,13 @@ const URANIUM_FALLBACK = {
   sourceUrl: "https://tradingeconomics.com/commodity/uranium",
 };
 
+// Reactor counts come from IAEA PRIS, refreshed on every build.
+const inOperation = PRIS_WORLD_STATS?.inOperation;
+const underConstruction = PRIS_WORLD_STATS?.underConstruction;
+
 const STATIC_GLOBAL_STATS = [
-  { label: "Operating Reactors", target: 440, decimals: 0, prefix: "", suffix: "", sub: "across 32 countries", source: "IAEA PRIS", sourceUrl: "https://pris.iaea.org/PRIS/WorldStatistics/OperationalReactorsByCountry.aspx" },
-  { label: "Under Construction", target: 63, decimals: 0, prefix: "", suffix: "", sub: "in 16 countries", source: "IAEA PRIS", sourceUrl: "https://pris.iaea.org/PRIS/WorldStatistics/UnderConstructionReactorsByCountry.aspx" },
+  { label: "Operating Reactors", target: inOperation?.reactors ?? 417, decimals: 0, prefix: "", suffix: "", sub: `across ${inOperation?.countries ?? 31} countries`, source: "IAEA PRIS", sourceUrl: "https://pris-stats.iaea.org/world-statistics" },
+  { label: "Under Construction", target: underConstruction?.reactors ?? 78, decimals: 0, prefix: "", suffix: "", sub: `in ${underConstruction?.countries ?? 17} countries`, source: "IAEA PRIS", sourceUrl: "https://pris-stats.iaea.org/world-statistics" },
   { label: "Global Electricity", target: 10, decimals: 0, prefix: "~", suffix: "%", sub: "2,818 TWh in 2024", source: "World Nuclear Association", sourceUrl: "https://world-nuclear.org/nuclear-essentials/how-much-of-the-world-s-electricity-comes-from-nuclear" },
   { label: "CO₂ Avoided", target: 2, decimals: 0, prefix: "", suffix: " Gt", sub: "per year vs. fossil fuels", source: "IAEA Climate Report", sourceUrl: "https://www.iaea.org/topics/nuclear-power-and-climate-change" },
   { label: "Capacity Factor", target: 92.5, decimals: 1, prefix: "", suffix: "%", sub: "highest of any source", source: "US EIA, 2024", sourceUrl: "https://www.eia.gov/electricity/monthly/" },
@@ -167,7 +171,7 @@ export default function HeroSection({
             transition={{ duration: 0.9, ease: EASE, delay: 0.85 }}
             style={{ fontSize: 16, color: isDark ? "rgba(245,240,232,0.76)" : "#5e5546", maxWidth: 680, margin: "16px auto 0", lineHeight: 1.75, fontWeight: 500 }}
           >
-            The grid will not be rebuilt with slogans. Track {NUCLEAR_PLANTS.length}+ reactors, uranium-sensitive markets, national buildouts, and the political fight over firm power in one scroll-heavy briefing.
+            The grid will not be rebuilt with slogans. Track all {inOperation?.reactors ?? 417} operating reactors, uranium-sensitive markets, national buildouts, and the political fight over firm power in one scroll-heavy briefing.
           </motion.p>
         </motion.div>
       </section>
