@@ -244,7 +244,7 @@ export default function TerminalEditorialStrip({ signals, onOpenTerminal }) {
           />
           <TerminalMiniList
             title={radarTitle}
-            accent="#7dd3fc"
+            accent="#8fb8ad"
             items={filings}
             renderMeta={(item) => item.metaLine || `${item.ticker || item.sourceName || "Signal"} | ${item.filedLabel || item.dateLabel || ""}`}
           />

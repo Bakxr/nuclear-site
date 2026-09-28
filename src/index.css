@@ -32,7 +32,7 @@
 
   /* Rhythm — generous editorial whitespace, fluid gutters. */
   --np-section-x: clamp(20px, 4vw, 64px);
-  --np-section-y: clamp(88px, 9vw, 128px);
+  --np-section-y: clamp(76px, 7vw, 100px);
   --np-section-y-tight: clamp(56px, 6vw, 84px);
   --np-section-y-footer: 64px;
 

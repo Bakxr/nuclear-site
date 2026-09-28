@@ -88,6 +88,8 @@ function TimelineCard({ event, isLeft }) {
         justifyContent: isLeft ? "flex-start" : "flex-end",
         alignItems: "center",
         paddingTop: 8,
+        // Keep the big year clear of the centre line and dot.
+        [isLeft ? "paddingLeft" : "paddingRight"]: 36,
       }}>
         <motion.span
           initial={{ opacity: 0 }}

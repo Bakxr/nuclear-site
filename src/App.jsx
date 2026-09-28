@@ -474,7 +474,7 @@ function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport
                   style={{
                     width: "100%",
                     borderRadius: 14,
-                    border: "1px solid rgba(125,211,252,0.24)",
+                    border: "1px solid rgba(212,165,74,0.35)",
                     background: "#f5f0e8",
                     color: "#14120e",
                     padding: "13px 16px",
@@ -1602,11 +1602,11 @@ export default function NuclearPulse() {
         scrollTo={scrollTo}
       />
 
-      <section style={{ padding: "0 var(--np-section-x) var(--np-section-y)", background: "var(--np-bg)" }}>
+      {/* Sits directly above ProSection, which draws the divider between them. */}
+      <section style={{ padding: "0 var(--np-section-x)", background: "var(--np-bg)" }}>
         <div style={{ maxWidth: "var(--np-content-max)", margin: "0 auto" }}>
           <div style={{
             borderTop: "1px solid var(--np-hairline)",
-            borderBottom: "1px solid var(--np-hairline)",
             padding: isMobileViewport ? "36px 0" : "clamp(40px, 5vw, 64px) 0",
           }}>
             <div style={{ display: "grid", gridTemplateColumns: isMobileViewport ? "1fr" : "minmax(0, 1.1fr) minmax(320px, 420px)", gap: 28, alignItems: "center" }}>

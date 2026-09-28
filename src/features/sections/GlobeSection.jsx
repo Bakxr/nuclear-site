@@ -79,7 +79,7 @@ export default function GlobeSection({
             <div
               className="np-globe-stage"
               style={{
-                background: "radial-gradient(ellipse at 50% 40%, #0d1b2a 0%, #0a1520 60%, #060e15 100%)",
+                background: "radial-gradient(ellipse at 50% 40%, #1f1912 0%, #15110c 60%, #0b0907 100%)",
                 borderRadius: "var(--np-r-lg)",
                 border: "1px solid var(--np-hairline)",
                 overflow: "hidden",

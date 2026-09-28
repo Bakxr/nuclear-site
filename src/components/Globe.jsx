@@ -250,7 +250,7 @@ export default function Globe({
     const sun = new THREE.DirectionalLight(0xe1ceb0, 0.78);
     sun.position.set(5, 3, 5);
     scene.add(sun);
-    const rim = new THREE.DirectionalLight(0x7c8f9a, 0.1);
+    const rim = new THREE.DirectionalLight(0x9a8c7c, 0.1);
     rim.position.set(-3, -2, -3);
     scene.add(rim);
 
@@ -279,9 +279,9 @@ export default function Globe({
     // Ocean sphere
     const oceanGeom = new THREE.SphereGeometry(0.995, 96, 96);
     const oceanMat = new THREE.MeshPhongMaterial({
-      color: 0x121a23,
-      emissive: 0x0a1117,
-      specular: 0x2b3946,
+      color: 0x1a150f,
+      emissive: 0x0d0a07,
+      specular: 0x3a3226,
       shininess: 24,
       transparent: true,
       opacity: 0.97,
@@ -317,7 +317,7 @@ export default function Globe({
         ctx.fill();
         ctx.stroke();
 
-        ctx.strokeStyle = "rgba(126,168,192,0.04)";
+        ctx.strokeStyle = "rgba(212,165,74,0.05)";
         ctx.lineWidth = 0.6;
         const graticule = geoGraticule().step([15, 15])();
         ctx.beginPath();
@@ -330,7 +330,7 @@ export default function Globe({
         globeMat = new THREE.MeshPhongMaterial({
           map: landTexture,
           color: 0xb8aa95,
-          specular: 0x1f2730,
+          specular: 0x2a241b,
           transparent: true,
           opacity: 0.93,
           shininess: 8,
@@ -338,7 +338,7 @@ export default function Globe({
       } else {
         // Fallback: solid color globe
         globeGeom = new THREE.SphereGeometry(1, 64, 64);
-        globeMat = new THREE.MeshPhongMaterial({ color: 0xb8aa95, specular: 0x1f2730, shininess: 10 });
+        globeMat = new THREE.MeshPhongMaterial({ color: 0xb8aa95, specular: 0x2a241b, shininess: 10 });
       }
       pivotGroup.add(new THREE.Mesh(globeGeom, globeMat));
     });
@@ -347,7 +347,7 @@ export default function Globe({
     const atmosGeom = new THREE.SphereGeometry(1.06, 64, 64);
     const atmosMat = new THREE.ShaderMaterial({
       vertexShader: `varying vec3 vNormal; void main(){ vNormal=normalize(normalMatrix*normal); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
-      fragmentShader: `varying vec3 vNormal; void main(){ float intensity=pow(0.7-dot(vNormal,vec3(0.0,0.0,1.0)),3.0); gl_FragColor=vec4(0.46,0.56,0.62,1.0)*intensity*0.17; }`,
+      fragmentShader: `varying vec3 vNormal; void main(){ float intensity=pow(0.7-dot(vNormal,vec3(0.0,0.0,1.0)),3.0); gl_FragColor=vec4(0.83,0.65,0.35,1.0)*intensity*0.16; }`,
       blending: THREE.AdditiveBlending,
       side: THREE.BackSide,
       transparent: true,
@@ -356,7 +356,7 @@ export default function Globe({
 
     const haloGeom = new THREE.SphereGeometry(1.12, 64, 64);
     const haloMat = new THREE.MeshBasicMaterial({
-      color: 0x7ea8c0,
+      color: 0xc9a46a,
       transparent: true,
       opacity: 0.014,
       side: THREE.BackSide,
@@ -588,7 +588,7 @@ export default function Globe({
         const sizeScalar = Math.min(1.8, Math.max(0.6, 0.5 + Math.log10(vol) * 0.18));
         // Color: if cluster has any polymarket → gold; else cyan.
         const hasPoly = cluster.markets.some((m) => m.source === "polymarket");
-        const color = hasPoly ? 0xd8a04a : 0x7ea8c0;
+        const color = hasPoly ? 0xd8a04a : 0x8fb8ad;
         const baseGeomSize = 0.013 * sizeScalar;
         const markerGeom = new THREE.SphereGeometry(baseGeomSize, 14, 14);
         const markerMat = new THREE.MeshPhongMaterial({
@@ -751,9 +751,9 @@ export default function Globe({
   }
 
   const controlButtonStyle = {
-    border: "1px solid rgba(125,139,156,0.14)",
-    background: "rgba(10,14,19,0.76)",
-    color: "rgba(237,241,245,0.88)",
+    border: "1px solid rgba(212,165,74,0.18)",
+    background: "rgba(16,13,9,0.76)",
+    color: "rgba(245,240,232,0.88)",
     fontFamily: "'DM Mono',monospace",
     fontWeight: 700,
     cursor: "pointer",
@@ -882,9 +882,9 @@ export default function Globe({
         gap: 10,
         padding: "9px 12px",
         borderRadius: 2,
-        background: "rgba(10,14,19,0.72)",
-        border: "1px solid rgba(125,139,156,0.12)",
-        color: "rgba(237,241,245,0.78)",
+        background: "rgba(16,13,9,0.72)",
+        border: "1px solid rgba(212,165,74,0.16)",
+        color: "rgba(245,240,232,0.78)",
         fontSize: 11,
         fontWeight: 700,
         letterSpacing: "0.08em",
@@ -906,16 +906,16 @@ export default function Globe({
           position: "absolute",
           left: `clamp(12px, ${tooltip.x + 14}px, calc(100% - 252px))`,
           top: Math.max(12, tooltip.y - 10),
-          background: "rgba(10,14,19,0.94)", color: "#f5f0e8", padding: "12px 16px", borderRadius: 2,
+          background: "rgba(16,13,9,0.94)", color: "#f5f0e8", padding: "12px 16px", borderRadius: 2,
           fontSize: 13, fontFamily: "'DM Sans',sans-serif", pointerEvents: "none", zIndex: 10,
-          border: "1px solid rgba(125,139,156,0.14)", maxWidth: "min(240px, calc(100% - 24px))", lineHeight: 1.4,
+          border: "1px solid rgba(212,165,74,0.18)", maxWidth: "min(240px, calc(100% - 24px))", lineHeight: 1.4,
           backdropFilter: "blur(8px)", boxShadow: "0 8px 28px rgba(0,0,0,0.28)",
         }}>
           <div style={{ fontWeight: 700, fontSize: 15 }}>{hoveredPlant.name || hoveredPlant.question || "—"}</div>
           {mode === "markets" ? (
             <>
               <div style={{ opacity: 0.6, marginTop: 2 }}>{hoveredPlant.anchor?.anchorLabel || "Market"}</div>
-              <div style={{ color: hoveredPlant.source === "polymarket" ? "#d8a04a" : "#7ea8c0", marginTop: 6, fontFamily: "'DM Mono',monospace", fontSize: 14 }}>
+              <div style={{ color: hoveredPlant.source === "polymarket" ? "#d8a04a" : "#8fb8ad", marginTop: 6, fontFamily: "'DM Mono',monospace", fontSize: 14 }}>
                 {Number.isFinite(hoveredPlant.yesPrice) ? `${Math.round(hoveredPlant.yesPrice * 100)}% YES` : "—"}
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4, fontSize: 11, opacity: 0.7 }}>

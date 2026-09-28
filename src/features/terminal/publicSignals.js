@@ -65,15 +65,15 @@ export function buildPublicTerminalSignals({ stocks = [], news = [] } = {}) {
     cards: [
       {
         id: "fleet",
-        label: "Operating fleet",
+        label: "Plants tracked",
         value: `${NUCLEAR_PLANTS.filter((plant) => plant.status === "Operating").length}`,
-        detail: "Global operating reactor footprint on the public map",
+        detail: "Operating plants profiled on the atlas",
       },
       {
         id: "pipeline",
         label: "Construction watch",
         value: `${constructionProjects.length}`,
-        detail: "Publicly visible construction projects on the homepage",
+        detail: "New builds tracked from site work to grid",
       },
       {
         id: "markets",
@@ -85,7 +85,7 @@ export function buildPublicTerminalSignals({ stocks = [], news = [] } = {}) {
         id: "leader",
         label: "Capacity leader",
         value: leader ? leader[0] : "Tracking",
-        detail: leader ? `${(leader[1] / 1000).toFixed(1)} GW represented in the public model` : "Country ranking refresh pending",
+        detail: leader ? `${(leader[1] / 1000).toFixed(1)} GW of operating capacity, the largest fleet` : "Country ranking refresh pending",
       },
     ],
     topCatalysts: catalysts,

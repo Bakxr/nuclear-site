@@ -72,10 +72,11 @@ export default function FooterSection() {
           color: "rgba(245,240,232,0.35)",
         }}>
           <div>
-            © {year} NuclearPulse · For informational purposes only, not investment advice ·{" "}
+            © {year} Nuclear Pulse · For informational purposes only, not investment advice ·{" "}
             <a className="np-footer-link" href="/legal/terms.html">Terms</a> ·{" "}
             <a className="np-footer-link" href="/legal/privacy.html">Privacy</a> ·{" "}
-            <a className="np-footer-link" href="/legal/refunds.html">Refunds</a>
+            <a className="np-footer-link" href="/legal/refunds.html">Refunds</a> ·{" "}
+            <a className="np-footer-link" href="mailto:support@thenuclearpulse.com">support@thenuclearpulse.com</a>
           </div>
           <div style={{ fontFamily: "var(--np-font-mono)", letterSpacing: "0.06em" }}>
             Data sourced from IAEA PRIS, WNA, and public markets.

@@ -91,7 +91,7 @@ export default function ProSection({ isMobileViewport, onOpenTerminal }) {
                   border: "1px solid var(--np-hairline)",
                   borderRadius: 12,
                   padding: "18px 18px 16px",
-                  background: "rgba(255,255,255,0.4)",
+                  background: "var(--np-surface)",
                 }}
               >
                 <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--np-accent-ink)" }}>
@@ -151,8 +151,8 @@ export default function ProSection({ isMobileViewport, onOpenTerminal }) {
               type="button"
               onClick={onOpenTerminal}
               style={{
-                background: "#14120e",
-                color: "#f5f0e8",
+                background: "#d4a54a",
+                color: "#14120e",
                 border: "none",
                 borderRadius: 8,
                 padding: "14px 30px",
