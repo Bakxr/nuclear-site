@@ -192,6 +192,7 @@ export const NUCLEAR_PLANTS = [
   { name: "Xiapu", country: "China", lat: 26.95, lng: 120.00, capacity: 1260, status: "Construction", reactors: 2, type: "CFR600" },
   { name: "Lianjiang", country: "China", lat: 26.30, lng: 119.80, capacity: 2260, status: "Construction", reactors: 2, type: "HPR1000" },
   { name: "Changjiang 3-4", country: "China", lat: 19.48, lng: 108.91, capacity: 2260, status: "Construction", reactors: 2, type: "HPR1000" },
+  { name: "Bailong", country: "China", lat: 21.55, lng: 108.29, capacity: 2500, status: "Construction", reactors: 2, type: "CAP1000" },
   // INDIA - Under Construction
   { name: "Kakrapar 5-6", country: "India", lat: 21.25, lng: 73.36, capacity: 1400, status: "Construction", reactors: 2, type: "PHWR" },
   { name: "Rajasthan 7-8", country: "India", lat: 24.89, lng: 75.59, capacity: 1400, status: "Construction", reactors: 2, type: "PHWR" },

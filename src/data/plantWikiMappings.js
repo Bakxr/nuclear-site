@@ -105,6 +105,7 @@ export const PLANT_WIKI_TITLES = {
   "Changjiang":           "Changjiang_Nuclear_Power_Plant",
   "Yangjiang":            "Yangjiang_Nuclear_Power_Plant",
   "Fangchenggang":        "Fangchenggang_Nuclear_Power_Plant",
+  "Bailong":              "Guangxi_Bailong_Nuclear_Power_Project",
   "Ningde":               "Ningde_Nuclear_Power_Plant",
   "Sanmen":               "Sanmen_Nuclear_Power_Station",
   "Haiyang":              "Haiyang_Nuclear_Power_Plant",
