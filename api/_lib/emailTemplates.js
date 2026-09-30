@@ -337,21 +337,35 @@ function funnelText(funnel) {
   return `FUNNEL: ${funnel.subscribers} subscribers (+${funnel.new7} this week), ${funnel.terminalMembers ?? "?"} terminal members. Sources (30d): ${sources}\n\n`;
 }
 
-export function buildXDraftsEmail({ drafts, intentUrl, funnel = null }) {
+export function buildXDraftsEmail({ drafts, intentUrl, funnel = null, cardUrl = null }) {
   const subject = `X drafts for today (${drafts.length})`;
-  const blocks = drafts.map((d) => moduleBlock(d.postAt ? `${d.kind} · post ${d.postAt}` : d.kind, `
+  const button = (href, label) => `<a href="${escapeHtml(href)}" style="display:inline-block;padding:9px 16px;border-radius:4px;background:#d4a54a;color:#111;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">${label}</a>`;
+  const step = (n, label) => `<div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(245,240,232,0.5);font-weight:700;margin:16px 0 8px;">${n}. ${label}</div>`;
+
+  const blocks = drafts.map((d) => {
+    const image = d.card && cardUrl ? cardUrl(d.card) : null;
+    return moduleBlock(d.postAt ? `${d.kind} · post ${d.postAt}` : d.kind, `
+    ${image ? `${step(1, "Save the image")}<a href="${escapeHtml(image)}"><img src="${escapeHtml(image)}" width="536" alt="${escapeHtml(d.kind)} chart" style="display:block;width:100%;max-width:536px;height:auto;border-radius:6px;border:1px solid rgba(245,240,232,0.08);" /></a>
+    <div style="font-size:12px;margin-top:6px;"><a href="${escapeHtml(image)}" style="color:#d4a54a;">Open full size to save</a></div>` : ""}
+    ${step(image ? 2 : 1, image ? "Post it, with the image attached" : "Post it")}
     <div style="font-size:14px;line-height:1.6;color:#f5f0e8;white-space:pre-wrap;">${escapeHtml(d.text)}</div>
-    <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;">
-      <a href="${escapeHtml(intentUrl(d.text))}" style="display:inline-block;padding:9px 16px;border-radius:4px;background:#d4a54a;color:#111;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">Post on X</a>
-      <span style="font-size:11px;color:rgba(245,240,232,0.4);">${xLength(d.text)}/280</span>
-    </div>`)).join("");
+    <div style="margin-top:12px;">${button(intentUrl(d.text), "Post on X")} <span style="font-size:11px;color:rgba(245,240,232,0.4);margin-left:10px;">${xLength(d.text)}/280</span></div>
+    ${d.reply ? `${step(image ? 3 : 2, "Reply to your own post with the link")}
+    <div style="font-size:13px;line-height:1.6;color:#f5f0e8;white-space:pre-wrap;background:#100d09;border:1px dashed rgba(212,165,74,0.35);border-radius:4px;padding:10px 12px;font-family:'Courier New',monospace;">${escapeHtml(d.reply)}</div>` : ""}`);
+  }).join("");
 
   const html = shell({
     title: subject,
-    bodyHtml: `<p style="font-size:14px;line-height:1.6;color:rgba(245,240,232,0.72);margin:0 0 18px;">Weekdays: post two, at 8:00am and 12:30pm ET, plus any reactor milestone right away. Weekends: one, mid-morning. "Post on X" opens X with the text filled in; check it reads right, then post. Links are tagged, so the sign-ups they bring in show up in the funnel below.</p>${funnelBlock(funnel)}${blocks}`,
+    bodyHtml: `<p style="font-size:14px;line-height:1.6;color:rgba(245,240,232,0.72);margin:0 0 18px;">Weekdays: post two, at 8:00am and 12:30pm ET, plus any reactor milestone right away. Weekends: one, mid-morning. Attach the image, post, then reply to your own post with the link: the post is built to get replies, which X ranks far above link clicks. Links are tagged, so the sign-ups they bring in show up in the funnel below.</p>${funnelBlock(funnel)}${blocks}`,
     footerNote: "Owner-only email from the Nuclear Pulse morning job.",
   });
-  const text = funnelText(funnel) + drafts.map((d) => `== ${d.kind.toUpperCase()}${d.postAt ? ` (post ${d.postAt})` : ""} ==\n${d.text}\nPost: ${intentUrl(d.text)}`).join("\n\n");
+  const text = funnelText(funnel) + drafts.map((d) => [
+    `== ${d.kind.toUpperCase()}${d.postAt ? ` (post ${d.postAt})` : ""} ==`,
+    d.card && cardUrl ? `Image: ${cardUrl(d.card)}` : null,
+    d.text,
+    `Post: ${intentUrl(d.text)}`,
+    d.reply ? `Reply with:\n${d.reply}` : null,
+  ].filter(Boolean).join("\n")).join("\n\n");
   return { subject, html, text };
 }
 

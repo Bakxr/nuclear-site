@@ -36,16 +36,31 @@ const fleet = {
 };
 
 describe('X drafts', () => {
-  it('keeps every draft within 280 characters', () => {
+  it('keeps every post and reply within 280 characters', () => {
     const drafts = buildXDrafts({ snapshot, fleet, now: NOW });
     expect(drafts.map((d) => d.kind)).toEqual(['Market movers', 'Reactor status', 'Insider buy', 'Market odds']);
-    for (const d of drafts) expect(xLength(d.text)).toBeLessThanOrEqual(280);
+    for (const d of drafts) {
+      expect(xLength(d.text)).toBeLessThanOrEqual(280);
+      expect(xLength(d.reply)).toBeLessThanOrEqual(280);
+    }
   });
 
-  it('links each post to a relevant page, tagged for attribution', () => {
+  it('keeps links out of the post and puts a tagged link in the reply', () => {
     const [movers, status] = buildXDrafts({ snapshot, fleet, now: NOW });
-    expect(movers.text).toContain('https://thenuclearpulse.com/uranium-stocks?utm_source=x&utm_medium=social&utm_campaign=market-movers');
-    expect(status.text).toContain('/reactor-outages?utm_source=x');
+    for (const d of [movers, status]) expect(d.text).not.toMatch(/https?:\/\//);
+    expect(movers.reply).toContain('https://thenuclearpulse.com/uranium-stocks?utm_source=x&utm_medium=social&utm_campaign=market-movers');
+    expect(status.reply).toContain('/reactor-outages?utm_source=x');
+  });
+
+  it('ends each post with a question to draw replies', () => {
+    for (const d of buildXDrafts({ snapshot, fleet, now: NOW })) expect(d.text.trim().endsWith('?')).toBe(true);
+  });
+
+  it('attaches chart data that matches the post', () => {
+    const { card } = moversDraft(snapshot, { now: NOW });
+    expect(card).toMatchObject({ type: 'movers', date: 'Sep 28', uranium: 82.5, up: 3, total: 5 });
+    expect(card.rows[0]).toEqual({ ticker: 'OKLO', pct: 6.2 });
+    expect(fleetDraft(fleet, { now: NOW }).card).toMatchObject({ type: 'fleet', full: 82, total: 84, offline: ['Browns Ferry 1'], offlineCount: 1, reducedCount: 1 });
   });
 
   it('counts links the way X does (23 characters each)', () => {
@@ -58,43 +73,47 @@ describe('X drafts', () => {
       { kind: 'construction-start', station: 'Bailong (China)', name: 'Bailong', unit: 'Bailong 1' },
       { kind: 'operating', station: 'Zhangzhou (China)', name: 'Zhangzhou', unit: 'Zhangzhou 2' },
     ];
-    const drafts = milestoneDrafts(changes);
+    const drafts = milestoneDrafts(changes, { now: NOW });
     expect(drafts).toHaveLength(2);
     expect(drafts[0].text).toContain('Construction has started on Bailong 1, at Bailong (China).');
-    expect(drafts[0].text).toContain('/?plant=Bailong&utm_source=x');
+    expect(drafts[0].reply).toContain('/?plant=Bailong&utm_source=x');
+    expect(drafts[0].card).toMatchObject({ type: 'milestone', unit: 'Bailong 1', station: 'Bailong, China', label: 'construction start' });
     expect(drafts[1].text).toContain('Zhangzhou 2 at Zhangzhou (China) is now in operation.');
     expect(buildXDrafts({ snapshot, fleet, plantChanges: changes, now: NOW })[0].kind).toBe('Reactor milestone');
   });
 
-  it('plugs the newsletter on Thursdays only', () => {
+  it('plugs the newsletter on Thursdays only, link in the post itself', () => {
     expect(newsletterDraft({ now: NOW })).toBeNull();
     const thursday = Date.parse('2026-10-01T14:00:00Z');
-    expect(newsletterDraft({ now: thursday }).text).toContain('utm_campaign=newsletter-plug');
+    const plug = newsletterDraft({ now: thursday });
+    expect(plug.text).toContain('utm_campaign=newsletter-plug');
+    expect(plug.reply).toBeNull();
   });
 
   it('leads the movers post with the biggest absolute moves', () => {
     const { text } = moversDraft(snapshot);
     expect(text.indexOf('$OKLO +6.2%')).toBeLessThan(text.indexOf('$SMR −4.1%'));
     expect(text).toContain('Uranium spot: $82.50/lb');
-    expect(text).toContain('3 of 5 names');
+    expect(text).toContain('3 of 5 names closed higher');
   });
 
   it('summarises the fleet with offline units first', () => {
     const { text } = fleetDraft(fleet);
-    expect(text).toContain('82 of 84 reactors at full power');
-    expect(text).toContain('Offline: Browns Ferry 1');
-    expect(text).toContain('Vogtle 3 (60%)');
+    expect(text).toContain('82 of 84 US reactors are at full power');
+    expect(text).toContain('1 offline, including Browns Ferry 1');
+    expect(text).toContain('1 running at reduced power');
   });
 
   it('only posts recent open-market buys, never grants', () => {
-    const { text } = insiderDraft(snapshot, { now: NOW });
-    expect(text).toContain('John Roe, CEO bought 25,000 shares of $UEC');
+    const { text, card } = insiderDraft(snapshot, { now: NOW });
+    expect(text).toContain('John Roe, CEO bought 25,000 shares at $9.40');
     expect(text).not.toContain('Jane Doe');
     expect(text).not.toContain('Old Buyer');
+    expect(card).toMatchObject({ ticker: 'UEC', date: 'Sep 25', value: '$235K' });
   });
 
   it('skips settled prediction markets', () => {
-    expect(oddsDraft(snapshot).text).toContain('put it at 10%');
+    expect(oddsDraft(snapshot).text).toContain('Polymarket traders put this at 10%');
   });
 
   it('returns nothing rather than an empty post when data is missing', () => {

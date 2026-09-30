@@ -35,6 +35,10 @@
     },
     "api/cron/dispatch.js": {
       "maxDuration": 60
+    },
+    "api/social/card.js": {
+      "maxDuration": 30,
+      "includeFiles": "api/_lib/fonts/**"
     }
   }
 }
