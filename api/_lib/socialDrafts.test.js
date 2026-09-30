@@ -112,6 +112,13 @@ describe('X drafts', () => {
     expect(card).toMatchObject({ ticker: 'UEC', date: 'Sep 25', value: '$235K' });
   });
 
+  it('tones down all-caps SEC job titles', () => {
+    const loud = { entities: { insiderTrades: [{ ticker: 'URG', filer: 'Walle Jade', title: 'VICE PRESIDENT FINANCE', transactionCode: 'P', shares: 1, date: '2026-09-27' }] } };
+    expect(insiderDraft(loud, { now: NOW }).text).toContain('Walle Jade, Vice President Finance bought');
+    const ceo = { entities: { insiderTrades: [{ ...loud.entities.insiderTrades[0], title: 'CEO AND DIRECTOR' }] } };
+    expect(insiderDraft(ceo, { now: NOW }).card.title).toBe('CEO And Director');
+  });
+
   it('skips settled prediction markets', () => {
     expect(oddsDraft(snapshot).text).toContain('Polymarket traders put this at 10%');
   });

@@ -41,6 +41,12 @@ export function trackedLink(path, campaign) {
   return url.toString();
 }
 
+// SEC filings often shout job titles ("VICE PRESIDENT FINANCE").
+function titleCase(text) {
+  if (!text || text !== text.toUpperCase()) return text;
+  return text.toLowerCase().replace(/\b[a-z]/g, (c) => c.toUpperCase()).replace(/\b(Ceo|Cfo|Coo|Cto|Evp|Svp|Vp)\b/g, (w) => w.toUpperCase());
+}
+
 function clip(text) {
   return xLength(text) <= X_LIMIT ? text : `${text.slice(0, X_LIMIT - 1).trimEnd()}…`;
 }
@@ -95,7 +101,7 @@ export function fleetDraft(fleet, { now = Date.now() } = {}) {
   let text = `${full} of ${units.length} US reactors are at full power today, per the NRC.`;
   if (offline.length) text += `\n\n${offline.length} offline, including ${offline.slice(0, 3).join(", ")}.`;
   if (reduced.length) text += ` ${reduced.length} running at reduced power.`;
-  text += offline.length ? "\n\nMost of these are planned refueling outages. Any you're keeping an eye on?" : "\n\nA clean sheet. How long before the next refueling season?";
+  text += offline.length ? "\n\nAny of these you're keeping an eye on?" : "\n\nEvery unit at full power. How long does that last?";
 
   return {
     kind: "Reactor status",
@@ -121,7 +127,7 @@ export function insiderDraft(snapshot, { now = Date.now(), days = 10 } = {}) {
   const top = buys[0];
   if (!top) return null;
 
-  const who = [top.filer, top.title].filter(Boolean).join(", ");
+  const who = [top.filer, titleCase(top.title)].filter(Boolean).join(", ");
   const price = top.pricePerShare ? ` at $${Number(top.pricePerShare).toFixed(2)}` : "";
   const value = top.totalValue ? ` (${fmtUsd(top.totalValue)})` : "";
   const text = `An insider is buying $${top.ticker} with their own money.\n\n${who} bought ${Number(top.shares).toLocaleString("en-US")} shares${price}${value} on the open market, per an SEC Form 4 dated ${top.date}.\n\nSignal, or noise?`;
@@ -134,7 +140,7 @@ export function insiderDraft(snapshot, { now = Date.now(), days = 10 } = {}) {
       date: new Date(`${top.date}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" }),
       ticker: top.ticker,
       filer: top.filer || "",
-      title: top.title || "",
+      title: titleCase(top.title) || "",
       shares: Number(top.shares) || 0,
       price: top.pricePerShare ? Number(top.pricePerShare) : null,
       value: top.totalValue ? fmtUsd(top.totalValue) : null,
