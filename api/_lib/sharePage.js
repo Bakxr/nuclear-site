@@ -1,9 +1,11 @@
 // Posting page for one X draft, linked from the owner's morning email.
 // Email can't touch the clipboard, but a page can: copy the chart image and
 // paste it into X, or on a phone hand image + text to the X app through the
-// share sheet. The draft travels in the signed URL (see api/_lib/cardLinks.js).
+// share sheet. The draft travels in the signed URL (see cardLinks.js).
+// Served by api/social/card.js (?view=post, via the /api/social/post rewrite):
+// the Hobby plan caps a deployment at 12 functions.
 
-import { cardUrl, readSignedParams } from "../_lib/cardLinks.js";
+import { cardUrl } from "./cardLinks.js";
 
 const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
@@ -119,21 +121,8 @@ export function renderSharePage(draft) {
 </html>`;
 }
 
-export default function handler(req, res) {
-  if (req.method !== "GET" && req.method !== "HEAD") {
-    res.setHeader("Allow", "GET, HEAD");
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-
-  let draft;
-  try {
-    draft = readSignedParams(req.query?.d, req.query?.s);
-  } catch (err) {
-    console.error("[social/share]", err?.message || err);
-    return res.status(500).send("Not configured.");
-  }
+export function sendSharePage(res, draft) {
   if (!draft || typeof draft.text !== "string") return res.status(403).send("Invalid or expired link.");
-
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.setHeader("Cache-Control", "private, max-age=86400");
   res.setHeader("X-Robots-Tag", "noindex, nofollow");

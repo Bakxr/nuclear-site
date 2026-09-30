@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createMockReq, createMockRes } from '../../tests/serverTestUtils.js';
-import { shareUrl } from '../_lib/cardLinks.js';
-import handler, { renderSharePage } from './share.js';
+import { shareUrl } from './cardLinks.js';
+import { renderSharePage } from './sharePage.js';
+import handler from '../social/card.js';
 
 const draft = {
   kind: 'Market odds',
@@ -10,7 +11,7 @@ const draft = {
   card: { type: 'odds', source: 'Polymarket', question: 'Iran deal?', pct: 6 },
 };
 
-describe('/api/social/share', () => {
+describe('posting page (/api/social/post)', () => {
   beforeEach(() => {
     process.env.CRON_SECRET = 'test-secret';
   });
@@ -18,13 +19,14 @@ describe('/api/social/share', () => {
   it('serves the posting page for a signed link', async () => {
     const url = new URL(shareUrl('https://thenuclearpulse.com', draft));
     const res = createMockRes();
-    await handler(createMockReq({ method: 'GET', query: { d: url.searchParams.get('d'), s: url.searchParams.get('s') } }), res);
+    await handler(createMockReq({ method: 'GET', query: { view: 'post', d: url.searchParams.get('d'), s: url.searchParams.get('s') } }), res);
     expect(res.statusCode).toBe(200);
+    expect(url.pathname).toBe('/api/social/post');
   });
 
   it('refuses unsigned or tampered links', async () => {
     const res = createMockRes();
-    await handler(createMockReq({ method: 'GET', query: { d: 'abc', s: 'nope' } }), res);
+    await handler(createMockReq({ method: 'GET', query: { view: 'post', d: 'abc', s: 'nope' } }), res);
     expect(res.statusCode).toBe(403);
   });
 

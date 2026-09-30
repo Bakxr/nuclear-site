@@ -14,6 +14,10 @@
     {
       "source": "/api/terminal/panel/:key",
       "destination": "/api/terminal/panel?key=:key"
+    },
+    {
+      "source": "/api/social/post",
+      "destination": "/api/social/card?view=post"
     }
   ],
   "crons": [

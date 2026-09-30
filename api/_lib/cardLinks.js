@@ -1,5 +1,5 @@
 // Signed links for the X drafts: chart card images (/api/social/card) and
-// the posting page (/api/social/share). The data travels in the URL, so the
+// the posting page (/api/social/post). The data travels in the URL, so the
 // image and page always match the post they were drafted with, however late
 // the owner opens the email; the signature stops anyone else minting branded
 // pages. Kept apart from socialCards.js so the cron job never loads the renderer.
@@ -27,7 +27,7 @@ export function cardUrl(siteUrl, card) {
 
 // Posting page for one draft: text, reply and card.
 export function shareUrl(siteUrl, draft) {
-  return signedUrl(siteUrl, "/api/social/share", { kind: draft.kind, text: draft.text, reply: draft.reply || null, card: draft.card || null });
+  return signedUrl(siteUrl, "/api/social/post", { kind: draft.kind, text: draft.text, reply: draft.reply || null, card: draft.card || null });
 }
 
 // Returns the signed object, or null if the signature doesn't match.
