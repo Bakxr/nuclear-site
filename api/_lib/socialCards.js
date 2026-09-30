@@ -106,7 +106,7 @@ function fleetCard({ full, total, offline = [], offlineCount = 0, reducedCount =
       h("div", { flexDirection: "column", flex: 1, marginLeft: 40, justifyContent: "center" },
         h("div", { fontSize: 20, fontWeight: 700, letterSpacing: 3, color: C.down, textTransform: "uppercase", marginBottom: 14 }, "Offline"),
         ...offline.slice(0, 8).map((name) => h("div", { fontSize: 28, color: C.body, marginBottom: 8 }, name)),
-        offlineCount > 8 ? h("div", { fontSize: 24, color: C.faint }, `+${offlineCount - 8} more`) : null,
+        offlineCount > Math.min(offline.length, 8) ? h("div", { fontSize: 24, color: C.faint }, `+${offlineCount - Math.min(offline.length, 8)} more`) : null,
       )));
 }
 
