@@ -277,20 +277,21 @@ export function diffStations(before = {}, after = {}) {
   for (const key of new Set([...Object.keys(before), ...Object.keys(after)])) {
     const now = after[key];
     const was = before[key];
-    const label = `${(now || was).name} (${(now || was).country})`;
+    const name = (now || was).name;
+    const label = `${name} (${(now || was).country})`;
     if (!was) {
-      changes.push({ kind: "new-station", station: label, text: `New station listed: ${label}, ${now.construction.length} unit(s) under construction, ${now.operating.length} operating.` });
+      changes.push({ kind: "new-station", station: label, name, text: `New station listed: ${label}, ${now.construction.length} unit(s) under construction, ${now.operating.length} operating.` });
       continue;
     }
     for (const unit of unitsIn(after, key, "construction")) {
-      if (!unitsIn(before, key, "construction").has(unit)) changes.push({ kind: "construction-start", station: label, unit, text: `Construction start: ${unit} (${label}).` });
+      if (!unitsIn(before, key, "construction").has(unit)) changes.push({ kind: "construction-start", station: label, name, unit, text: `Construction start: ${unit} (${label}).` });
     }
     for (const unit of unitsIn(after, key, "operating")) {
-      if (!unitsIn(before, key, "operating").has(unit)) changes.push({ kind: "operating", station: label, unit, text: `Now operating: ${unit} (${label}).` });
+      if (!unitsIn(before, key, "operating").has(unit)) changes.push({ kind: "operating", station: label, name, unit, text: `Now operating: ${unit} (${label}).` });
     }
     for (const unit of [...unitsIn(before, key, "operating"), ...unitsIn(before, key, "construction")]) {
       const stillThere = unitsIn(after, key, "operating").has(unit) || unitsIn(after, key, "construction").has(unit);
-      if (!stillThere) changes.push({ kind: "removed", station: label, unit, text: `No longer operating or under construction: ${unit} (${label}).` });
+      if (!stillThere) changes.push({ kind: "removed", station: label, name, unit, text: `No longer operating or under construction: ${unit} (${label}).` });
     }
   }
   return changes;

@@ -7,6 +7,7 @@
 // fold, plus an unsubscribe link.
 
 import { buildUnsubscribeHeaders, createUnsubscribeToken } from "./unsubscribe.js";
+import { xLength } from "./socialDrafts.js";
 
 const SITE_URL = process.env.SITE_URL?.trim() || "https://thenuclearpulse.com";
 
@@ -321,21 +322,36 @@ export function buildPlantChangesEmail({ changes = [], headlines = [], deployTri
 
 // ---------------- X DRAFTS (owner only) ----------------
 
-export function buildXDraftsEmail({ drafts, intentUrl }) {
+function funnelBlock(funnel) {
+  if (!funnel) return "";
+  const stat = (value, label) => `<td style="padding:0 18px 0 0;vertical-align:top;"><div style="font-family:Georgia,serif;font-size:22px;color:#f5f0e8;">${escapeHtml(String(value ?? "—"))}</div><div style="font-size:11px;color:rgba(245,240,232,0.5);text-transform:uppercase;letter-spacing:0.06em;">${label}</div></td>`;
+  const sources = funnel.topSources?.length
+    ? `<div style="margin-top:12px;font-size:12px;line-height:1.7;color:rgba(245,240,232,0.72);">Sign-ups by source, last 30 days: ${funnel.topSources.map((s) => `${escapeHtml(s.label)} <strong style="color:#d4a54a;">${s.count}</strong>`).join(" · ")}</div>`
+    : `<div style="margin-top:12px;font-size:12px;color:rgba(245,240,232,0.5);">No sign-ups in the last 30 days yet.</div>`;
+  return moduleBlock("Funnel", `<table role="presentation" cellpadding="0" cellspacing="0"><tr>${stat(funnel.subscribers, "Subscribers")}${stat(`+${funnel.new7}`, "This week")}${stat(funnel.terminalMembers, "Terminal members")}</tr></table>${sources}`);
+}
+
+function funnelText(funnel) {
+  if (!funnel) return "";
+  const sources = funnel.topSources?.map((s) => `${s.label} ${s.count}`).join(", ") || "none yet";
+  return `FUNNEL: ${funnel.subscribers} subscribers (+${funnel.new7} this week), ${funnel.terminalMembers ?? "?"} terminal members. Sources (30d): ${sources}\n\n`;
+}
+
+export function buildXDraftsEmail({ drafts, intentUrl, funnel = null }) {
   const subject = `X drafts for today (${drafts.length})`;
   const blocks = drafts.map((d) => moduleBlock(d.postAt ? `${d.kind} · post ${d.postAt}` : d.kind, `
     <div style="font-size:14px;line-height:1.6;color:#f5f0e8;white-space:pre-wrap;">${escapeHtml(d.text)}</div>
     <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;">
       <a href="${escapeHtml(intentUrl(d.text))}" style="display:inline-block;padding:9px 16px;border-radius:4px;background:#d4a54a;color:#111;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">Post on X</a>
-      <span style="font-size:11px;color:rgba(245,240,232,0.4);">${d.text.length}/280</span>
+      <span style="font-size:11px;color:rgba(245,240,232,0.4);">${xLength(d.text)}/280</span>
     </div>`)).join("");
 
   const html = shell({
     title: subject,
-    bodyHtml: `<p style="font-size:14px;line-height:1.6;color:rgba(245,240,232,0.72);margin:0 0 18px;">Weekdays: post two, at 8:00am and 12:30pm ET. Weekends: one, mid-morning. "Post on X" opens X with the text filled in; check it reads right, then post.</p>${blocks}`,
+    bodyHtml: `<p style="font-size:14px;line-height:1.6;color:rgba(245,240,232,0.72);margin:0 0 18px;">Weekdays: post two, at 8:00am and 12:30pm ET, plus any reactor milestone right away. Weekends: one, mid-morning. "Post on X" opens X with the text filled in; check it reads right, then post. Links are tagged, so the sign-ups they bring in show up in the funnel below.</p>${funnelBlock(funnel)}${blocks}`,
     footerNote: "Owner-only email from the Nuclear Pulse morning job.",
   });
-  const text = drafts.map((d) => `== ${d.kind.toUpperCase()}${d.postAt ? ` (post ${d.postAt})` : ""} ==\n${d.text}\nPost: ${intentUrl(d.text)}`).join("\n\n");
+  const text = funnelText(funnel) + drafts.map((d) => `== ${d.kind.toUpperCase()}${d.postAt ? ` (post ${d.postAt})` : ""} ==\n${d.text}\nPost: ${intentUrl(d.text)}`).join("\n\n");
   return { subject, html, text };
 }
 

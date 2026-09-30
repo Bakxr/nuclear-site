@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildXDrafts, fleetDraft, insiderDraft, moversDraft, oddsDraft, xIntentUrl } from './socialDrafts.js';
+import { buildXDrafts, fleetDraft, insiderDraft, milestoneDrafts, moversDraft, newsletterDraft, oddsDraft, trackedLink, xIntentUrl, xLength } from './socialDrafts.js';
 
 const NOW = Date.parse('2026-09-28T10:30:00Z');
 
@@ -39,7 +39,37 @@ describe('X drafts', () => {
   it('keeps every draft within 280 characters', () => {
     const drafts = buildXDrafts({ snapshot, fleet, now: NOW });
     expect(drafts.map((d) => d.kind)).toEqual(['Market movers', 'Reactor status', 'Insider buy', 'Market odds']);
-    for (const d of drafts) expect(d.text.length).toBeLessThanOrEqual(280);
+    for (const d of drafts) expect(xLength(d.text)).toBeLessThanOrEqual(280);
+  });
+
+  it('links each post to a relevant page, tagged for attribution', () => {
+    const [movers, status] = buildXDrafts({ snapshot, fleet, now: NOW });
+    expect(movers.text).toContain('https://thenuclearpulse.com/uranium-stocks?utm_source=x&utm_medium=social&utm_campaign=market-movers');
+    expect(status.text).toContain('/reactor-outages?utm_source=x');
+  });
+
+  it('counts links the way X does (23 characters each)', () => {
+    expect(xLength(`hi ${trackedLink('/', 'a-very-long-campaign-name-indeed')}`)).toBe(26);
+  });
+
+  it('turns IAEA construction starts and grid entries into milestone posts, skipping removals', () => {
+    const changes = [
+      { kind: 'removed', station: 'Old (US)', name: 'Old', unit: 'Old 1' },
+      { kind: 'construction-start', station: 'Bailong (China)', name: 'Bailong', unit: 'Bailong 1' },
+      { kind: 'operating', station: 'Zhangzhou (China)', name: 'Zhangzhou', unit: 'Zhangzhou 2' },
+    ];
+    const drafts = milestoneDrafts(changes);
+    expect(drafts).toHaveLength(2);
+    expect(drafts[0].text).toContain('Construction has started on Bailong 1, at Bailong (China).');
+    expect(drafts[0].text).toContain('/?plant=Bailong&utm_source=x');
+    expect(drafts[1].text).toContain('Zhangzhou 2 at Zhangzhou (China) is now in operation.');
+    expect(buildXDrafts({ snapshot, fleet, plantChanges: changes, now: NOW })[0].kind).toBe('Reactor milestone');
+  });
+
+  it('plugs the newsletter on Thursdays only', () => {
+    expect(newsletterDraft({ now: NOW })).toBeNull();
+    const thursday = Date.parse('2026-10-01T14:00:00Z');
+    expect(newsletterDraft({ now: thursday }).text).toContain('utm_campaign=newsletter-plug');
   });
 
   it('leads the movers post with the biggest absolute moves', () => {

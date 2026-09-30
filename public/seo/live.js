@@ -85,3 +85,44 @@
       .catch(function () {});
   }
 })();
+
+// Newsletter sign-up form on each guide page.
+(function () {
+  var form = document.querySelector("[data-signup]");
+  if (!form) return;
+  var msg = form.querySelector(".signup-msg");
+  var button = form.querySelector("button");
+  function show(text, kind) {
+    msg.textContent = text;
+    msg.className = "signup-msg " + kind;
+  }
+  form.addEventListener("submit", function (event) {
+    event.preventDefault();
+    var email = form.email.value.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+      show("Please enter a valid email address.", "err");
+      return;
+    }
+    button.disabled = true;
+    show("", "");
+    var attribution = window.npAttribution ? window.npAttribution(form.getAttribute("data-signup")) : null;
+    fetch("/api/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: email, website: form.website.value, attribution: attribution }),
+    })
+      .then(function (res) {
+        return res.json().catch(function () { return {}; }).then(function (data) { return { ok: res.ok, data: data }; });
+      })
+      .then(function (result) {
+        if (!result.ok) throw new Error(result.data.error || "Something went wrong. Please try again.");
+        try { window.localStorage.setItem("np-newsletter-subscribed", "1"); } catch { /* private mode */ }
+        form.querySelector(".signup-row").remove();
+        show("You're in. Check your inbox for a welcome email.", "ok");
+      })
+      .catch(function (err) {
+        button.disabled = false;
+        show(err.message || "Could not connect. Please try again.", "err");
+      });
+  });
+})();

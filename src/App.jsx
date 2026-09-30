@@ -772,7 +772,7 @@ export default function NuclearPulse() {
       const res = await fetch("/api/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: trimmed, website: form.website }),
+        body: JSON.stringify({ email: trimmed, website: form.website, attribution: window.npAttribution?.(surface) }),
       });
       const data = await res.json();
       if (!res.ok) {

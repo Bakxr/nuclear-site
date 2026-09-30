@@ -74,3 +74,13 @@ td .desc { display: block; color: var(--muted); font-size: 13.5px; margin-top: 2
 
 footer { padding-block: 24px 40px; border-top: 1px solid var(--line); font-size: 13px; color: var(--faint); display: flex; flex-wrap: wrap; gap: 8px 18px; }
 footer a { color: var(--muted); }
+.signup { display: grid; gap: 10px; margin-top: 6px; }
+.signup label { color: var(--body); font-size: 14px; }
+.signup-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.signup input[type="email"] { flex: 1 1 220px; min-width: 0; padding: 12px 14px; border-radius: 8px; border: 1px solid rgba(212, 165, 74, 0.35); background: rgba(0, 0, 0, 0.25); color: inherit; font: inherit; font-size: 16px; }
+.signup button { cursor: pointer; background: transparent; font-family: inherit; }
+.signup button[disabled] { opacity: 0.6; cursor: wait; }
+.signup .hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.signup-msg { margin: 0; font-size: 13px; min-height: 1em; }
+.signup-msg.ok { color: var(--gold); }
+.signup-msg.err { color: var(--down); }

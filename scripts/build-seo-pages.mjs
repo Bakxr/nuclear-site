@@ -89,11 +89,19 @@ ${faqLd}
     ${body.main}
     <section class="cta" aria-label="Nuclear Pulse Pro">
       <h2>Follow it every day</h2>
-      <p>The Nuclear Pulse terminal adds insider buying from SEC Form 4 filings, daily NRC status for every US reactor, and prediction-market odds on enrichment and policy. Try it free for 7 days, or get the free weekly briefing.</p>
+      <p>The Nuclear Pulse terminal adds insider buying from SEC Form 4 filings, daily NRC status for every US reactor, and prediction-market odds on enrichment and policy. Try it free for 7 days.</p>
       <div class="cta-row">
         <a class="btn primary" href="/terminal">Start 7-day free trial</a>
-        <a class="btn ghost" href="/">Get the free weekly briefing</a>
       </div>
+      <form class="signup" data-signup="seo-${slug}" novalidate>
+        <label for="signup-email">Or get the free weekly briefing: uranium, reactors and nuclear stocks in five minutes, every Sunday.</label>
+        <div class="signup-row">
+          <input id="signup-email" type="email" name="email" placeholder="you@example.com" autocomplete="email" required />
+          <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" class="hp" />
+          <button class="btn ghost" type="submit">Subscribe free</button>
+        </div>
+        <p class="signup-msg" role="status" aria-live="polite"></p>
+      </form>
     </section>
     ${faq.length ? `<section class="group" aria-labelledby="faq"><h2 id="faq">Questions</h2><div class="faq">${faq.map(([q, a]) => `<details><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join("")}</div></section>` : ""}
   </main>
@@ -103,6 +111,7 @@ ${faqLd}
     <a href="mailto:support@thenuclearpulse.com">support@thenuclearpulse.com</a>
   </footer>
 </div>
+<script src="/attribution.js"></script>
 <script src="/seo/live.js" defer></script>
 </body>
 </html>

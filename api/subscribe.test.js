@@ -70,9 +70,26 @@ describe('/api/subscribe', () => {
       'service-key',
     );
     expect(upsert).toHaveBeenCalledWith(
-      { email: 'person@example.com', active: true },
+      expect.objectContaining({ email: 'person@example.com', active: true }),
       { onConflict: 'email' },
     );
+  });
+
+  it('stores cleaned first-touch attribution for a new subscriber', async () => {
+    const attribution = { source: 'X', campaign: 'market-movers', referrer: 't.co', landing: '/uranium-stocks', surface: 'seo-uranium-stocks<script>', extra: 'ignored' };
+    await handler(createMockReq({ method: 'POST', body: { email: 'a@b.co', attribution } }), createMockRes());
+
+    expect(upsert.mock.calls[0][0]).toEqual({
+      email: 'a@b.co', active: true,
+      source: 'x', campaign: 'market-movers', referrer: 't.co', landing: '/uranium-stocks', surface: 'seo-uranium-stocksscript',
+    });
+  });
+
+  it('keeps the original attribution when someone re-subscribes', async () => {
+    existingRow = { active: false };
+    await handler(createMockReq({ method: 'POST', body: { email: 'a@b.co', attribution: { source: 'reddit' } } }), createMockRes());
+
+    expect(upsert.mock.calls[0][0]).toEqual({ email: 'a@b.co', active: true });
   });
 
   it('returns 500 when the service key is not configured', async () => {

@@ -30,6 +30,7 @@ import { diffStations, fetchPrisReactors, groupStations, summarizeStations } fro
 import { buildXDrafts, xIntentUrl } from "../_lib/socialDrafts.js";
 import { fetchNrcFleetStatus } from "../_lib/nrcFleet.js";
 import { buildSnapshotIndex, evaluateAlert } from "../_lib/alerts.js";
+import { getFunnelStats } from "../_lib/funnel.js";
 
 function isAuthorized(req) {
   const secret = process.env.CRON_SECRET?.trim();
@@ -309,7 +310,7 @@ async function runAlerts({ supabase, snapshot, dryRun }) {
 
 // Emails the owner today's ready-to-post X drafts (free alternative to the
 // paid X API). At most once per day.
-async function runXDrafts({ supabase, snapshot, dryRun }) {
+async function runXDrafts({ supabase, snapshot, plantChanges = [], dryRun }) {
   const owner = process.env.OWNER_EMAIL?.trim();
   if (!owner) return { skipped: "OWNER_EMAIL not set" };
 
@@ -320,11 +321,12 @@ async function runXDrafts({ supabase, snapshot, dryRun }) {
   if (await alreadyDispatched(supabase, { email: owner, dispatch_key: dispatchKey })) return { skipped: "already sent today" };
 
   const fleet = await fetchNrcFleetStatus().catch(() => null);
-  const drafts = buildXDrafts({ snapshot, fleet });
+  const drafts = buildXDrafts({ snapshot, fleet, plantChanges });
   if (!drafts.length) return { skipped: "no data for drafts" };
-  if (dryRun) return { drafts: drafts.map((d) => d.text) };
+  const funnel = await getFunnelStats(supabase).catch(() => null);
+  if (dryRun) return { drafts: drafts.map((d) => d.text), funnel };
 
-  const result = await sendEmail({ to: owner, ...buildXDraftsEmail({ drafts, intentUrl: xIntentUrl }) });
+  const result = await sendEmail({ to: owner, ...buildXDraftsEmail({ drafts, intentUrl: xIntentUrl, funnel }) });
   if (!result.ok) return { error: result.error };
   await recordDispatch(supabase, { user_id: null, email: owner, dispatch_type: "xdrafts", dispatch_key: dispatchKey });
   return { sent: drafts.length };
@@ -359,7 +361,7 @@ async function runPlantRefresh({ supabase, snapshot, dryRun }) {
     .slice(0, 6)
     .map((a) => ({ title: a.title, source: a.sourceName || a.source, url: a.url || a.link }));
 
-  if (dryRun) return { changes: changes.map((c) => c.text), headlines: headlines.map((h) => h.title), needsDeploy };
+  if (dryRun) return { changes: changes.map((c) => c.text), headlines: headlines.map((h) => h.title), needsDeploy, changeList: changes };
 
   let deployTriggered = false;
   const hook = process.env.VERCEL_DEPLOY_HOOK_URL?.trim();
@@ -372,7 +374,7 @@ async function runPlantRefresh({ supabase, snapshot, dryRun }) {
     if (!result.ok) return { error: result.error, changes: changes.length, deployTriggered };
   }
   if (owner) await recordDispatch(supabase, { user_id: null, email: owner, dispatch_type: "plants", dispatch_key: dispatchKey });
-  return { changes: changes.length, headlines: headlines.length, deployTriggered };
+  return { changes: changes.length, headlines: headlines.length, deployTriggered, changeList: changes };
 }
 
 export default async function handler(req, res) {
@@ -417,18 +419,19 @@ export default async function handler(req, res) {
       return res.status(200).json({ job, dryRun, ...result });
     }
     if (job === "plants") {
-      const result = await runPlantRefresh({ supabase, snapshot, dryRun });
+      const { changeList: _changeList, ...result } = await runPlantRefresh({ supabase, snapshot, dryRun });
       return res.status(200).json({ job, dryRun, ...result });
     }
     if (job === "xdrafts") {
       const result = await runXDrafts({ supabase, snapshot, dryRun });
       return res.status(200).json({ job, dryRun, ...result });
     }
-    // daily: run daily, then alerts and X drafts (Hobby cron cap workaround)
+    // daily: run daily, then alerts, plant refresh and X drafts (Hobby cron cap
+    // workaround). Plants go first so IAEA changes become milestone drafts.
     const daily = await runDaily({ supabase, snapshot, dryRun });
     const alerts = await runAlerts({ supabase, snapshot, dryRun });
-    const xdrafts = await runXDrafts({ supabase, snapshot, dryRun }).catch((err) => ({ error: err?.message || String(err) }));
-    const plants = await runPlantRefresh({ supabase, snapshot, dryRun }).catch((err) => ({ error: err?.message || String(err) }));
+    const { changeList = [], ...plants } = await runPlantRefresh({ supabase, snapshot, dryRun }).catch((err) => ({ error: err?.message || String(err) }));
+    const xdrafts = await runXDrafts({ supabase, snapshot, plantChanges: changeList, dryRun }).catch((err) => ({ error: err?.message || String(err) }));
     return res.status(200).json({ job: "daily", dryRun, daily, alerts, xdrafts, plants });
   } catch (err) {
     console.error("[cron/dispatch] handler failed", err?.message || err);

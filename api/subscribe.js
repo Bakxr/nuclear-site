@@ -3,6 +3,7 @@ import { ensureAllowedOrigin, getClientAddress } from "./_lib/http.js";
 import { checkRateLimit } from "./_lib/rateLimit.js";
 import { sendEmail } from "./_lib/dispatch.js";
 import { buildWelcomeEmail } from "./_lib/emailTemplates.js";
+import { sanitizeAttribution } from "./_lib/attribution.js";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -19,7 +20,7 @@ export default async function handler(req, res) {
 
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
-  const { email, website } = req.body || {};
+  const { email, website, attribution } = req.body || {};
 
   if (website) {
     return res.status(400).json({ error: 'Request rejected.' });
@@ -45,10 +46,12 @@ export default async function handler(req, res) {
     .maybeSingle();
   const isNewSignup = !existing?.active;
 
-  // Upsert: if email already exists, re-activate it (handles re-subscribe after unsubscribe)
+  // Upsert: if email already exists, re-activate it (handles re-subscribe after unsubscribe).
+  // Attribution is first-touch: only brand-new rows get it.
+  const row = existing ? { email: normalised, active: true } : { email: normalised, active: true, ...sanitizeAttribution(attribution) };
   const { error } = await supabase
     .from('subscribers')
-    .upsert({ email: normalised, active: true }, { onConflict: 'email' });
+    .upsert(row, { onConflict: 'email' });
 
   if (error) {
     console.error('[subscribe]', error.message);
