@@ -28,7 +28,8 @@ const SEND_BUDGET_MS = 45 * 1000;
 import { buildDailyEmail, buildWeeklyEmail, buildAlertEmail, buildXDraftsEmail, buildPlantChangesEmail } from "../_lib/emailTemplates.js";
 import { diffStations, fetchPrisReactors, groupStations, summarizeStations } from "../_lib/plantRegistry.js";
 import { buildXDrafts, xIntentUrl } from "../_lib/socialDrafts.js";
-import { cardUrl } from "../_lib/cardLinks.js";
+import { cardUrl, shareUrl } from "../_lib/cardLinks.js";
+import { writeHooks } from "../_lib/hookWriter.js";
 import { fetchNrcFleetStatus } from "../_lib/nrcFleet.js";
 import { buildSnapshotIndex, evaluateAlert } from "../_lib/alerts.js";
 import { getFunnelStats } from "../_lib/funnel.js";
@@ -322,20 +323,32 @@ async function runXDrafts({ supabase, snapshot, plantChanges = [], dryRun }) {
   if (await alreadyDispatched(supabase, { email: owner, dispatch_key: dispatchKey })) return { skipped: "already sent today" };
 
   const fleet = await fetchNrcFleetStatus().catch(() => null);
-  const drafts = buildXDrafts({ snapshot, fleet, plantChanges });
-  if (!drafts.length) return { skipped: "no data for drafts" };
-  const funnel = await getFunnelStats(supabase).catch(() => null);
-  if (dryRun) return { drafts: drafts.map(({ kind, text, reply, card }) => ({ kind, text, reply, card })), funnel };
+  const templated = buildXDrafts({ snapshot, fleet, plantChanges });
+  if (!templated.length) return { skipped: "no data for drafts" };
 
+  // Claude rewrites the hooks from today's headlines; falls back to the
+  // templates on any problem (see hookWriter.js).
+  const cutoff = Date.now() - 36 * 60 * 60 * 1000;
+  const headlines = (snapshot?.entities?.newsArticles || [])
+    .filter((a) => a.title && (Date.parse(a.pubDate || a.publishedAt || "") || Date.now()) >= cutoff)
+    .slice(0, 10)
+    .map((a) => ({ title: a.title, source: a.sourceName || a.source }));
+  const { drafts, ...hooks } = await writeHooks(templated, { headlines });
+
+  const funnel = await getFunnelStats(supabase).catch(() => null);
+  if (dryRun) return { hooks, drafts: drafts.map(({ kind, text, template, reply, card }) => ({ kind, text, template, reply, card })), funnel };
+
+  const site = process.env.SITE_URL?.trim() || "https://thenuclearpulse.com";
   const result = await sendEmail({ to: owner, ...buildXDraftsEmail({
     drafts,
     intentUrl: xIntentUrl,
     funnel,
-    cardUrl: (card) => cardUrl(process.env.SITE_URL?.trim() || "https://thenuclearpulse.com", card),
+    cardUrl: (card) => cardUrl(site, card),
+    shareUrl: (draft) => shareUrl(site, draft),
   }) });
-  if (!result.ok) return { error: result.error };
+  if (!result.ok) return { error: result.error, hooks };
   await recordDispatch(supabase, { user_id: null, email: owner, dispatch_type: "xdrafts", dispatch_key: dispatchKey });
-  return { sent: drafts.length };
+  return { sent: drafts.length, hooks };
 }
 
 // Headlines that usually mean a reactor milestone (the IAEA lags the news).

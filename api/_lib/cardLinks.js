@@ -1,7 +1,8 @@
-// Signed links to chart cards. The card's numbers travel in the URL, so the
-// image always matches the post text it was drafted with, however late the
-// owner opens the email; the signature stops anyone else minting branded
-// cards. Kept apart from socialCards.js so the cron job never loads the renderer.
+// Signed links for the X drafts: chart card images (/api/social/card) and
+// the posting page (/api/social/share). The data travels in the URL, so the
+// image and page always match the post they were drafted with, however late
+// the owner opens the email; the signature stops anyone else minting branded
+// pages. Kept apart from socialCards.js so the cron job never loads the renderer.
 
 import crypto from "node:crypto";
 
@@ -15,13 +16,22 @@ function sign(payload) {
   return crypto.createHmac("sha256", cardSecret()).update(payload).digest("base64url").slice(0, 22);
 }
 
-export function cardUrl(siteUrl, card) {
-  const d = Buffer.from(JSON.stringify(card), "utf8").toString("base64url");
-  return `${siteUrl.replace(/\/$/, "")}/api/social/card?d=${d}&s=${sign(d)}`;
+function signedUrl(siteUrl, path, data) {
+  const d = Buffer.from(JSON.stringify(data), "utf8").toString("base64url");
+  return `${siteUrl.replace(/\/$/, "")}${path}?d=${d}&s=${sign(d)}`;
 }
 
-// Returns the card object, or null if the signature doesn't match.
-export function readCardParams(d, s) {
+export function cardUrl(siteUrl, card) {
+  return signedUrl(siteUrl, "/api/social/card", card);
+}
+
+// Posting page for one draft: text, reply and card.
+export function shareUrl(siteUrl, draft) {
+  return signedUrl(siteUrl, "/api/social/share", { kind: draft.kind, text: draft.text, reply: draft.reply || null, card: draft.card || null });
+}
+
+// Returns the signed object, or null if the signature doesn't match.
+export function readSignedParams(d, s) {
   if (typeof d !== "string" || typeof s !== "string" || d.length > 6000) return null;
   const expected = Buffer.from(sign(d));
   const given = Buffer.from(s);
@@ -32,3 +42,4 @@ export function readCardParams(d, s) {
     return null;
   }
 }
+

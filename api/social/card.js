@@ -2,7 +2,7 @@
 // (see api/_lib/cardLinks.js), so a given URL always renders the same image
 // and can be cached for good.
 
-import { readCardParams } from "../_lib/cardLinks.js";
+import { readSignedParams } from "../_lib/cardLinks.js";
 import { renderCardPng } from "../_lib/socialCards.js";
 
 export default async function handler(req, res) {
@@ -13,7 +13,7 @@ export default async function handler(req, res) {
 
   let card;
   try {
-    card = readCardParams(req.query?.d, req.query?.s);
+    card = readSignedParams(req.query?.d, req.query?.s);
   } catch (err) {
     console.error("[social/card]", err?.message || err);
     return res.status(500).json({ error: "Cards are not configured." });

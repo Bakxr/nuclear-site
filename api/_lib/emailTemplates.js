@@ -337,7 +337,7 @@ function funnelText(funnel) {
   return `FUNNEL: ${funnel.subscribers} subscribers (+${funnel.new7} this week), ${funnel.terminalMembers ?? "?"} terminal members. Sources (30d): ${sources}\n\n`;
 }
 
-export function buildXDraftsEmail({ drafts, intentUrl, funnel = null, cardUrl = null }) {
+export function buildXDraftsEmail({ drafts, intentUrl, funnel = null, cardUrl = null, shareUrl = null }) {
   const subject = `X drafts for today (${drafts.length})`;
   const button = (href, label) => `<a href="${escapeHtml(href)}" style="display:inline-block;padding:9px 16px;border-radius:4px;background:#d4a54a;color:#111;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">${label}</a>`;
   const step = (n, label) => `<div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(245,240,232,0.5);font-weight:700;margin:16px 0 8px;">${n}. ${label}</div>`;
@@ -345,6 +345,7 @@ export function buildXDraftsEmail({ drafts, intentUrl, funnel = null, cardUrl = 
   const blocks = drafts.map((d) => {
     const image = d.card && cardUrl ? cardUrl(d.card) : null;
     return moduleBlock(d.postAt ? `${d.kind} · post ${d.postAt}` : d.kind, `
+    ${shareUrl ? `<div style="margin:0 0 6px;">${button(shareUrl(d), "Open posting page")} <span style="font-size:12px;color:rgba(245,240,232,0.55);margin-left:8px;">copy the image and text in one tap each</span></div>` : ""}
     ${image ? `${step(1, "Save the image")}<a href="${escapeHtml(image)}"><img src="${escapeHtml(image)}" width="536" alt="${escapeHtml(d.kind)} chart" style="display:block;width:100%;max-width:536px;height:auto;border-radius:6px;border:1px solid rgba(245,240,232,0.08);" /></a>
     <div style="font-size:12px;margin-top:6px;"><a href="${escapeHtml(image)}" style="color:#d4a54a;">Open full size to save</a></div>` : ""}
     ${step(image ? 2 : 1, image ? "Post it, with the image attached" : "Post it")}

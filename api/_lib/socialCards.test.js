@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { cardUrl, readCardParams } from './cardLinks.js';
+import { cardUrl, readSignedParams } from './cardLinks.js';
 import { renderCardPng } from './socialCards.js';
 
 const PNG_MAGIC = [0x89, 0x50, 0x4e, 0x47];
@@ -13,14 +13,14 @@ describe('chart card links', () => {
     const card = { type: 'odds', source: 'Polymarket', question: 'Will it happen?', pct: 12 };
     const url = new URL(cardUrl('https://thenuclearpulse.com/', card));
     expect(url.pathname).toBe('/api/social/card');
-    expect(readCardParams(url.searchParams.get('d'), url.searchParams.get('s'))).toEqual(card);
+    expect(readSignedParams(url.searchParams.get('d'), url.searchParams.get('s'))).toEqual(card);
   });
 
   it('rejects tampered data', () => {
     const url = new URL(cardUrl('https://thenuclearpulse.com', { type: 'odds', question: 'a', pct: 1, source: 'x' }));
     const forged = Buffer.from(JSON.stringify({ type: 'odds', question: 'fake', pct: 99, source: 'x' })).toString('base64url');
-    expect(readCardParams(forged, url.searchParams.get('s'))).toBeNull();
-    expect(readCardParams(url.searchParams.get('d'), undefined)).toBeNull();
+    expect(readSignedParams(forged, url.searchParams.get('s'))).toBeNull();
+    expect(readSignedParams(url.searchParams.get('d'), undefined)).toBeNull();
   });
 });
 
