@@ -21,6 +21,7 @@ export function renderSharePage(draft) {
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="robots" content="noindex, nofollow" />
+<link rel="icon" type="image/png" href="/pwa-192.png" />
 <title>Post: ${esc(draft.kind)} | Nuclear Pulse</title>
 <style>
   :root { color-scheme: dark; --bg: #100d09; --surface: #1a1712; --text: #f5f0e8; --body: #d9cfbe; --muted: #b3a489; --line: rgba(245,240,232,0.12); --gold: #d4a54a; --up: #4ade80; --down: #f87171; }
