@@ -51,15 +51,14 @@ function Check() {
   );
 }
 
-export default function ProSection({ isMobileViewport, onOpenTerminal }) {
+export default function ProSection({ isMobileViewport, onOpenTerminal, preview = null }) {
   return (
-    <section style={{ padding: "0 var(--np-section-x) var(--np-section-y)", background: "var(--np-bg)" }}>
+    <section style={{ padding: "0 var(--np-section-x) var(--np-section-y)", background: "var(--np-band-bg)", color: "var(--np-band-text)" }}>
       <div style={{ maxWidth: "var(--np-content-max)", margin: "0 auto" }}>
         <div
           style={{
-            borderTop: "1px solid var(--np-hairline)",
-            borderBottom: "1px solid var(--np-hairline)",
-            padding: isMobileViewport ? "36px 0" : "clamp(40px, 5vw, 64px) 0",
+            borderTop: "1px solid var(--np-band-rule)",
+            padding: isMobileViewport ? "36px 0 28px" : "clamp(40px, 5vw, 64px) 0 32px",
             display: "grid",
             gridTemplateColumns: isMobileViewport ? "1fr" : "minmax(0, 1.45fr) minmax(300px, 1fr)",
             gap: isMobileViewport ? 32 : "clamp(36px, 5vw, 72px)",
@@ -96,20 +95,17 @@ export default function ProSection({ isMobileViewport, onOpenTerminal }) {
                 padding: 0,
                 margin: "28px 0 0",
                 display: "grid",
-                gridTemplateColumns: isMobileViewport ? "1fr" : "repeat(2, minmax(0, 1fr))",
-                columnGap: 32,
-                rowGap: 18,
-                borderTop: "1px solid var(--np-hairline)",
-                paddingTop: 22,
+                gridTemplateColumns: isMobileViewport ? "repeat(2, minmax(0, 1fr))" : "repeat(3, minmax(0, 1fr))",
+                columnGap: 24,
+                rowGap: 12,
+                borderTop: "1px solid var(--np-band-rule)",
+                paddingTop: 20,
               }}
             >
               {PRO_MODULES.map((mod) => (
-                <li key={mod.label} style={{ display: "flex", gap: 10 }}>
+                <li key={mod.label} title={mod.detail} style={{ display: "flex", gap: 8, fontSize: 14, fontWeight: 600, color: "var(--np-band-text)" }}>
                   <Check />
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: "var(--np-text)" }}>{mod.label}</div>
-                    <div style={{ fontSize: 13, lineHeight: 1.55, color: "var(--np-text-muted)", marginTop: 3 }}>{mod.detail}</div>
-                  </div>
+                  {mod.label}
                 </li>
               ))}
             </ul>
@@ -190,6 +186,7 @@ export default function ProSection({ isMobileViewport, onOpenTerminal }) {
             </div>
           </div>
         </div>
+        {preview}
       </div>
     </section>
   );

@@ -1644,11 +1644,6 @@ export default function NuclearPulse() {
         </div>
       </section>
 
-      <ProSection
-        isMobileViewport={isMobileViewport}
-        onOpenTerminal={() => switchAppView("terminal")}
-      />
-
       <StocksSection
         sectionRef={sectionRefs.stocks}
         stocks={stocks}
@@ -1660,7 +1655,12 @@ export default function NuclearPulse() {
         setSelectedStock={setSelectedStock}
       />
 
-      <TerminalEditorialStrip signals={editorialSignals} onOpenTerminal={() => switchAppView("terminal")} />
+      {/* One terminal block after Markets: pitch + pricing, then the live preview. */}
+      <ProSection
+        isMobileViewport={isMobileViewport}
+        onOpenTerminal={() => switchAppView("terminal")}
+        preview={<TerminalEditorialStrip signals={editorialSignals} onOpenTerminal={() => switchAppView("terminal")} />}
+      />
 
       <SmrSection sectionRef={sectionRefs.smr} />
 
