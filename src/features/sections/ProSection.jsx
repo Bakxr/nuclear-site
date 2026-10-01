@@ -43,6 +43,14 @@ const PRO_PLANS = [
   },
 ];
 
+function Check() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="var(--np-accent-ink)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 3 }}>
+      <path d="M3 8.5 6.5 12 13 4.5" />
+    </svg>
+  );
+}
+
 export default function ProSection({ isMobileViewport, onOpenTerminal }) {
   return (
     <section style={{ padding: "0 var(--np-section-x) var(--np-section-y)", background: "var(--np-bg)" }}>
@@ -52,110 +60,123 @@ export default function ProSection({ isMobileViewport, onOpenTerminal }) {
             borderTop: "1px solid var(--np-hairline)",
             borderBottom: "1px solid var(--np-hairline)",
             padding: isMobileViewport ? "36px 0" : "clamp(40px, 5vw, 64px) 0",
+            display: "grid",
+            gridTemplateColumns: isMobileViewport ? "1fr" : "minmax(0, 1.45fr) minmax(300px, 1fr)",
+            gap: isMobileViewport ? 32 : "clamp(36px, 5vw, 72px)",
+            alignItems: "start",
           }}
         >
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--np-accent-ink)" }}>
-            Nuclear Pulse PRO
-          </div>
-          <div
-            style={{
-              fontFamily: "var(--np-font-display)",
-              fontSize: "clamp(28px,3.4vw,48px)",
-              fontWeight: 400,
-              letterSpacing: "-0.02em",
-              lineHeight: 1.06,
-              marginTop: 14,
-              textWrap: "balance",
-              maxWidth: "22ch",
-            }}
-          >
-            The terminal for people who <em style={{ fontStyle: "italic", fontWeight: 350, color: "var(--np-accent-ink)" }}>trade the buildout.</em>
-          </div>
-          <div style={{ fontSize: 15, color: "var(--np-text-muted)", lineHeight: 1.7, marginTop: 14, maxWidth: "62ch" }}>
-            The free site tells you the story. PRO gives you the tape: filings, catalysts, operations
-            signals, and market context in one workspace, refreshed through the trading day.
+          {/* Pitch + what's inside */}
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--np-accent-ink)" }}>
+              Nuclear Pulse PRO
+            </div>
+            <div
+              style={{
+                fontFamily: "var(--np-font-display)",
+                fontSize: "clamp(28px,3.4vw,46px)",
+                fontWeight: 400,
+                letterSpacing: "-0.02em",
+                lineHeight: 1.06,
+                marginTop: 14,
+                textWrap: "balance",
+                maxWidth: "20ch",
+              }}
+            >
+              The terminal for people who <em style={{ fontStyle: "italic", fontWeight: 350, color: "var(--np-accent-ink)" }}>trade the buildout.</em>
+            </div>
+            <div style={{ fontSize: 15, color: "var(--np-text-muted)", lineHeight: 1.7, marginTop: 14, maxWidth: "58ch" }}>
+              The free site tells you the story. PRO gives you the tape: filings, catalysts, operations
+              signals, and market context in one workspace, refreshed through the trading day.
+            </div>
+
+            <ul
+              style={{
+                listStyle: "none",
+                padding: 0,
+                margin: "28px 0 0",
+                display: "grid",
+                gridTemplateColumns: isMobileViewport ? "1fr" : "repeat(2, minmax(0, 1fr))",
+                columnGap: 32,
+                rowGap: 18,
+                borderTop: "1px solid var(--np-hairline)",
+                paddingTop: 22,
+              }}
+            >
+              {PRO_MODULES.map((mod) => (
+                <li key={mod.label} style={{ display: "flex", gap: 10 }}>
+                  <Check />
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "var(--np-text)" }}>{mod.label}</div>
+                    <div style={{ fontSize: 13, lineHeight: 1.55, color: "var(--np-text-muted)", marginTop: 3 }}>{mod.detail}</div>
+                  </div>
+                </li>
+              ))}
+            </ul>
           </div>
 
+          {/* Pricing panel */}
           <div
             style={{
-              display: "grid",
-              gridTemplateColumns: isMobileViewport ? "1fr" : "repeat(3, minmax(0, 1fr))",
-              gap: 14,
-              marginTop: 28,
+              border: "1px solid var(--np-hairline)",
+              borderRadius: 14,
+              background: "var(--np-surface)",
+              padding: "24px 22px 20px",
+              position: isMobileViewport ? "static" : "sticky",
+              top: 96,
             }}
           >
-            {PRO_MODULES.map((mod) => (
-              <div
-                key={mod.label}
-                style={{
-                  border: "1px solid var(--np-hairline)",
-                  borderRadius: 12,
-                  padding: "18px 18px 16px",
-                  background: "var(--np-surface)",
-                }}
-              >
-                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--np-accent-ink)" }}>
-                  {mod.label}
-                </div>
-                <div style={{ fontSize: 13.5, lineHeight: 1.6, color: "var(--np-text)", marginTop: 8 }}>
-                  {mod.detail}
-                </div>
-              </div>
-            ))}
-          </div>
+            <div style={{ fontFamily: "var(--np-font-display)", fontSize: 22, color: "var(--np-text)", lineHeight: 1.2 }}>
+              Try it free for 7 days
+            </div>
+            <div style={{ fontSize: 13, color: "var(--np-text-muted)", marginTop: 6 }}>Then pick a plan. Cancel anytime.</div>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: isMobileViewport ? "1fr" : "repeat(2, minmax(0, 1fr))",
-              gap: 14,
-              marginTop: 14,
-            }}
-          >
-            {PRO_PLANS.map((plan) => (
-              <button
-                key={plan.name}
-                type="button"
-                onClick={onOpenTerminal}
-                style={{
-                  cursor: "pointer",
-                  textAlign: "left",
-                  border: plan.badge ? "1px solid var(--np-accent-ink)" : "1px solid var(--np-hairline)",
-                  borderRadius: 12,
-                  padding: "20px 22px",
-                  background: plan.badge ? "rgba(130,96,23,0.06)" : "transparent",
-                  fontFamily: "inherit",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "var(--np-text)" }}>{plan.name}</div>
-                  {plan.badge ? (
-                    <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--np-accent-ink)" }}>
-                      {plan.badge}
-                    </div>
-                  ) : null}
-                </div>
-                <div style={{ fontFamily: "var(--np-font-display)", fontSize: 34, marginTop: 6, color: "var(--np-text)" }}>
-                  {plan.price}
-                  <span style={{ fontSize: 14, color: "var(--np-text-muted)" }}>{plan.cadence}</span>
-                </div>
-                <div style={{ fontSize: 13, lineHeight: 1.6, color: "var(--np-text-muted)", marginTop: 6 }}>
-                  {plan.detail}
-                </div>
-              </button>
-            ))}
-          </div>
+            <div style={{ display: "grid", gap: 10, marginTop: 18 }}>
+              {PRO_PLANS.map((plan) => (
+                <button
+                  key={plan.name}
+                  type="button"
+                  onClick={onOpenTerminal}
+                  style={{
+                    cursor: "pointer",
+                    textAlign: "left",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 12,
+                    border: plan.badge ? "1px solid var(--np-accent-ink)" : "1px solid var(--np-hairline)",
+                    borderRadius: 10,
+                    padding: "14px 16px",
+                    background: plan.badge ? "color-mix(in srgb, var(--np-accent) 8%, transparent)" : "transparent",
+                    fontFamily: "inherit",
+                    color: "var(--np-text)",
+                  }}
+                >
+                  <span>
+                    <span style={{ display: "block", fontSize: 14, fontWeight: 700 }}>{plan.name}</span>
+                    <span style={{ display: "block", fontSize: 12, color: plan.badge ? "var(--np-accent-ink)" : "var(--np-text-muted)", marginTop: 2, fontWeight: plan.badge ? 700 : 400 }}>
+                      {plan.badge ? "2 months free" : "Flexible, month to month"}
+                    </span>
+                  </span>
+                  <span style={{ fontFamily: "var(--np-font-display)", fontSize: 26, whiteSpace: "nowrap" }}>
+                    {plan.price}
+                    <span style={{ fontSize: 13, color: "var(--np-text-muted)" }}>{plan.cadence}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
 
-          <div style={{ display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap", marginTop: 26 }}>
             <button
               type="button"
               onClick={onOpenTerminal}
               style={{
+                width: "100%",
+                marginTop: 16,
                 background: "#d4a54a",
                 color: "#14120e",
                 border: "none",
                 borderRadius: 8,
-                padding: "14px 30px",
+                padding: "14px 20px",
                 fontSize: 14,
                 fontWeight: 700,
                 cursor: "pointer",
@@ -164,8 +185,8 @@ export default function ProSection({ isMobileViewport, onOpenTerminal }) {
             >
               Start 7-day free trial
             </button>
-            <div style={{ fontSize: 12.5, color: "var(--np-text-muted)" }}>
-              Free for 7 days · Cancel anytime · Secure Stripe checkout
+            <div style={{ fontSize: 12, color: "var(--np-text-faint)", marginTop: 10, textAlign: "center" }}>
+              Secure Stripe checkout · No charge for 7 days
             </div>
           </div>
         </div>
