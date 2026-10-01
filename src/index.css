@@ -37,7 +37,7 @@
   --np-section-y-footer: 64px;
 
   /* Content column — wide, full-screen friendly. */
-  --np-content-max: 1480px;
+  --np-content-max: 1200px;
 
   /* Geometry — quieter corners, hairline borders. */
   --np-r-sm: 6px;
