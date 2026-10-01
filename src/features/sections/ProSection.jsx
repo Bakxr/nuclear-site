@@ -62,7 +62,7 @@ export default function ProSection({ isMobileViewport, onOpenTerminal, preview =
             display: "grid",
             gridTemplateColumns: isMobileViewport ? "1fr" : "minmax(0, 1.45fr) minmax(300px, 1fr)",
             gap: isMobileViewport ? 32 : "clamp(36px, 5vw, 72px)",
-            alignItems: "start",
+            alignItems: "center",
           }}
         >
           {/* Pitch + what's inside */}
@@ -118,8 +118,6 @@ export default function ProSection({ isMobileViewport, onOpenTerminal, preview =
               borderRadius: 14,
               background: "var(--np-surface)",
               padding: "24px 22px 20px",
-              position: isMobileViewport ? "static" : "sticky",
-              top: 96,
             }}
           >
             <div style={{ fontFamily: "var(--np-font-display)", fontSize: 22, color: "var(--np-text)", lineHeight: 1.2 }}>
