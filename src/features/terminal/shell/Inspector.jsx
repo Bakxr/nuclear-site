@@ -4,6 +4,7 @@ import { useTerminal } from "../context.jsx";
 import TerminalPanel from "../components/TerminalPanel.jsx";
 import AlertsPanel from "../components/AlertsPanel.jsx";
 import { fmtAgo, fmtCompact, fmtPrice, fmtShortDate, fmtSignedNum, fmtSignedPct, historyChange, isNum, toneOf } from "./format.js";
+import ExtArrow from "../../../components/ExtArrow.jsx";
 
 const TYPE_LABEL = {
   company: "Equity",
@@ -99,7 +100,7 @@ function MiniRows({ rows, onSelect, empty }) {
       {rows.map((row) => {
         const content = (
           <>
-            <span className="npt-row-meta"><span>{row.meta}</span>{row.url && !onSelect ? <span style={{ marginLeft: "auto" }}>↗</span> : null}</span>
+            <span className="npt-row-meta"><span>{row.meta}</span>{row.url && !onSelect ? <span style={{ marginLeft: "auto" }}><ExtArrow /></span> : null}</span>
             <span className="npt-row-title" style={{ fontSize: 12 }}>{row.title}</span>
           </>
         );
@@ -247,7 +248,7 @@ function GenericView({ entity }) {
       {body ? <p style={{ margin: 0, padding: "12px", fontSize: 12.5, lineHeight: 1.6, color: "var(--np-terminal-muted)" }}>{body}</p> : null}
       {entity.url ? (
         <div className="npt-insp-actions" style={{ padding: "0 12px 12px" }}>
-          <a className="npt-btn" data-variant="gold" href={entity.url} target="_blank" rel="noopener noreferrer">Open source ↗</a>
+          <a className="npt-btn" data-variant="gold" href={entity.url} target="_blank" rel="noopener noreferrer">Open source <ExtArrow /></a>
         </div>
       ) : null}
     </>

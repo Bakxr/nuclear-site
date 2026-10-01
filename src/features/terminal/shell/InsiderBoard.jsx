@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTerminal } from "../context.jsx";
 import TerminalPanel from "../components/TerminalPanel.jsx";
 import { fmtCompact, fmtShortDate } from "./format.js";
+import ExtArrow from "../../../components/ExtArrow.jsx";
 
 const TONE = { buy: "up", sell: "down" };
 
@@ -65,7 +66,7 @@ export default function InsiderBoard() {
                   <td className={`r npt-num ${tone ? `npt-${tone}` : "npt-muted"}`}>
                     {row.url ? (
                       <a href={row.url} target="_blank" rel="noopener noreferrer" onClick={(event) => event.stopPropagation()} style={{ color: "inherit", textDecoration: "none" }}>
-                        {row.totalValue ? fmtCompact(row.totalValue, { prefix: "$" }) : "—"} ↗
+                        {row.totalValue ? fmtCompact(row.totalValue, { prefix: "$" }) : "—"} <ExtArrow />
                       </a>
                     ) : row.totalValue ? fmtCompact(row.totalValue, { prefix: "$" }) : "—"}
                   </td>

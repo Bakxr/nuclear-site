@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTerminal } from "../context.jsx";
 import TerminalPanel from "../components/TerminalPanel.jsx";
 import { fmtShortDate } from "./format.js";
+import ExtArrow from "../../../components/ExtArrow.jsx";
 
 const ACTION_TONE = { Licensing: "gold", "Public Meeting": "cyan", Enforcement: "down" };
 
@@ -41,7 +42,7 @@ export function NrcNotices() {
                 <span className="npt-num" style={{ minWidth: 48 }}>{fmtShortDate(dateOnly(row.filedAt))}</span>
                 <span className="npt-chip" data-tone={ACTION_TONE[row.action]}>{row.action || "Notice"}</span>
                 {row.plant ? <span className="npt-fill">{row.plant}</span> : null}
-                <span style={{ marginLeft: "auto" }}>↗</span>
+                <span style={{ marginLeft: "auto" }}><ExtArrow /></span>
               </span>
               <span className="npt-row-title">{row.title}</span>
             </a>
@@ -108,7 +109,7 @@ export function SecFilings() {
                   </td>
                   <td className="r">
                     {filing.url ? (
-                      <a href={filing.url} target="_blank" rel="noopener noreferrer" onClick={(event) => event.stopPropagation()} style={{ color: "var(--np-terminal-subtle)", textDecoration: "none" }} aria-label="Open on EDGAR">↗</a>
+                      <a href={filing.url} target="_blank" rel="noopener noreferrer" onClick={(event) => event.stopPropagation()} style={{ color: "var(--np-terminal-subtle)", textDecoration: "none" }} aria-label="Open on EDGAR"><ExtArrow /></a>
                     ) : null}
                   </td>
                 </tr>

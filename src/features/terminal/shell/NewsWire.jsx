@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useTerminal } from "../context.jsx";
 import TerminalPanel from "../components/TerminalPanel.jsx";
 import { fmtAgo } from "./format.js";
+import ExtArrow from "../../../components/ExtArrow.jsx";
 
 const FILTERS = [
   { id: "all", label: "All" },
@@ -123,7 +124,7 @@ export default function NewsWire({ full = false }) {
                     style={{ marginLeft: "auto", color: "var(--np-terminal-subtle)", textDecoration: "none" }}
                     aria-label="Open source"
                   >
-                    ↗
+                    <ExtArrow />
                   </a>
                 ) : null}
               </span>

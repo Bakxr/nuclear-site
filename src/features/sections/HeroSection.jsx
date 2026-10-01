@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { NUCLEAR_PLANTS, PRIS_WORLD_STATS } from "../../data/plants.js";
 import { EASE, wordReveal } from "./animations.js";
 import CountUp from "./CountUp.jsx";
+import ExtArrow from "../../components/ExtArrow.jsx";
 
 // Source/label defaults. There is deliberately no fallback *price*: a stale
 // hard-coded number would read as live data.
@@ -104,7 +105,7 @@ function FleetPulse({ fleet }) {
           onMouseEnter={(e) => { e.currentTarget.style.color = "var(--np-accent-ink)"; }}
           onMouseLeave={(e) => { e.currentTarget.style.color = "var(--np-text-muted)"; }}
         >
-          {fleet.online}/{fleet.total} online · fleet avg {fleet.avgPower}% · NRC ↗
+          {fleet.online}/{fleet.total} online · fleet avg {fleet.avgPower}% · NRC <ExtArrow />
         </a>
       </div>
     </section>
@@ -205,7 +206,7 @@ export default function HeroSection({
             </div>
             <div style={{ fontSize: 10, fontWeight: 600, color: "var(--np-text-muted)", marginTop: 10, textTransform: "uppercase", letterSpacing: "0.08em" }}>{s.label}</div>
             <div style={{ fontSize: 11, color: "var(--np-text-faint)", marginTop: 4, lineHeight: 1.4 }}>{s.sub}</div>
-            <div style={{ fontSize: 9, color: "#d4a54a", marginTop: 8, letterSpacing: "0.04em", opacity: 0.7 }}>↗ {s.source}</div>
+            <div style={{ fontSize: 9, color: "#d4a54a", marginTop: 8, letterSpacing: "0.04em", opacity: 0.7 }}><ExtArrow /> {s.source}</div>
           </a>
         ))}
       </section>

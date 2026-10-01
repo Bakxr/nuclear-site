@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTerminal } from "../context.jsx";
 import TerminalPanel from "../components/TerminalPanel.jsx";
 import { fmtShortDate } from "./format.js";
+import ExtArrow from "../../../components/ExtArrow.jsx";
 
 const DAY_MS = 86_400_000;
 
@@ -73,7 +74,7 @@ export default function CatalystCalendar() {
                   <td className="r npt-num npt-subtle">
                     {row.lastFilingUrl ? (
                       <a href={row.lastFilingUrl} target="_blank" rel="noopener noreferrer" onClick={(event) => event.stopPropagation()} style={{ color: "inherit", textDecoration: "none" }}>
-                        {row.lastForm || "filing"} ↗
+                        {row.lastForm || "filing"} <ExtArrow />
                       </a>
                     ) : "—"}
                   </td>
@@ -104,7 +105,7 @@ export default function CatalystCalendar() {
                 <span className="npt-num">{fmtShortDate(`${event.filedAt}T12:00:00Z`)}</span>
                 <span className="npt-sym" style={{ fontSize: 11 }}>{event.ticker}</span>
                 <span>Item {event.item}</span>
-                <span style={{ marginLeft: "auto" }}>↗</span>
+                <span style={{ marginLeft: "auto" }}><ExtArrow /></span>
               </span>
               <span className="npt-row-title" style={{ fontSize: 12 }}>{event.summary}</span>
             </a>

@@ -5,6 +5,7 @@ import ReactorDiagram from "../../components/reactorDiagrams/index.jsx";
 import LazySectionFallback from "../../components/LazySectionFallback.jsx";
 import { fadeUp, staggerContainer } from "./animations.js";
 import { SectionHeader, SectionLabel } from "./shared.jsx";
+import ExtArrow from "../../components/ExtArrow.jsx";
 
 const Reactor3D = lazy(() => import("../../components/reactorDiagrams/Reactor3D.jsx"));
 
@@ -281,7 +282,7 @@ export default function LearnSection({
                           onMouseEnter={e => e.currentTarget.style.opacity = "0.7"}
                           onMouseLeave={e => e.currentTarget.style.opacity = "1"}
                         >
-                          Source: {item.source} ↗
+                          Source: {item.source} <ExtArrow />
                         </a>
                       </div>
                     </div>
