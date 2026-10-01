@@ -14,9 +14,12 @@ const FEEDS = [
 
 const CACHE_TTL = 10 * 60 * 1000;
 const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
-const MAX_PER_FEED = 8;
-const MAX_DIVERSITY = 3;
-const MAX_TOTAL = 30;
+// Per source: newest items parsed, then newest kept after merging. Sources
+// order their feeds differently (World Nuclear News lists oldest first), so
+// everything is sorted by date before any cap applies.
+const MAX_PER_FEED = 12;
+const MAX_DIVERSITY = 8;
+const MAX_TOTAL = 60;
 const CACHE_KEY = "news";
 const cache = globalThis.__nuclearNewsCache ?? new Map();
 globalThis.__nuclearNewsCache = cache;
@@ -186,6 +189,20 @@ function engagementScore(feed, pubDate, relevance, title) {
   return Math.round(Math.min(100, score));
 }
 
+// RSS dates as Date. Also handles two IAEA formats Date can't parse: a
+// two-digit year ("Wed, 30 Sep 26 06:00:00 +0200") and "26-09-30 06:00"
+// (no zone given; read as UTC, at most a couple of hours off).
+export function parseFeedDate(text = "") {
+  const clean = text.replace(/\s+/g, " ").trim();
+  const short = clean.match(/^(\d{2})-(\d{2})-(\d{2}) (\d{2}):(\d{2})$/);
+  if (short) return new Date(`20${short[1]}-${short[2]}-${short[3]}T${short[4]}:${short[5]}:00Z`);
+  let date = new Date(clean);
+  if (Number.isNaN(date.getTime())) {
+    date = new Date(clean.replace(/^(\w{3}, \d{1,2} \w{3}) (\d{2}) /, (_, head, yy) => `${head} 20${yy} `));
+  }
+  return date;
+}
+
 function relativeDate(date) {
   const hours = Math.floor((Date.now() - date.getTime()) / 3_600_000);
   const days = Math.floor(hours / 24);
@@ -195,19 +212,18 @@ function relativeDate(date) {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: days > 365 ? "numeric" : undefined });
 }
 
-function parseFeed(xml, feed) {
+export function parseFeed(xml, feed) {
   const isAtom = /<feed[\s>]/i.test(xml);
   const blocks = [...xml.matchAll(new RegExp(isAtom ? "<entry[\\s\\S]*?<\\/entry>" : "<item[\\s\\S]*?<\\/item>", "gi"))]
-    .map((match) => match[0])
-    .slice(0, MAX_PER_FEED);
+    .map((match) => match[0]);
 
-  return blocks.map((block) => {
+  const parsed = blocks.map((block) => {
     const title = matchTag(block, "title");
     const description = matchTag(block, "description|summary|content:encoded|content");
     const rawLink = isAtom ? matchAtomLink(block) : matchRssLink(block) || matchTag(block, "guid");
     const link = canonicalize(rawLink);
     const dateText = matchTag(block, "pubDate|published|updated|dc:date");
-    const pubDate = new Date(dateText);
+    const pubDate = parseFeedDate(dateText);
 
     if (!title || !link || !isArticleURL(link) || Number.isNaN(pubDate.getTime())) return null;
     if (Date.now() - pubDate.getTime() > MAX_AGE_MS) return null;
@@ -234,6 +250,8 @@ function parseFeed(xml, feed) {
       _feedId: feed.id,
     };
   }).filter(Boolean);
+
+  return parsed.sort((a, b) => b.pubDate.getTime() - a.pubDate.getTime()).slice(0, MAX_PER_FEED);
 }
 
 async function fetchFeed(feed) {
@@ -264,6 +282,7 @@ export async function getLiveNewsPayload({ force = false } = {}) {
   const seen = new Set();
   const counts = {};
   const deduped = articles
+    .sort((a, b) => b.pubDate.getTime() - a.pubDate.getTime())
     .filter((article) => {
       if (seen.has(article.url)) return false;
       seen.add(article.url);
@@ -275,7 +294,6 @@ export async function getLiveNewsPayload({ force = false } = {}) {
       counts[article._feedId] = count + 1;
       return true;
     })
-    .sort((a, b) => b.pubDate.getTime() - a.pubDate.getTime())
     .slice(0, MAX_TOTAL);
 
   if (!deduped.length && cached?.payload) {
