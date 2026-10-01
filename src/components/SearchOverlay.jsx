@@ -327,7 +327,6 @@ export default function SearchOverlay({ query, plants, news, stocks, onSelectPla
                   onMouseEnter={() => setCursor(myIdx)}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <span style={{ fontSize: 20 }}>{country.flag}</span>
                     <div>
                       <div style={{ fontWeight: 600, fontSize: 13.5 }}>{highlight(country.country, query)}</div>
                       <div style={{ fontSize: 11, color: "var(--np-text-muted)", marginTop: 1 }}>{country.reactors} reactors | {country.capacity}</div>

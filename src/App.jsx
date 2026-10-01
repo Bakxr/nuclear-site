@@ -1390,7 +1390,7 @@ export default function NuclearPulse() {
             }}
             onMouseEnter={e => e.currentTarget.style.borderColor = "var(--np-accent)"}
             onMouseLeave={e => e.currentTarget.style.borderColor = "var(--np-hairline)"}
-          ><span aria-hidden="true">{isDark ? "☀" : "☾"}</span></button>
+          ><span aria-hidden="true">{isDark ? "☀︎" : "☾︎"}</span></button>
           <div className="np-search-shell" style={{ position: "relative" }}>
             <div className="np-nav-search" style={{ display: "flex", alignItems: "center", gap: 8, background: "transparent", borderRadius: 6, padding: "7px 14px", border: "1px solid var(--np-hairline)", transition: "border-color 0.2s" }}>
               <svg aria-hidden="true" width="13" height="13" viewBox="0 0 14 14" fill="none" style={{ opacity: 0.45, flexShrink: 0 }}>

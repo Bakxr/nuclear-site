@@ -53,7 +53,6 @@ export default function CountryModal({ country, onClose, onSelectPlant }) {
         }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-              <span style={{ fontSize: 36 }}>{shareData.flag}</span>
               <div>
                 <h3 id="country-modal-title" style={{
                   fontFamily: "var(--np-font-display)", fontSize: 26, fontWeight: 500,

@@ -32,7 +32,7 @@ export default class ErrorBoundary extends React.Component {
         borderRadius: 16,
         margin: "0 40px",
       }}>
-        <div style={{ fontSize: 32, marginBottom: 16 }}>⚠</div>
+        <div style={{ fontSize: 32, marginBottom: 16 }}>{"⚠︎"}</div>
         <h3 style={{
           fontFamily: "var(--np-font-display)",
           fontSize: 22,

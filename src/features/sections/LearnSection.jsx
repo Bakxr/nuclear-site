@@ -163,7 +163,7 @@ export default function LearnSection({
           <motion.p variants={fadeUp} style={{ color: "var(--np-text-muted)", fontSize: 15, marginBottom: 24, maxWidth: 540, lineHeight: 1.7 }}>Key facts that explain why nuclear power matters for our energy future.</motion.p>
 
           {/* Filter tabs + Surprise Me */}
-          <motion.div variants={fadeUp} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 32, flexWrap: "wrap" }}>
+          <motion.div variants={fadeUp} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
             {["All", "Environment", "Technology", "History", "Economics"].map(cat => (
               <button key={cat} onClick={() => { setLearnFilter(cat); setFlippedCards({}); }} style={{
                 background: learnFilter === cat ? (cat === "All" ? "var(--np-text)" : LEARN_COLORS[cat] + "18") : "var(--np-surface-dim)",
@@ -175,13 +175,14 @@ export default function LearnSection({
             ))}
             <button onClick={() => {
               const randomIndex = Math.floor(Math.random() * filteredFacts.length);
-              setFlippedCards(prev => ({ ...prev, [randomIndex]: true }));
+              setFlippedCards({ [randomIndex]: true });
               setHighlightedFact(randomIndex);
               setTimeout(() => setHighlightedFact(null), 2000);
+              requestAnimationFrame(() => document.getElementById(`np-fact-row-${randomIndex}`)?.scrollIntoView({ behavior: "smooth", block: "center" }));
             }} style={{
               marginLeft: "auto", background: "none", border: "1px solid rgba(212,165,74,0.3)",
               borderRadius: 8, padding: "7px 16px", fontSize: 12, fontWeight: 600,
-              cursor: "pointer", color: "#d4a54a", fontFamily: "'DM Sans',sans-serif", transition: "all 0.2s",
+              cursor: "pointer", color: "var(--np-accent-ink)", fontFamily: "'DM Sans',sans-serif", transition: "all 0.2s",
             }}
               onMouseEnter={e => { e.currentTarget.style.background = "rgba(212,165,74,0.08)"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "none"; }}
@@ -191,107 +192,101 @@ export default function LearnSection({
           </motion.div>
         </motion.div>
 
-        {/* Fact cards grid */}
-        <motion.div
-          initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-40px" }}
-          variants={staggerContainer}
-          style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 20 }}
+        {/* Field notes: an expandable list instead of flip cards */}
+        {/* Two independent columns, so an open fact only pushes down its own column. */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: isMobileViewport ? "1fr" : "repeat(2, minmax(0, 1fr))",
+            columnGap: 40,
+            alignItems: "start",
+          }}
         >
-          <AnimatePresence mode="popLayout">
-            {filteredFacts.map((item, i) => {
-              const isFlipped = flippedCards[i];
-              const catColor = LEARN_COLORS[item.category] || "#d4a54a";
-              const isHighlighted = highlightedFact === i;
-              return (
-                <motion.div
-                  key={item.headline}
-                  variants={fadeUp}
-                  layout
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.3 }}
+          {(isMobileViewport ? [filteredFacts.map((item, i) => [item, i])] : [
+            filteredFacts.map((item, i) => [item, i]).slice(0, Math.ceil(filteredFacts.length / 2)),
+            filteredFacts.map((item, i) => [item, i]).slice(Math.ceil(filteredFacts.length / 2)),
+          ]).map((column, ci) => (
+        <ul key={ci} style={{ listStyle: "none", margin: 0, padding: 0, borderTop: "1px solid var(--np-hairline)" }}>
+          {column.map(([item, i]) => {
+            const open = Boolean(flippedCards[i]);
+            const catColor = LEARN_COLORS[item.category] || "#d4a54a";
+            const isHighlighted = highlightedFact === i;
+            const panelId = `np-fact-${i}`;
+            return (
+              <li
+                key={item.headline}
+                id={`np-fact-row-${i}`}
+                style={{
+                  borderBottom: "1px solid var(--np-hairline)",
+                  background: isHighlighted ? "color-mix(in srgb, var(--np-accent) 10%, transparent)" : "transparent",
+                  transition: "background 0.6s",
+                }}
+              >
+                <button
+                  type="button"
+                  aria-expanded={open}
+                  aria-controls={panelId}
                   onClick={() => setFlippedCards(prev => ({ ...prev, [i]: !prev[i] }))}
                   style={{
-                    perspective: 1000, cursor: "pointer", minHeight: 220,
+                    width: "100%", display: "flex", alignItems: "baseline", gap: 14,
+                    background: "none", border: "none", padding: "16px 2px", cursor: "pointer",
+                    textAlign: "left", fontFamily: "inherit", color: "var(--np-text)",
                   }}
                 >
-                  <div style={{
-                    position: "relative", width: "100%", height: "100%", minHeight: 220,
-                    transformStyle: "preserve-3d", transition: "transform 0.6s ease",
-                    transform: isFlipped ? "rotateY(180deg)" : "rotateY(0)",
-                  }}>
-                    {/* FRONT */}
-                    <div style={{
-                      position: "absolute", inset: 0, backfaceVisibility: "hidden",
-                      padding: "28px", borderRadius: 14, border: "1px solid var(--np-card-border)",
-                      background: "var(--np-card-bg)", borderTop: `2px solid ${catColor}`,
-                      display: "flex", flexDirection: "column", justifyContent: "space-between",
-                      transition: "box-shadow 0.3s, transform 0.3s",
-                      boxShadow: isHighlighted ? `0 0 24px ${catColor}40` : "none",
-                    }}>
-                      <div>
-                        <span style={{
-                          display: "inline-block", fontSize: 11, fontWeight: 700, textTransform: "uppercase",
-                          letterSpacing: "0.08em", color: catColor, background: catColor + "12",
-                          borderRadius: 6, padding: "4px 10px", marginBottom: 14,
-                        }}>{item.category}</span>
-                        <h4 style={{
-                          fontFamily: "var(--np-font-display)", fontSize: 18, fontWeight: 500,
-                          lineHeight: 1.3, color: "var(--np-text)", margin: 0,
-                        }}>{item.headline}</h4>
-                      </div>
-                      <p style={{ fontSize: 12, color: "var(--np-text-faint)", margin: 0, marginTop: 16 }}>Click to learn more →</p>
-                    </div>
+                  <span style={{ width: 92, flexShrink: 0, fontSize: 10.5, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: catColor }}>
+                    {item.category}
+                  </span>
+                  <span style={{ flex: 1, minWidth: 0, fontFamily: "var(--np-font-display)", fontSize: 18, fontWeight: 500, lineHeight: 1.3 }}>
+                    {item.headline}
+                  </span>
+                  <span aria-hidden="true" style={{ flexShrink: 0, color: "var(--np-text-faint)", fontSize: 18, lineHeight: 1, transform: open ? "rotate(45deg)" : "none", transition: "transform 0.2s" }}>+</span>
+                </button>
+                <AnimatePresence initial={false}>
+                  {open && (
+                    <motion.div
+                      id={panelId}
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.25 }}
+                      style={{ overflow: "hidden" }}
+                    >
+                      <div style={{ padding: "0 2px 18px 106px" }} className="np-fact-body">
+                        <p style={{ fontSize: 14, lineHeight: 1.7, color: "var(--np-text-muted)", margin: 0 }}>{item.fact}</p>
 
-                    {/* BACK */}
-                    <div style={{
-                      position: "absolute", inset: 0, backfaceVisibility: "hidden",
-                      transform: "rotateY(180deg)", padding: "24px", borderRadius: 14,
-                      border: "1px solid var(--np-card-border)", background: "var(--np-card-bg)",
-                      borderTop: `2px solid ${catColor}`, display: "flex", flexDirection: "column",
-                      overflow: "auto",
-                    }}>
-                      <p style={{ fontSize: 13, lineHeight: 1.7, color: "var(--np-text)", margin: 0, flex: 1 }}>{item.fact}</p>
-
-                      {/* Comparison visualization */}
-                      {item.comparison && (
-                        <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid var(--np-border)" }}>
-                          <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--np-text-muted)", marginBottom: 8 }}>{item.comparison.label}</div>
-                          {item.comparison.items.map((bar, bi) => {
-                            const maxVal = Math.max(...item.comparison.items.map(b => b.value));
-                            return (
-                              <div key={bi} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
-                                <span style={{ fontSize: 11, width: 52, textAlign: "right", color: "var(--np-text-muted)", flexShrink: 0 }}>{bar.name}</span>
-                                <div style={{ flex: 1, height: 6, borderRadius: 3, background: "var(--np-surface-dim)" }}>
-                                  <div style={{
-                                    height: "100%", borderRadius: 3, background: catColor,
-                                    width: `${(bar.value / maxVal) * 100}%`, transition: "width 0.8s ease",
-                                  }} />
+                        {item.comparison && (
+                          <div style={{ marginTop: 14 }}>
+                            <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--np-text-faint)", marginBottom: 8 }}>{item.comparison.label}</div>
+                            {item.comparison.items.map((bar, bi) => {
+                              const maxVal = Math.max(...item.comparison.items.map(b => b.value));
+                              return (
+                                <div key={bi} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                                  <span style={{ fontSize: 11, width: 60, textAlign: "right", color: "var(--np-text-muted)", flexShrink: 0 }}>{bar.name}</span>
+                                  <div style={{ flex: 1, height: 6, borderRadius: 3, background: "var(--np-surface-dim)" }}>
+                                    <div style={{ height: "100%", borderRadius: 3, background: catColor, width: `${(bar.value / maxVal) * 100}%` }} />
+                                  </div>
+                                  <span style={{ fontSize: 11, fontFamily: "'DM Mono',monospace", color: "var(--np-text)", fontWeight: 600, width: 44, flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>{bar.value}</span>
                                 </div>
-                                <span style={{ fontSize: 11, fontFamily: "'DM Mono',monospace", color: "var(--np-text)", fontWeight: 600, width: 40, flexShrink: 0 }}>{bar.value}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
+                              );
+                            })}
+                          </div>
+                        )}
 
-                      <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid var(--np-border)" }}>
-                        <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-                          style={{ fontSize: 11, color: catColor, textDecoration: "none", fontWeight: 600, transition: "opacity 0.2s" }}
-                          onMouseEnter={e => e.currentTarget.style.opacity = "0.7"}
-                          onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+                        <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer"
+                          style={{ display: "inline-flex", alignItems: "center", gap: 4, marginTop: 12, fontSize: 12, color: "var(--np-accent-ink)", textDecoration: "none", fontWeight: 600 }}
                         >
                           Source: {item.source} <ExtArrow />
                         </a>
                       </div>
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
-        </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </li>
+            );
+          })}
+        </ul>
+          ))}
+        </div>
       </div>
     </section>
   );

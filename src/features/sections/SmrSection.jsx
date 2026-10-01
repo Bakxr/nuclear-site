@@ -53,56 +53,60 @@ export default function SmrSection({ sectionRef }) {
           </motion.div>
         </motion.div>
 
-        {/* SMR cards grid */}
+        {/* SMR programmes as a table: one row per design, sorted by status */}
         <motion.div
-          initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.05 }} variants={staggerContainer}
-          style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 14 }}
+          initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.05 }} transition={{ duration: 0.4 }}
+          style={{ overflowX: "auto", border: "1px solid var(--np-band-border)", borderRadius: 12, background: "var(--np-band-surface)" }}
         >
-          {[...SMR_PROJECTS].sort((a, b) => SMR_STATUS_ORDER.indexOf(a.status) - SMR_STATUS_ORDER.indexOf(b.status)).map((project) => (
-            <motion.div key={project.name} variants={fadeUp} style={{
-              background: "var(--np-band-surface)", border: "1px solid var(--np-band-border)",
-              borderRadius: 12, padding: "18px 20px",
-              borderLeft: `3px solid ${SMR_STATUS_COLORS[project.status]}`,
-              transition: "background 0.2s",
-            }}
-              onMouseEnter={e => e.currentTarget.style.background = "var(--np-band-surface-hover)"}
-              onMouseLeave={e => e.currentTarget.style.background = "var(--np-band-surface)"}
-            >
-              {/* Header row */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
-                <div>
-                  <div style={{ fontFamily: "var(--np-font-display)", fontSize: 17, fontWeight: 500, color: "var(--np-band-text)", lineHeight: 1.2 }}>{project.name}</div>
-                  <div style={{ fontSize: 12, color: "var(--np-band-text-faint)", marginTop: 2 }}>{project.company} · {project.country}</div>
-                </div>
-                <span style={{
-                  fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
-                  color: SMR_STATUS_COLORS[project.status],
-                  background: tint(SMR_STATUS_COLORS[project.status], 15),
-                  border: `1px solid ${tint(SMR_STATUS_COLORS[project.status], 33)}`,
-                  padding: "3px 8px", borderRadius: 20, flexShrink: 0, marginLeft: 8,
-                }}>{project.status}</span>
-              </div>
-
-              {/* Description */}
-              <p style={{ fontSize: 12, color: "var(--np-band-text-muted)", lineHeight: 1.55, margin: "0 0 14px" }}>{project.desc}</p>
-
-              {/* Stats row */}
-              <div style={{ display: "flex", gap: 20 }}>
-                <div>
-                  <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--np-band-text-faint)", marginBottom: 2 }}>Capacity</div>
-                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 13, fontWeight: 600, color: "var(--np-accent-ink)" }}>{project.capacity} MW</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--np-band-text-faint)", marginBottom: 2 }}>Type</div>
-                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 13, fontWeight: 600, color: "var(--np-accent-ink)" }}>{project.type}</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--np-band-text-faint)", marginBottom: 2 }}>Target</div>
-                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 13, fontWeight: 600, color: "var(--np-accent-ink)" }}>{project.year}</div>
-                </div>
-              </div>
-            </motion.div>
-          ))}
+          <table style={{ width: "100%", minWidth: 760, borderCollapse: "collapse", fontSize: 13 }}>
+            <thead>
+              <tr>
+                {["Design", "Country", "Status", "Capacity", "Type", "Target"].map((h, hi) => (
+                  <th key={h} scope="col" style={{
+                    textAlign: hi >= 3 ? "right" : "left", padding: "12px 16px", fontSize: 10, fontWeight: 700,
+                    letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--np-band-text-faint)",
+                    borderBottom: "1px solid var(--np-band-border)", whiteSpace: "nowrap",
+                  }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {[...SMR_PROJECTS].sort((a, b) => SMR_STATUS_ORDER.indexOf(a.status) - SMR_STATUS_ORDER.indexOf(b.status) || a.year - b.year).map((project, i, rows) => {
+                const cell = { padding: "14px 16px", borderBottom: i === rows.length - 1 ? "none" : "1px solid var(--np-band-border)", verticalAlign: "top" };
+                const num = { ...cell, textAlign: "right", fontFamily: "'DM Mono',monospace", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap", color: "var(--np-band-text)" };
+                // Data carries a flag emoji first ("🇨🇦 Canada"); show the name only.
+                const countryName = project.country.split(" ").slice(1).join(" ");
+                return (
+                  <tr key={project.name}>
+                    <td style={{ ...cell, maxWidth: 420 }}>
+                      <div style={{ fontFamily: "var(--np-font-display)", fontSize: 16, fontWeight: 500, color: "var(--np-band-text)", lineHeight: 1.25 }}>
+                        {project.name} <span style={{ fontFamily: "var(--np-font-sans)", fontSize: 12, fontWeight: 400, color: "var(--np-band-text-faint)" }}>· {project.company}</span>
+                      </div>
+                      <div style={{ fontSize: 12, color: "var(--np-band-text-muted)", lineHeight: 1.5, marginTop: 3 }}>{project.desc}</div>
+                    </td>
+                    <td style={{ ...cell, whiteSpace: "nowrap", color: "var(--np-band-text-muted)" }}>
+                      {countryName}
+                    </td>
+                    <td style={cell}>
+                      <span style={{
+                        display: "inline-flex", alignItems: "center", gap: 6, whiteSpace: "nowrap",
+                        fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
+                        color: SMR_STATUS_COLORS[project.status],
+                        background: tint(SMR_STATUS_COLORS[project.status], 12),
+                        padding: "3px 9px", borderRadius: 20,
+                      }}>
+                        <span style={{ width: 6, height: 6, borderRadius: "50%", background: SMR_STATUS_COLORS[project.status] }} />
+                        {project.status}
+                      </span>
+                    </td>
+                    <td style={num}>{project.capacity} MW</td>
+                    <td style={num}>{project.type}</td>
+                    <td style={num}>{project.year}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </motion.div>
 
         <motion.p

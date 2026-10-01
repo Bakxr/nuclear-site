@@ -49,7 +49,7 @@ export default function StocksSection({
               ))
             ) : stocksError ? (
               <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: "60px 40px" }}>
-                <div style={{ fontSize: 28, marginBottom: 14 }}>⚠</div>
+                <div style={{ fontSize: 28, marginBottom: 14 }}>{"⚠︎"}</div>
                 <p style={{ color: "var(--np-band-text-muted)", fontSize: 15, marginBottom: 24 }}>
                   Market data couldn't load. Check your connection and try again.
                 </p>

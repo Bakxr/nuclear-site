@@ -217,7 +217,7 @@ export default function DataSection({
                             className="np-data-row"
                             style={{
                               display: "grid",
-                              gridTemplateColumns: "36px 110px 1fr 84px 132px 24px",
+                              gridTemplateColumns: "110px 1fr 84px 132px 24px",
                               alignItems: "center",
                               gap: 12,
                               padding: "14px 8px",
@@ -227,7 +227,6 @@ export default function DataSection({
                               background: hoveredCountry === c.country ? "rgba(212,165,74,0.04)" : expandedCountry === c.country ? "rgba(212,165,74,0.06)" : "transparent",
                             }}
                           >
-                            <span style={{ fontSize: 20 }}>{c.flag}</span>
                             <span style={{ fontWeight: 600, fontSize: 14, color: "var(--np-text)" }}>{c.country}</span>
                             <div className="np-data-bar" style={{ position: "relative", height: 20, borderRadius: 999, background: "var(--np-surface-dim)", overflow: "hidden" }}>
                               <motion.div
