@@ -40,7 +40,7 @@ export default function NewsletterSection({
         </motion.div>
         {subStatus === "success" ? (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-            style={{ fontSize: 15, color: "#4ade80", fontWeight: 600, padding: "18px 0" }}>
+            style={{ fontSize: 15, color: "var(--np-success)", fontWeight: 600, padding: "18px 0" }}>
             You're subscribed! First issue lands this Sunday.
           </motion.div>
         ) : (

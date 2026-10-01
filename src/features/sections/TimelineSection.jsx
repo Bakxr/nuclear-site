@@ -3,7 +3,7 @@ import { SectionHeader } from "./shared.jsx";
 
 export default function TimelineSection({ sectionRef }) {
   return (
-    <section ref={sectionRef} style={{ padding: "var(--np-section-y) var(--np-section-x)", background: "var(--np-dark-bg)", color: "var(--np-dark-text)", scrollMarginTop: 80 }}>
+    <section ref={sectionRef} style={{ padding: "var(--np-section-y) var(--np-section-x)", background: "var(--np-band-bg)", color: "var(--np-band-text)", scrollMarginTop: 80 }}>
       <div style={{ maxWidth: "var(--np-content-max)", margin: "0 auto" }}>
         <SectionHeader
           dark

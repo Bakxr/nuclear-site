@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
-import { NUCLEAR_SHARE, STATUS_COLORS } from "../data/constants.js";
+import { NUCLEAR_SHARE, STATUS_TEXT_COLORS } from "../data/constants.js";
 
 function highlight(text, query) {
   if (!query || !text) return text;
@@ -200,7 +200,7 @@ export default function SearchOverlay({ query, plants, news, stocks, onSelectPla
                   </div>
                   <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 12 }}>
                     <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 12, fontWeight: 600 }}>{plant.capacity.toLocaleString()} MW</div>
-                    <div style={{ fontSize: 10, color: STATUS_COLORS[plant.status] || STATUS_COLORS.Idle }}>* {plant.status}</div>
+                    <div style={{ fontSize: 10, color: STATUS_TEXT_COLORS[plant.status] || STATUS_TEXT_COLORS.Idle }}>* {plant.status}</div>
                   </div>
                 </button>
               );

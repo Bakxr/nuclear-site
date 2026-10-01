@@ -7,6 +7,15 @@ export const STATUS_COLORS = {
   Shutdown:     "#ef4444",
 };
 
+// Status as text on themed backgrounds: deeper on light, bright on dark
+// (tokens in index.css). STATUS_COLORS stays for dots and the globe.
+export const STATUS_TEXT_COLORS = {
+  Operating:    "var(--np-c-green)",
+  Construction: "var(--np-c-amber)",
+  Idle:         "var(--np-c-slate)",
+  Shutdown:     "var(--np-c-red)",
+};
+
 // Three.js marker colors (numeric 0xRRGGBB format)
 export const STATUS_COLORS_HEX = {
   Operating:    0x4ade80,

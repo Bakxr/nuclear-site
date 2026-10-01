@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { STATUS_COLORS } from "../../data/constants.js";
+import { STATUS_COLORS, STATUS_TEXT_COLORS } from "../../data/constants.js";
 import { SUPPLY_STAGE_COLORS } from "../../data/supplySites.js";
 import ErrorBoundary from "../../components/ErrorBoundary.jsx";
 import LazySectionFallback from "../../components/LazySectionFallback.jsx";
@@ -119,7 +119,7 @@ export default function GlobeSection({
                         style={{
                           borderRadius: 999,
                           border: `1px solid ${active ? "rgba(212,165,74,0.45)" : "var(--np-border)"}`,
-                          background: active ? "#f5f0e8" : "rgba(255,255,255,0.02)",
+                          background: active ? "var(--np-text)" : "rgba(255,255,255,0.02)",
                           color: active ? "var(--np-bg)" : "var(--np-text-muted)",
                           padding: "8px 14px",
                           fontSize: 12,
@@ -358,7 +358,7 @@ export default function GlobeSection({
                     <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 12.5, fontWeight: 600, color: "var(--np-text)" }}>
                       {plant.capacity.toLocaleString("en-US")} MW
                     </div>
-                    <div style={{ fontSize: 10, color: STATUS_COLORS[plant.status] ?? STATUS_COLORS.Idle }}>
+                    <div style={{ fontSize: 10, color: STATUS_TEXT_COLORS[plant.status] ?? STATUS_TEXT_COLORS.Idle }}>
                       ● {plant.status}
                     </div>
                   </div>

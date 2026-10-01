@@ -2,10 +2,12 @@ import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 import { TIMELINE_EVENTS, ERA_COLORS } from "../data/timeline.js";
 
+const tint = (color, pct) => `color-mix(in srgb, ${color} ${pct}%, transparent)`;
+
 function TimelineCard({ event, isLeft }) {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, amount: 0.3 });
-  const eraColor = ERA_COLORS[event.era] || "#d4a54a";
+  const eraColor = ERA_COLORS[event.era] || "var(--np-c-gold)";
 
   return (
     <div
@@ -42,7 +44,7 @@ function TimelineCard({ event, isLeft }) {
           }}>{event.year}</span>
           <span style={{
             fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em",
-            color: eraColor, background: eraColor + "18", padding: "3px 8px", borderRadius: 4,
+            color: eraColor, background: tint(eraColor, 10), padding: "3px 8px", borderRadius: 4,
           }}>{event.era}</span>
         </div>
         <h4 style={{
@@ -57,7 +59,7 @@ function TimelineCard({ event, isLeft }) {
         </p>
         <div style={{
           fontSize: 11, color: eraColor, fontWeight: 600,
-          padding: "6px 10px", background: eraColor + "10", borderRadius: 6,
+          padding: "6px 10px", background: tint(eraColor, 7), borderRadius: 6,
           display: "inline-block",
         }}>
           {event.significance}
@@ -75,8 +77,8 @@ function TimelineCard({ event, isLeft }) {
           transition={{ duration: 0.3, delay: 0.2 }}
           style={{
             width: 14, height: 14, borderRadius: "50%",
-            background: eraColor, border: "3px solid var(--np-bg)",
-            boxShadow: `0 0 0 2px ${eraColor}40`,
+            background: eraColor, border: "3px solid var(--np-band-bg)",
+            boxShadow: `0 0 0 2px ${tint(eraColor, 25)}`,
           }}
         />
       </div>
@@ -93,11 +95,11 @@ function TimelineCard({ event, isLeft }) {
       }}>
         <motion.span
           initial={{ opacity: 0 }}
-          animate={inView ? { opacity: 0.4 } : {}}
+          animate={inView ? { opacity: 1 } : {}}
           transition={{ duration: 0.4, delay: 0.3 }}
           style={{
             fontFamily: "var(--np-font-display)", fontSize: 48, fontWeight: 700,
-            color: "var(--np-text)", lineHeight: 1,
+            color: "var(--np-band-ghost)", lineHeight: 1,
           }}
         >{event.year}</motion.span>
       </div>

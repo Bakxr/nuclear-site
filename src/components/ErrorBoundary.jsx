@@ -22,14 +22,13 @@ export default class ErrorBoundary extends React.Component {
     if (!this.state.hasError) return this.props.children;
 
     const section = this.props.section || "This section";
-    const dark = this.props.dark ?? true;
 
     return (
       <div style={{
         padding: "48px 40px",
         textAlign: "center",
-        background: dark ? "rgba(245,240,232,0.03)" : "rgba(20,18,14,0.03)",
-        border: `1px solid ${dark ? "rgba(245,240,232,0.08)" : "rgba(20,18,14,0.08)"}`,
+        background: "var(--np-surface-dim)",
+        border: "1px solid var(--np-border)",
         borderRadius: 16,
         margin: "0 40px",
       }}>
@@ -38,14 +37,14 @@ export default class ErrorBoundary extends React.Component {
           fontFamily: "var(--np-font-display)",
           fontSize: 22,
           fontWeight: 600,
-          color: dark ? "#f5f0e8" : "#1e1912",
+          color: "var(--np-text)",
           margin: "0 0 10px",
         }}>
           {section} couldn't load
         </h3>
         <p style={{
           fontSize: 14,
-          color: dark ? "rgba(245,240,232,0.45)" : "rgba(30,25,18,0.5)",
+          color: "var(--np-text-muted)",
           margin: "0 0 24px",
           maxWidth: 380,
           marginLeft: "auto",
@@ -58,8 +57,8 @@ export default class ErrorBoundary extends React.Component {
           onClick={this.handleRetry}
           style={{
             background: "none",
-            border: "1px solid #d4a54a",
-            color: "#d4a54a",
+            border: "1px solid var(--np-accent-ink)",
+            color: "var(--np-accent-ink)",
             padding: "10px 24px",
             borderRadius: 8,
             fontSize: 13,
@@ -70,7 +69,7 @@ export default class ErrorBoundary extends React.Component {
             transition: "background 0.2s, color 0.2s",
           }}
           onMouseEnter={e => { e.currentTarget.style.background = "#d4a54a"; e.currentTarget.style.color = "#14120e"; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "#d4a54a"; }}
+          onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "var(--np-accent-ink)"; }}
         >
           Try again
         </button>

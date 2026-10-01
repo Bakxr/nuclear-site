@@ -181,8 +181,9 @@ export default function TerminalEditorialStrip({ signals, onOpenTerminal }) {
   const radarTitle = signals.radarTitle || "Filing radar";
 
   return (
+    // The panel itself stays dark in both themes: it previews the terminal.
     <section style={{
-      background: "var(--np-dark-bg)",
+      background: "var(--np-band-bg)",
       padding: "40px var(--np-section-x) 56px",
       display: "flex",
       justifyContent: "center",

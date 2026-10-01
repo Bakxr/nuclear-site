@@ -89,7 +89,7 @@ function NewsletterCapture({
     return (
       <div style={{
         fontSize: 15,
-        color: "#4ade80",
+        color: "var(--np-success)",
         fontWeight: 600,
         padding: "10px 0",
         textAlign: align,
@@ -1052,7 +1052,7 @@ export default function NuclearPulse() {
   const uniqueNewsSources = useMemo(() => new Set(news.map((item) => item.source)).size, [news]);
 
   const newsStatusLabel = newsError ? "Curated fallback" : "Live feeds";
-  const newsStatusColor = newsError ? "#d4a54a" : "#4ade80";
+  const newsStatusColor = newsError ? "var(--np-accent-ink)" : "var(--np-up)";
 
   async function refreshNews() {
     setNewsError(false);

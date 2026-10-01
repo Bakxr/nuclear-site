@@ -1,8 +1,9 @@
+// Theme tokens (index.css): deeper on light, brighter on dark.
 export const ERA_COLORS = {
-  dawn: "#d4a54a",
-  growth: "#4ade80",
-  challenge: "#ef4444",
-  renaissance: "#5ab8d4",
+  dawn: "var(--np-c-gold)",
+  growth: "var(--np-c-green)",
+  challenge: "var(--np-c-red)",
+  renaissance: "var(--np-c-teal)",
 };
 
 export const TIMELINE_EVENTS = [

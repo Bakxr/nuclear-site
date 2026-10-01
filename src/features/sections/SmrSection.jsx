@@ -19,17 +19,19 @@ const SMR_PROJECTS = [
 ];
 
 const SMR_STATUS_ORDER = ["Operational", "Construction", "Licensed", "Licensing", "Design"];
+// Theme tokens (index.css): deeper on light, brighter on dark.
 const SMR_STATUS_COLORS = {
-  Operational: "#4ade80",
-  Construction: "#fbbf24",
-  Licensed: "#60a5fa",
-  Licensing: "#a78bfa",
-  Design: "#94a3b8",
+  Operational: "var(--np-c-green)",
+  Construction: "var(--np-c-amber)",
+  Licensed: "var(--np-c-blue)",
+  Licensing: "var(--np-c-violet)",
+  Design: "var(--np-c-slate)",
 };
+const tint = (color, pct) => `color-mix(in srgb, ${color} ${pct}%, transparent)`;
 
 export default function SmrSection({ sectionRef }) {
   return (
-    <section ref={sectionRef} style={{ padding: "var(--np-section-y) var(--np-section-x)", background: "var(--np-dark-bg)", color: "var(--np-dark-text)", scrollMarginTop: 80 }}>
+    <section ref={sectionRef} style={{ padding: "var(--np-section-y) var(--np-section-x)", background: "var(--np-band-bg)", color: "var(--np-band-text)", scrollMarginTop: 80 }}>
       <div style={{ maxWidth: "var(--np-content-max)", margin: "0 auto" }}>
         <SectionHeader
           dark
@@ -43,9 +45,9 @@ export default function SmrSection({ sectionRef }) {
           {/* Status legend */}
           <motion.div variants={fadeUp} style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 36, marginTop: -16 }}>
             {SMR_STATUS_ORDER.map(s => (
-              <div key={s} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "rgba(245,240,232,0.5)" }}>
+              <div key={s} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--np-band-text-muted)" }}>
                 <span style={{ width: 8, height: 8, borderRadius: "50%", background: SMR_STATUS_COLORS[s], flexShrink: 0 }} />
-                {s} <span style={{ color: "rgba(245,240,232,0.25)", marginLeft: 2 }}>({SMR_PROJECTS.filter(p => p.status === s).length})</span>
+                {s} <span style={{ color: "var(--np-band-text-faint)", marginLeft: 2 }}>({SMR_PROJECTS.filter(p => p.status === s).length})</span>
               </div>
             ))}
           </motion.div>
@@ -58,45 +60,45 @@ export default function SmrSection({ sectionRef }) {
         >
           {[...SMR_PROJECTS].sort((a, b) => SMR_STATUS_ORDER.indexOf(a.status) - SMR_STATUS_ORDER.indexOf(b.status)).map((project) => (
             <motion.div key={project.name} variants={fadeUp} style={{
-              background: "rgba(245,240,232,0.04)", border: "1px solid rgba(245,240,232,0.08)",
+              background: "var(--np-band-surface)", border: "1px solid var(--np-band-border)",
               borderRadius: 12, padding: "18px 20px",
               borderLeft: `3px solid ${SMR_STATUS_COLORS[project.status]}`,
               transition: "background 0.2s",
             }}
-              onMouseEnter={e => e.currentTarget.style.background = "rgba(245,240,232,0.07)"}
-              onMouseLeave={e => e.currentTarget.style.background = "rgba(245,240,232,0.04)"}
+              onMouseEnter={e => e.currentTarget.style.background = "var(--np-band-surface-hover)"}
+              onMouseLeave={e => e.currentTarget.style.background = "var(--np-band-surface)"}
             >
               {/* Header row */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
                 <div>
-                  <div style={{ fontFamily: "var(--np-font-display)", fontSize: 17, fontWeight: 500, color: "#f5f0e8", lineHeight: 1.2 }}>{project.name}</div>
-                  <div style={{ fontSize: 12, color: "rgba(245,240,232,0.4)", marginTop: 2 }}>{project.company} · {project.country}</div>
+                  <div style={{ fontFamily: "var(--np-font-display)", fontSize: 17, fontWeight: 500, color: "var(--np-band-text)", lineHeight: 1.2 }}>{project.name}</div>
+                  <div style={{ fontSize: 12, color: "var(--np-band-text-faint)", marginTop: 2 }}>{project.company} · {project.country}</div>
                 </div>
                 <span style={{
                   fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
                   color: SMR_STATUS_COLORS[project.status],
-                  background: SMR_STATUS_COLORS[project.status] + "26",
-                  border: `1px solid ${SMR_STATUS_COLORS[project.status]}55`,
+                  background: tint(SMR_STATUS_COLORS[project.status], 15),
+                  border: `1px solid ${tint(SMR_STATUS_COLORS[project.status], 33)}`,
                   padding: "3px 8px", borderRadius: 20, flexShrink: 0, marginLeft: 8,
                 }}>{project.status}</span>
               </div>
 
               {/* Description */}
-              <p style={{ fontSize: 12, color: "rgba(245,240,232,0.45)", lineHeight: 1.55, margin: "0 0 14px" }}>{project.desc}</p>
+              <p style={{ fontSize: 12, color: "var(--np-band-text-muted)", lineHeight: 1.55, margin: "0 0 14px" }}>{project.desc}</p>
 
               {/* Stats row */}
               <div style={{ display: "flex", gap: 20 }}>
                 <div>
-                  <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(245,240,232,0.3)", marginBottom: 2 }}>Capacity</div>
-                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 13, fontWeight: 600, color: "#d4a54a" }}>{project.capacity} MW</div>
+                  <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--np-band-text-faint)", marginBottom: 2 }}>Capacity</div>
+                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 13, fontWeight: 600, color: "var(--np-accent-ink)" }}>{project.capacity} MW</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(245,240,232,0.3)", marginBottom: 2 }}>Type</div>
-                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 13, fontWeight: 600, color: "#d4a54a" }}>{project.type}</div>
+                  <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--np-band-text-faint)", marginBottom: 2 }}>Type</div>
+                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 13, fontWeight: 600, color: "var(--np-accent-ink)" }}>{project.type}</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(245,240,232,0.3)", marginBottom: 2 }}>Target</div>
-                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 13, fontWeight: 600, color: "#d4a54a" }}>{project.year}</div>
+                  <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--np-band-text-faint)", marginBottom: 2 }}>Target</div>
+                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 13, fontWeight: 600, color: "var(--np-accent-ink)" }}>{project.year}</div>
                 </div>
               </div>
             </motion.div>
@@ -105,7 +107,7 @@ export default function SmrSection({ sectionRef }) {
 
         <motion.p
           initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
-          style={{ fontSize: 11, color: "rgba(245,240,232,0.2)", marginTop: 24, textAlign: "right" }}
+          style={{ fontSize: 11, color: "var(--np-band-text-faint)", marginTop: 24, textAlign: "right" }}
         >
           Sources: IAEA, World Nuclear Association, company filings — updated Feb 2026
         </motion.p>

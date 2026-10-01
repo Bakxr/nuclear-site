@@ -68,6 +68,59 @@
   --np-containment-bg: #161310;
 }
 
+/* Band sections (Markets, Buildout, History): a darker band on dark mode,
+   a toned paper band on light. Plus status colors that hold contrast on
+   either background; the light values are deeper versions of the dark ones. */
+:root {
+  --np-band-bg: #ebe7da;
+  --np-band-text: #1b1609;
+  --np-band-text-muted: #5e5546;
+  --np-band-text-faint: #7d7360;
+  --np-band-surface: #fcfbf5;
+  --np-band-surface-hover: #ffffff;
+  --np-band-border: rgba(28, 24, 14, 0.12);
+  --np-band-rule: rgba(28, 24, 14, 0.2);
+  --np-band-shadow: 0 20px 48px rgba(28, 24, 14, 0.12);
+  --np-band-ghost: rgba(28, 24, 14, 0.13);
+
+  --np-up: #1f7a45;
+  --np-down: #b42318;
+  --np-success: #1f7a45;
+  --np-c-gold: #8a6212;
+  --np-c-green: #1f7a45;
+  --np-c-red: #b42318;
+  --np-c-teal: #1f6f8b;
+  --np-c-amber: #9a6200;
+  --np-c-blue: #2557b8;
+  --np-c-violet: #6941c6;
+  --np-c-slate: #55606e;
+}
+
+:root.dark {
+  --np-band-bg: var(--np-dark-bg);
+  --np-band-text: #f5f0e8;
+  --np-band-text-muted: rgba(245, 240, 232, 0.55);
+  --np-band-text-faint: rgba(245, 240, 232, 0.35);
+  --np-band-surface: rgba(245, 240, 232, 0.035);
+  --np-band-surface-hover: rgba(245, 240, 232, 0.07);
+  --np-band-border: rgba(245, 240, 232, 0.07);
+  --np-band-rule: rgba(245, 240, 232, 0.16);
+  --np-band-shadow: 0 20px 48px rgba(0, 0, 0, 0.28);
+  --np-band-ghost: rgba(245, 240, 232, 0.4);
+
+  --np-up: #4ade80;
+  --np-down: #f87171;
+  --np-success: #4ade80;
+  --np-c-gold: #d4a54a;
+  --np-c-green: #4ade80;
+  --np-c-red: #ef4444;
+  --np-c-teal: #5ab8d4;
+  --np-c-amber: #fbbf24;
+  --np-c-blue: #60a5fa;
+  --np-c-violet: #a78bfa;
+  --np-c-slate: #94a3b8;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -998,32 +1051,33 @@ video {
   margin: 18px 0 0;
 }
 
+/* Band-section headers (Markets, Buildout, History) follow the band tokens. */
 .np-sec-head--dark .np-sec-kicker-row {
-  border-top-color: rgba(245, 240, 232, 0.16);
+  border-top-color: var(--np-band-rule);
 }
 
 .np-sec-head--dark .np-sec-index {
-  color: var(--np-accent);
+  color: var(--np-accent-ink);
 }
 
 .np-sec-head--dark .np-sec-label {
-  color: rgba(245, 240, 232, 0.55);
+  color: var(--np-band-text-muted);
 }
 
 .np-sec-head--dark .np-sec-meta {
-  color: rgba(245, 240, 232, 0.35);
+  color: var(--np-band-text-faint);
 }
 
 .np-sec-head--dark .np-sec-title {
-  color: #f5f0e8;
+  color: var(--np-band-text);
 }
 
 .np-sec-head--dark .np-sec-title em {
-  color: var(--np-accent);
+  color: var(--np-accent-ink);
 }
 
 .np-sec-head--dark .np-sec-lede {
-  color: rgba(245, 240, 232, 0.55);
+  color: var(--np-band-text-muted);
 }
 
 /* Buttons */
