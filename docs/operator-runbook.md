@@ -231,7 +231,7 @@ Check these in order:
 ### If terminal data is stale
 
 - Confirm external data providers are reachable.
-- Trigger `/api/terminal/revalidate?token=...` if `TERMINAL_REVALIDATE_TOKEN` is configured.
+- Trigger `/api/terminal/revalidate` with `Authorization: Bearer $TERMINAL_REVALIDATE_TOKEN` (the `?token=` form still works but lands in access logs).
 - Confirm the optional `terminal_cache` table exists if you want cache consistency across serverless instances.
 
 ## Current Operational Risks

@@ -102,12 +102,10 @@ function PredictionOddsBoard({ markets, onOpenTerminal }) {
           type="button"
           onClick={onOpenTerminal}
           style={{
-            background: "none", border: "none", padding: 0, cursor: "pointer",
+            background: "none", border: "none", padding: "12px 0", minHeight: 44, cursor: "pointer",
             fontFamily: "var(--np-font-mono)", fontSize: 11, letterSpacing: "0.05em",
-            color: "rgba(212,165,74,0.85)",
+            color: "var(--np-accent-ink)",
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.color = "#d4a54a"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(212,165,74,0.85)"; }}
         >
           Full board in the terminal →
         </button>

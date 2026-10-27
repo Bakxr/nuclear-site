@@ -45,18 +45,23 @@ export default function QuotesSection({ quoteIndex, quoteFading, setQuoteIndex, 
         </div>
 
         {/* Numbered indicators */}
-        <div style={{ display: "flex", justifyContent: "center", gap: 20, marginTop: 36 }}>
+        <div style={{ display: "flex", justifyContent: "center", gap: 4, marginTop: 28 }}>
           {QUOTES.map((q, i) => (
             <button
               key={i}
               aria-label={`Show quote ${i + 1} of ${QUOTES.length}`}
               onClick={() => { setQuoteFading(true); setTimeout(() => { setQuoteIndex(i); setQuoteFading(false); }, 400); }}
               style={{
-                background: "none", border: "none", cursor: "pointer", padding: "4px 0",
+                // 44px hit area around a small numeral.
+                background: "none", border: "none", cursor: "pointer", padding: "12px 8px",
+                minWidth: 44, minHeight: 44,
                 fontFamily: "var(--np-font-mono)", fontSize: 11, letterSpacing: "0.08em",
                 color: i === quoteIndex ? "var(--np-text)" : "var(--np-text-faint)",
-                borderBottom: i === quoteIndex ? "1px solid var(--np-accent)" : "1px solid transparent",
-                transition: "color 0.25s ease, border-color 0.25s ease",
+                // Underline the numeral itself, not the padded hit area.
+                textDecoration: "underline",
+                textDecorationColor: i === quoteIndex ? "var(--np-accent)" : "transparent",
+                textUnderlineOffset: 6,
+                transition: "color 0.25s ease, text-decoration-color 0.25s ease",
               }}
             >
               {String(i + 1).padStart(2, "0")}

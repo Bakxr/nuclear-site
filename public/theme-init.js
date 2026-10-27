@@ -6,5 +6,5 @@
     if (stored ? stored === "dark" : true) {
       document.documentElement.classList.add("dark");
     }
-  } catch (e) { /* storage unavailable — stay with default */ }
+  } catch { /* storage unavailable — stay with default */ }
 })();

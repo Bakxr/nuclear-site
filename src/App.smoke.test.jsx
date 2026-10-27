@@ -52,6 +52,7 @@ vi.mock('./services/newsAPI.js', () => {
     clearNewsCache: vi.fn(),
     fetchNuclearNews: vi.fn(async () => [article]),
     getInstantNews: vi.fn(() => [article]),
+    fetchNewsPayload: vi.fn(async () => ({ articles: [article], uranium: null, fleet: null })),
   };
 });
 

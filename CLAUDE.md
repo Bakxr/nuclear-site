@@ -14,19 +14,22 @@ External data: Finnhub (quotes), SEC EDGAR, NRC, nuclear RSS feeds.
 
 ```
 src/                React app
-  App.jsx           Editorial shell — still large (~3.4k LOC), being incrementally split
+  App.jsx           Editorial shell (~1.6k LOC), being incrementally split into features/
   features/access/  Auth + membership state (context.jsx is the source of truth)
+  features/news/    useNewsFeed (live /api/news with curated fallback)
+  features/newsletter/ useNewsletter (all sign-up forms + popup rules), NewsletterCapture
   features/terminal Terminal UI, selectors
-  components/       Globe.jsx is its own beast (~800 LOC, Three.js + raycaster)
+  components/       Globe.jsx is its own beast (~950 LOC, Three.js + raycaster)
   services/         Client-side fetchers
 api/                Vercel functions
   _lib/             Shared server utils — auth, billing, http, rate limit, snapshot cache
   auth/             OTP request endpoint
   billing/          Checkout session + portal session
   stripe/           Webhook handler (raw body, signature-verified)
-  terminal/         Snapshot + entity endpoints (require active terminal_access)
+  terminal/         Snapshot (requires active terminal_access) + token-gated revalidate
   market/           Public quote fetch
-  news.js, subscribe.js, unsubscribe.js
+  news.js, subscribe.js (sign-up + ?confirm= double opt-in), unsubscribe.js, alerts.js
+  cron/, social/    Daily/weekly dispatch; X draft cards + posting page
 supabase/migrations Billing/terminal schema, RLS policies
 scripts/            Newsletter sender
 tests/              Vitest setup
@@ -66,8 +69,8 @@ tests/              Vitest setup
 - **`api/auth/request-otp.js`** uses `getUserByEmail` (not `listUsers` pagination). Do not regress to scanning all users. It provisions on first sight, then the browser triggers the actual OTP email via Supabase Auth.
 - **CORS**: state-changing routes must check `ensureAllowedOrigin` — don't accept missing-origin requests for POSTs.
 - **Stripe `current_period_end`**: top-level field is deprecated in newer API versions. Read `subscription.items.data[0].current_period_end` as fallback.
-- **`api/terminal/entity.js` imports from `src/features/terminal/selectors.js`** — this couples serverless code to the Vite tree. If you touch a selector, do not introduce `import.meta.env` or anything else client-only into its dependency chain.
-- The `subscribers` table for newsletter isn't in `supabase/migrations/` — it exists in the live DB but the schema isn't tracked here yet. If you change subscribe/unsubscribe flows, document the expected shape.
+- **`api/market/quotes.js` imports from `src/data/constants.js` and `src/features/terminal/marketTopic.js`** — this couples serverless code to the Vite tree. If you touch those, do not introduce `import.meta.env` or anything else client-only into their dependency chain.
+- The `subscribers` table was created in the dashboard (no create migration); later migrations add RLS, attribution columns and `confirmed_at`. Shape: `email` (unique), `active`, `confirmed_at`, `created_at`, attribution columns. **Senders must filter `active = true AND confirmed_at IS NOT NULL`**; `active = false` is an opt-out and also suppresses the member daily brief.
 
 ## Terminal architecture (2026-09 rebuild)
 
@@ -98,6 +101,12 @@ tests/              Vitest setup
   - Reactor schematics converted to WebP and runtime-cached, not precached (precache 10.4 MB → 2 MB).
   - Browser-side RSS/CORS-proxy news path removed — `/api/news` or the curated fallback only.
 - 2026-05-13: Security pass — locked down `revalidate` token requirement, rewrote `request-otp` to drop user enumeration, replaced in-memory rate limiter with Supabase-backed limiter, tightened `/api/market/quotes`, fixed `news.js` error leak, switched unsubscribe HMAC to dedicated `UNSUBSCRIBE_SECRET`, added in-flight dedup for terminal snapshot.
+
+- 2026-10-27: Audit pass — alerts/watchlist inserts require an active membership at the RLS level and the alert cron skips lapsed members; security headers + CSP in `vercel.json` (no inline scripts on pages: the theme bootstrap is `public/theme-init.js`); newsletter double opt-in; news "why it matters" lines written by Claude (`api/_lib/newsTakes.js`, cached by URL) instead of canned text; feed health in the owner's morning email; `/api/news` CDN-cached; uranium SPUT row validated + daily change.
+
+## CSP
+
+`vercel.json` sets a Content-Security-Policy on every non-`/api` path. A new third-party script, font, image host or fetch target must be added there, or it will be blocked in production (it still works in `vite dev`, which doesn't send the header). `/api` HTML pages (unsubscribe, confirm, posting page) are exempt because they use inline styles/scripts.
 
 ## When you change things
 

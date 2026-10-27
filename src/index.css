@@ -14,7 +14,7 @@
   --np-surface-dim: rgba(28, 24, 14, 0.05);
   --np-text: #1b1609;
   --np-text-muted: #5e5546;
-  --np-text-faint: #8c8169;
+  --np-text-faint: #6f6552; /* 5.1:1 on --np-bg (was #8c8169, 3.4:1) */
   --np-accent: #d4a54a;
   /* Gold that holds contrast as small text on paper. Resolves back to bright gold on dark. */
   --np-accent-ink: #826017;
@@ -932,6 +932,28 @@ video {
   }
 }
 
+/* Hero call to action: newsletter form plus a quiet terminal link */
+.np-hero-cta {
+  margin: 28px auto 0;
+  max-width: 560px;
+}
+.np-hero-terminal-link {
+  margin-top: 14px;
+  min-height: 44px;
+  padding: 10px 14px;
+  background: none;
+  border: none;
+  color: var(--np-accent-ink);
+  font: 600 13px/1.2 "DM Sans", sans-serif;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.np-hero-terminal-link:hover {
+  text-decoration-thickness: 2px;
+}
+
 /* ====================================================================
    EDITORIAL COMPONENT LAYER — masthead, section headers, buttons, cards
    ==================================================================== */
@@ -1179,6 +1201,13 @@ video {
   padding: 9px 18px;
   cursor: pointer;
   transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+
+/* Touch screens: chips get a full 44px tap height. */
+@media (pointer: coarse) {
+  .np-chip {
+    min-height: 44px;
+  }
 }
 
 .np-chip:hover {

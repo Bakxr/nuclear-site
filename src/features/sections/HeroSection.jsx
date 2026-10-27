@@ -119,6 +119,7 @@ export default function HeroSection({
   heroY,
   heroOpacity,
   showStats,
+  children,
 }) {
   const { uranium, fleet } = useHeroSignals();
   const uraniumStat = buildUraniumStat(uranium);
@@ -172,8 +173,17 @@ export default function HeroSection({
             transition={{ duration: 0.9, ease: EASE, delay: 0.85 }}
             style={{ fontSize: 16, color: isDark ? "rgba(245,240,232,0.76)" : "#5e5546", maxWidth: 680, margin: "16px auto 0", lineHeight: 1.75, fontWeight: 500 }}
           >
-            The grid will not be rebuilt with slogans. Track all {inOperation?.reactors ?? 417} operating reactors, uranium-sensitive markets, national buildouts, and the political fight over firm power in one scroll-heavy briefing.
+            The grid will not be rebuilt with slogans. Every one of the world's {inOperation?.reactors ?? 417} operating reactors, the uranium market, the stocks and the national buildouts, tracked from primary sources and updated daily.
           </motion.p>
+          {children ? (
+            <motion.div
+              className="np-hero-cta"
+              initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, ease: EASE, delay: 1.05 }}
+            >
+              {children}
+            </motion.div>
+          ) : null}
         </motion.div>
       </section>
 
@@ -206,7 +216,7 @@ export default function HeroSection({
             </div>
             <div style={{ fontSize: 10, fontWeight: 600, color: "var(--np-text-muted)", marginTop: 10, textTransform: "uppercase", letterSpacing: "0.08em" }}>{s.label}</div>
             <div style={{ fontSize: 11, color: "var(--np-text-faint)", marginTop: 4, lineHeight: 1.4 }}>{s.sub}</div>
-            <div style={{ fontSize: 9, color: "#d4a54a", marginTop: 8, letterSpacing: "0.04em", opacity: 0.7 }}><ExtArrow /> {s.source}</div>
+            <div style={{ fontSize: 10, color: "var(--np-accent-ink)", marginTop: 8, letterSpacing: "0.04em" }}><ExtArrow /> {s.source}</div>
           </a>
         ))}
       </section>
