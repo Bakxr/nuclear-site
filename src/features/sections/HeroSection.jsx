@@ -4,6 +4,7 @@ import { NUCLEAR_PLANTS, PRIS_WORLD_STATS } from "../../data/plants.js";
 import { EASE, wordReveal } from "./animations.js";
 import CountUp from "./CountUp.jsx";
 import ExtArrow from "../../components/ExtArrow.jsx";
+import { fetchNewsPayload } from "../../services/newsAPI.js";
 
 // Source/label defaults. There is deliberately no fallback *price*: a stale
 // hard-coded number would read as live data.
@@ -33,7 +34,9 @@ function buildUraniumStat(live) {
       decimals: live.pricePerLb >= 100 ? 0 : 2,
       prefix: "$",
       suffix: "",
-      sub: URANIUM_FALLBACK.sub,
+      sub: Number.isFinite(live.changePct)
+        ? `${URANIUM_FALLBACK.sub} · ${live.changePct >= 0 ? "+" : "−"}${Math.abs(live.changePct).toFixed(1)}% on the day`
+        : URANIUM_FALLBACK.sub,
       source: live.source || URANIUM_FALLBACK.source,
       sourceUrl: live.sourceUrl || URANIUM_FALLBACK.sourceUrl,
     };
@@ -45,15 +48,12 @@ function useHeroSignals() {
   const [data, setData] = useState({ uranium: null, fleet: null });
   useEffect(() => {
     let cancelled = false;
-    const controller = new AbortController();
-    fetch("/api/news", { signal: controller.signal })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((payload) => {
-        if (cancelled || !payload) return;
-        setData({ uranium: payload.uranium || null, fleet: payload.fleet || null });
-      })
-      .catch(() => {});
-    return () => { cancelled = true; controller.abort(); };
+    // Shares the news list's request rather than fetching /api/news again.
+    fetchNewsPayload().then((payload) => {
+      if (cancelled || !payload) return;
+      setData({ uranium: payload.uranium || null, fleet: payload.fleet || null });
+    });
+    return () => { cancelled = true; };
   }, []);
   return data;
 }

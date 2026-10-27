@@ -35,6 +35,9 @@
     "api/social/card.js": {
       "maxDuration": 30,
       "includeFiles": "{api/_lib/fonts/**,node_modules/harfbuzzjs/hb.wasm,node_modules/satori/yoga.wasm}"
+    },
+    "api/news.js": {
+      "maxDuration": 60
     }
   },
   "headers": [

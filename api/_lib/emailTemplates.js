@@ -370,7 +370,21 @@ function funnelText(funnel) {
   return `FUNNEL: ${funnel.subscribers} subscribers (+${funnel.new7} this week), ${funnel.terminalMembers ?? "?"} terminal members. Sources (30d): ${sources}\n\n`;
 }
 
-export function buildXDraftsEmail({ drafts, intentUrl, funnel = null, cardUrl = null, shareUrl = null }) {
+// Lists only the news feeds that need a look: errors, or nothing in 30 days.
+function feedHealthBlock(feedHealth) {
+  const problems = (feedHealth || []).filter((f) => f.status !== "ok");
+  if (!problems.length) return "";
+  const rows = problems.map((f) => `${escapeHtml(f.name)}: <strong style="color:${f.status === "error" ? "#f87171" : "#d4a54a"};">${f.status === "error" ? `error (${escapeHtml(f.error || "unknown")})` : "nothing in the last 30 days"}</strong>`).join("<br/>");
+  return moduleBlock("News feeds to check", `<div style="font-size:12px;line-height:1.8;color:rgba(245,240,232,0.78);">${rows}</div>`);
+}
+
+function feedHealthText(feedHealth) {
+  const problems = (feedHealth || []).filter((f) => f.status !== "ok");
+  if (!problems.length) return "";
+  return `NEWS FEEDS TO CHECK: ${problems.map((f) => `${f.name} (${f.status === "error" ? f.error || "error" : "empty 30d"})`).join(", ")}\n\n`;
+}
+
+export function buildXDraftsEmail({ drafts, intentUrl, funnel = null, cardUrl = null, shareUrl = null, feedHealth = null }) {
   const subject = `X drafts for today (${drafts.length})`;
   const button = (href, label) => `<a href="${escapeHtml(href)}" style="display:inline-block;padding:9px 16px;border-radius:4px;background:#d4a54a;color:#111;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">${label}</a>`;
   const step = (n, label) => `<div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(245,240,232,0.5);font-weight:700;margin:16px 0 8px;">${n}. ${label}</div>`;
@@ -390,10 +404,10 @@ export function buildXDraftsEmail({ drafts, intentUrl, funnel = null, cardUrl = 
 
   const html = shell({
     title: subject,
-    bodyHtml: `<p style="font-size:14px;line-height:1.6;color:rgba(245,240,232,0.72);margin:0 0 18px;">Weekdays: post two, at 8:00am and 12:30pm ET, plus any reactor milestone right away. Weekends: one, mid-morning. Attach the image, post, then reply to your own post with the link: the post is built to get replies, which X ranks far above link clicks. Links are tagged, so the sign-ups they bring in show up in the funnel below.</p>${funnelBlock(funnel)}${blocks}`,
+    bodyHtml: `<p style="font-size:14px;line-height:1.6;color:rgba(245,240,232,0.72);margin:0 0 18px;">Weekdays: post two, at 8:00am and 12:30pm ET, plus any reactor milestone right away. Weekends: one, mid-morning. Attach the image, post, then reply to your own post with the link: the post is built to get replies, which X ranks far above link clicks. Links are tagged, so the sign-ups they bring in show up in the funnel below.</p>${funnelBlock(funnel)}${feedHealthBlock(feedHealth)}${blocks}`,
     footerNote: "Owner-only email from the Nuclear Pulse morning job.",
   });
-  const text = funnelText(funnel) + drafts.map((d) => [
+  const text = funnelText(funnel) + feedHealthText(feedHealth) + drafts.map((d) => [
     `== ${d.kind.toUpperCase()}${d.postAt ? ` (post ${d.postAt})` : ""} ==`,
     d.card && cardUrl ? `Image: ${cardUrl(d.card)}` : null,
     d.text,

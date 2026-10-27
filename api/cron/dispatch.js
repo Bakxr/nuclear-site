@@ -33,6 +33,7 @@ import { writeHooks } from "../_lib/hookWriter.js";
 import { fetchNrcFleetStatus } from "../_lib/nrcFleet.js";
 import { buildSnapshotIndex, evaluateAlert } from "../_lib/alerts.js";
 import { getFunnelStats } from "../_lib/funnel.js";
+import { getLiveNewsPayload } from "../_lib/newsFeed.js";
 
 function isAuthorized(req) {
   const secret = process.env.CRON_SECRET?.trim();
@@ -341,6 +342,7 @@ async function runXDrafts({ supabase, snapshot, plantChanges = [], dryRun }) {
   const { drafts, ...hooks } = await writeHooks(templated, { headlines });
 
   const funnel = await getFunnelStats(supabase).catch(() => null);
+  const feedHealth = await getLiveNewsPayload().then((p) => p.feedHealth || null).catch(() => null);
   if (dryRun) return { hooks, drafts: drafts.map(({ kind, text, template, reply, card }) => ({ kind, text, template, reply, card })), funnel };
 
   const site = process.env.SITE_URL?.trim() || "https://thenuclearpulse.com";
@@ -348,6 +350,7 @@ async function runXDrafts({ supabase, snapshot, plantChanges = [], dryRun }) {
     drafts,
     intentUrl: xIntentUrl,
     funnel,
+    feedHealth,
     cardUrl: (card) => cardUrl(site, card),
     shareUrl: (draft) => shareUrl(site, draft),
   }) });

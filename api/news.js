@@ -21,7 +21,9 @@ export default async function handler(req, res) {
     return res.status(502).json({ error: "No live articles available." });
   }
 
-  const payload = { ...newsResult.value };
+  // Feed health is for the owner's email, not the public payload.
+  const { feedHealth: _feedHealth, ...news } = newsResult.value;
+  const payload = news;
   if (uraniumResult.status === "fulfilled" && uraniumResult.value) {
     payload.uranium = uraniumResult.value;
   }
@@ -29,5 +31,8 @@ export default async function handler(req, res) {
     payload.fleet = fleetResult.value;
   }
 
+  // Shared CDN cache: one function run per region every 5 minutes at most,
+  // and readers get the cached copy instantly while it refreshes.
+  res.setHeader("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=1800");
   return res.status(200).json(payload);
 }

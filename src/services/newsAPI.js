@@ -12,55 +12,6 @@ const CACHE_TTL = 15 * 60 * 1000; // 15-min cache
 
 const cache = new Map();
 
-const WHY_IT_MATTERS = {
-  Policy: [
-    "Regulators set the speed limit on the buildout — and the cost of compliance.",
-    "Every approval and rule change reshapes which reactors get built this decade.",
-    "License timelines decide whether the next fleet starts in 2028 or 2035.",
-  ],
-  Expansion: [
-    "Each plant on the grid is decades of firm, zero-carbon power locked in.",
-    "Buildout pace is the real signal — capacity coming online beats capacity announced.",
-    "First-of-kind milestones de-risk the rest of the pipeline.",
-  ],
-  Markets: [
-    "Capital flow is conviction made visible — follow the money, not the press release.",
-    "Uranium price and equity action lead the news cycle by months.",
-    "Where institutional money lands today shapes the 2030 fleet.",
-  ],
-  Research: [
-    "Today's lab milestone is tomorrow's licensing application.",
-    "Fundamental advances quietly redraw what's feasible at commercial scale.",
-    "The work that gets cited becomes the work that gets built.",
-  ],
-  Safety: [
-    "Transparency on safety is how the industry earns a permission slip to grow.",
-    "Every incident report compounds — or erodes — decades of public trust.",
-    "Operational discipline is the moat. It either holds or it doesn't.",
-  ],
-  Innovation: [
-    "Advanced reactors are the bet that nuclear can be fast, cheap, and modular.",
-    "If next-gen designs work, the cost curve breaks in nuclear's favor.",
-    "Factory-built reactors change the deployment math — and the politics.",
-  ],
-  Industry: [
-    "The fleet is moving — operators, vendors, and supply chains are the leading edge.",
-    "Industry moves telegraph where conviction is hardest right now.",
-    "Watch what builders do, not what advocates say.",
-  ],
-};
-
-function hashKey(str = "") {
-  let h = 5381;
-  for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0;
-  return Math.abs(h);
-}
-
-function pickWhy(tag, key) {
-  const pool = WHY_IT_MATTERS[tag] || WHY_IT_MATTERS.Industry;
-  return pool[hashKey(key) % pool.length];
-}
-
 // ---------------------------------------------------------------------------
 // Curated Fallback  (shown instantly, and kept if /api/news is unavailable)
 // ---------------------------------------------------------------------------
@@ -87,7 +38,7 @@ function buildFallback() {
     relevanceScore:  10,
     engagementScore: 35,
     curiosityHook:   null,
-    whyItMatters:    pickWhy(item.tag, item.title || item.tag || ''),
+    whyItMatters:    '',
     newsletterCTA:   'Get weekly updates on the nuclear renaissance',
     _feedId:         'curated',
     _isFallback:     true,
@@ -98,6 +49,44 @@ function buildFallback() {
 // Main Export
 // ---------------------------------------------------------------------------
 
+// One request serves both the news list and the hero's side payloads
+// (uranium, NRC fleet): concurrent callers share the in-flight promise.
+let payloadRequest = null;
+
+/**
+ * Raw /api/news payload ({ articles, uranium, fleet, fetchedAt }), or null if
+ * the endpoint is unavailable. Cached for CACHE_TTL.
+ */
+export function fetchNewsPayload() {
+  const cached = cache.get('payload');
+  if (cached && Date.now() - cached.ts < CACHE_TTL) return Promise.resolve(cached.data);
+  if (payloadRequest) return payloadRequest;
+
+  payloadRequest = fetch('/api/news', { headers: { Accept: 'application/json' } })
+    .then((res) => (res.ok ? res.json() : null))
+    .then((payload) => {
+      if (payload) cache.set('payload', { data: payload, ts: Date.now() });
+      return payload;
+    })
+    .catch((error) => {
+      if (import.meta.env.DEV) console.warn('[newsAPI] /api/news unavailable:', error?.message || error);
+      return null;
+    })
+    .finally(() => { payloadRequest = null; });
+  return payloadRequest;
+}
+
+// "5h ago" from the article's own timestamp, so a cached payload never shows
+// a stale age.
+export function relativeDate(date) {
+  const hours = Math.floor((Date.now() - date.getTime()) / 3_600_000);
+  const days = Math.floor(hours / 24);
+  if (hours < 1) return 'Just now';
+  if (hours < 24) return `${hours}h ago`;
+  if (days < 7) return `${days}d ago`;
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: days > 365 ? 'numeric' : undefined });
+}
+
 /**
  * Fetch scored nuclear news from /api/news. Falls back to curated articles
  * if the endpoint fails or returns nothing; the fallback isn't cached so the
@@ -106,27 +95,17 @@ function buildFallback() {
  * @returns {Promise<Article[]>}
  */
 export async function fetchNuclearNews() {
-  const cacheKey = 'nuclear_news_v3';
-  const cached   = cache.get(cacheKey);
-  if (cached && Date.now() - cached.ts < CACHE_TTL) return cached.data;
-
-  try {
-    const apiRes = await fetch('/api/news', { headers: { Accept: 'application/json' } });
-    if (apiRes.ok) {
-      const payload = await apiRes.json();
-      if (Array.isArray(payload.articles) && payload.articles.length > 0) {
-        const articles = payload.articles.map((article) => ({
-          ...article,
-          pubDate: article.pubDate ? new Date(article.pubDate) : null,
-        }));
-        cache.set(cacheKey, { data: articles, ts: Date.now() });
-        return articles;
-      }
-    }
-  } catch (error) {
-    if (import.meta.env.DEV) console.warn('[newsAPI] /api/news unavailable:', error?.message || error);
+  const payload = await fetchNewsPayload();
+  if (Array.isArray(payload?.articles) && payload.articles.length > 0) {
+    return payload.articles.map((article) => {
+      const pubDate = article.pubDate ? new Date(article.pubDate) : null;
+      return {
+        ...article,
+        pubDate,
+        date: pubDate && !Number.isNaN(pubDate.getTime()) ? relativeDate(pubDate) : article.date,
+      };
+    });
   }
-
   return buildFallback();
 }
 
@@ -142,5 +121,5 @@ export function getInstantNews() {
  * Force a fresh fetch on next call.
  */
 export function clearNewsCache() {
-  cache.delete('nuclear_news_v3');
+  cache.delete('payload');
 }

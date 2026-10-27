@@ -1,12 +1,17 @@
+import { attachTakes } from "./newsTakes.js";
+
+// `official`: government or intergovernmental source (shown with an Official badge).
 const FEEDS = [
   { id: "wnn", name: "World Nuclear News", url: "https://www.world-nuclear-news.org/rss", reputation: 10, topicFiltered: true },
-  { id: "iaea", name: "IAEA", url: "https://www.iaea.org/feeds/topnews", reputation: 10, topicFiltered: false },
-  { id: "nrc_news", name: "US Nuclear Regulatory Commission", url: "https://www.nrc.gov/public-involve/rss?feed=news", reputation: 10, topicFiltered: true },
-  { id: "doe_ne", name: "US Department of Energy", url: "https://www.energy.gov/ne/rss.xml", reputation: 9, topicFiltered: true },
-  { id: "eia", name: "EIA Today in Energy", url: "https://www.eia.gov/rss/todayinenergy.xml", reputation: 8, topicFiltered: false },
+  { id: "iaea", name: "IAEA", url: "https://www.iaea.org/feeds/topnews", reputation: 10, topicFiltered: false, official: true },
+  { id: "nrc_news", name: "US Nuclear Regulatory Commission", url: "https://www.nrc.gov/public-involve/rss?feed=news", reputation: 10, topicFiltered: true, official: true },
+  { id: "cnsc", name: "Canadian Nuclear Safety Commission", url: "https://api.io.canada.ca/io-server/gc/news/en/v2?dept=canadiannuclearsafetycommission&type=newsreleases&sort=publishedDate&orderBy=desc&pick=20&format=atom", reputation: 10, topicFiltered: true, official: true },
+  { id: "doe_ne", name: "US Department of Energy", url: "https://www.energy.gov/ne/rss.xml", reputation: 9, topicFiltered: true, official: true },
+  { id: "eia", name: "EIA Today in Energy", url: "https://www.eia.gov/rss/todayinenergy.xml", reputation: 8, topicFiltered: false, official: true },
   { id: "ans", name: "ANS Nuclear Newswire", url: "https://www.ans.org/news/feed/", reputation: 9, topicFiltered: true },
   { id: "nucnet", name: "NucNet", url: "https://www.nucnet.org/feed", reputation: 9, topicFiltered: true },
-  { id: "nei_mag", name: "Nuclear Engineering International", url: "https://www.neimagazine.com/feed/", reputation: 8, topicFiltered: true },
+  // The site-wide /feed/ stopped updating in June 2026; /news/feed/ is current.
+  { id: "nei_mag", name: "Nuclear Engineering International", url: "https://www.neimagazine.com/news/feed/", reputation: 8, topicFiltered: true },
   { id: "power_mag", name: "Power Magazine", url: "https://www.powermag.com/feed/", reputation: 7, topicFiltered: false },
   { id: "atomic_insights", name: "Atomic Insights", url: "https://atomicinsights.com/feed/", reputation: 7, topicFiltered: true },
   { id: "neutron_bytes", name: "Neutron Bytes", url: "https://neutronbytes.com/feed/", reputation: 7, topicFiltered: true },
@@ -40,55 +45,6 @@ const TAG_RULES = [
   { tag: "Safety", re: /safety|incident|shutdown|leak|radiation|risk|inspection|accident/i },
   { tag: "Innovation", re: /advanced|microreactor|molten salt|thorium|fast reactor|generation iv|gen[- ]?4/i },
 ];
-
-const WHY_IT_MATTERS = {
-  Policy: [
-    "Regulators set the speed limit on the buildout — and the cost of compliance.",
-    "Every approval and rule change reshapes which reactors get built this decade.",
-    "License timelines decide whether the next fleet starts in 2028 or 2035.",
-  ],
-  Expansion: [
-    "Each plant on the grid is decades of firm, zero-carbon power locked in.",
-    "Buildout pace is the real signal — capacity coming online beats capacity announced.",
-    "First-of-kind milestones de-risk the rest of the pipeline.",
-  ],
-  Markets: [
-    "Capital flow is conviction made visible — follow the money, not the press release.",
-    "Uranium price and equity action lead the news cycle by months.",
-    "Where institutional money lands today shapes the 2030 fleet.",
-  ],
-  Research: [
-    "Today's lab milestone is tomorrow's licensing application.",
-    "Fundamental advances quietly redraw what's feasible at commercial scale.",
-    "The work that gets cited becomes the work that gets built.",
-  ],
-  Safety: [
-    "Transparency on safety is how the industry earns a permission slip to grow.",
-    "Every incident report compounds — or erodes — decades of public trust.",
-    "Operational discipline is the moat. It either holds or it doesn't.",
-  ],
-  Innovation: [
-    "Advanced reactors are the bet that nuclear can be fast, cheap, and modular.",
-    "If next-gen designs work, the cost curve breaks in nuclear's favor.",
-    "Factory-built reactors change the deployment math — and the politics.",
-  ],
-  Industry: [
-    "The fleet is moving — operators, vendors, and supply chains are the leading edge.",
-    "Industry moves telegraph where conviction is hardest right now.",
-    "Watch what builders do, not what advocates say.",
-  ],
-};
-
-function hashString(str = "") {
-  let h = 5381;
-  for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0;
-  return Math.abs(h);
-}
-
-function pickWhyItMatters(tag, key) {
-  const pool = WHY_IT_MATTERS[tag] || WHY_IT_MATTERS.Industry;
-  return pool[hashString(key) % pool.length];
-}
 
 function safeFromCodePoint(code) {
   try {
@@ -237,15 +193,16 @@ export function parseFeed(xml, feed) {
       title,
       url: link,
       source: feed.name,
-      sourceTier: /IAEA|Nuclear Regulatory Commission|Department of Energy|EIA/.test(feed.name) ? "Official" : "Industry",
-      isOfficial: /IAEA|Nuclear Regulatory Commission|Department of Energy|EIA/.test(feed.name),
+      sourceTier: feed.official ? "Official" : "Industry",
+      isOfficial: Boolean(feed.official),
+      // Display label as of fetch time; clients should prefer pubDate, since
+      // this payload is cached.
       date: relativeDate(pubDate),
       pubDate,
       tag,
       relevanceScore: relevance,
       engagementScore: engagementScore(feed, pubDate, relevance, title),
       curiosityHook: description.slice(0, 220) || null,
-      whyItMatters: pickWhyItMatters(tag, link || title),
       newsletterCTA: "Get weekly updates on the nuclear renaissance",
       _feedId: feed.id,
     };
@@ -254,12 +211,15 @@ export function parseFeed(xml, feed) {
   return parsed.sort((a, b) => b.pubDate.getTime() - a.pubDate.getTime()).slice(0, MAX_PER_FEED);
 }
 
+const FETCH_TIMEOUT_MS = 8000;
+
 async function fetchFeed(feed) {
   const res = await fetch(feed.url, {
     headers: {
       "user-agent": "NuclearPulseBot/1.0 (+https://thenuclearpulse.com)",
-      accept: "application/rss+xml, application/xml, text/xml;q=0.9, */*;q=0.8",
+      accept: "application/rss+xml, application/atom+xml, application/xml, text/xml;q=0.9, */*;q=0.8",
     },
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   });
 
   if (!res.ok) throw new Error(`${feed.id}:${res.status}`);
@@ -274,9 +234,19 @@ export async function getLiveNewsPayload({ force = false } = {}) {
 
   const results = await Promise.allSettled(FEEDS.map((feed) => fetchFeed(feed)));
   const articles = [];
-
-  results.forEach((result) => {
-    if (result.status === "fulfilled") articles.push(...result.value);
+  // Per-feed health for the owner's morning email: a feed that errors, or
+  // has had nothing in the 30-day window, is otherwise invisible.
+  const health = FEEDS.map((feed, i) => {
+    const result = results[i];
+    if (result.status === "rejected") return { id: feed.id, name: feed.name, status: "error", error: String(result.reason?.message || result.reason) };
+    articles.push(...result.value);
+    return {
+      id: feed.id,
+      name: feed.name,
+      status: result.value.length ? "ok" : "empty",
+      items: result.value.length,
+      newest: result.value[0]?.pubDate?.toISOString() || null,
+    };
   });
 
   const seen = new Set();
@@ -308,8 +278,9 @@ export async function getLiveNewsPayload({ force = false } = {}) {
   }
 
   const payload = {
-    articles: deduped,
+    articles: await attachTakes(deduped),
     fetchedAt: new Date().toISOString(),
+    feedHealth: health,
   };
 
   cache.set(CACHE_KEY, { ts: Date.now(), payload });
