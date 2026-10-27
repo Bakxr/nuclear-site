@@ -10,6 +10,7 @@ function query(table) {
     select: () => q,
     eq: (field, value) => { rows = rows.filter((r) => r[field] === value); return q; },
     in: (field, values) => { rows = rows.filter((r) => values.includes(r[field])); return q; },
+    not: (field, op, value) => { rows = rows.filter((r) => !(op === 'is' && value === null ? r[field] == null : r[field] === value)); return q; },
     limit: () => q,
     insert: async (payload) => { logInserts.push(...[].concat(payload)); return { error: null }; },
     then: (resolve) => resolve({ data: rows, error: null }),
@@ -45,10 +46,18 @@ function run(job) {
 }
 
 function subscribers(n) {
-  return Array.from({ length: n }, (_, i) => ({ email: `reader${i}@example.com`, active: true }));
+  return Array.from({ length: n }, (_, i) => ({ email: `reader${i}@example.com`, active: true, confirmed_at: '2026-10-01T00:00:00Z' }));
 }
 
 describe('weekly newsletter batching', () => {
+  it('skips subscribers who never confirmed', async () => {
+    tables = { subscribers: [...subscribers(2), { email: 'pending@example.com', active: true, confirmed_at: null }], terminal_dispatch_log: [] };
+    batchSend.mockReset().mockImplementation(async (payload) => ({ data: { data: payload.map((_, i) => ({ id: `e${i}` })) }, error: null }));
+    await run('weekly');
+    const sentTo = batchSend.mock.calls.flatMap(([payload]) => payload.map((m) => m.to));
+    expect(sentTo).toEqual(['reader0@example.com', 'reader1@example.com']);
+  });
+
   beforeEach(() => {
     logInserts.length = 0;
     batchSend.mockReset().mockImplementation(async (payload) => ({ data: { data: payload.map((_, i) => ({ id: `e${i}` })) }, error: null }));

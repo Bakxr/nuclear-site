@@ -8,6 +8,8 @@ export const config = {
   },
 };
 
+const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
 // Instant owner notification when a new paid subscription is created.
 // Never throws and never breaks the webhook: missing OWNER_EMAIL or a
 // failed send is logged and skipped silently.
@@ -39,10 +41,10 @@ async function notifyOwnerOfNewSubscription(subscription) {
     const html = [
       "<div style=\"font-family:sans-serif;max-width:560px\">",
       "<h2>⚛️ New PRO subscriber</h2>",
-      `<p><strong>Customer:</strong> ${customerEmail}<br/>`,
-      `<strong>Plan:</strong> ${amount} / ${interval}<br/>`,
-      `<strong>Subscription:</strong> ${subscription?.id || "unknown"}<br/>`,
-      `<strong>Status:</strong> ${subscription?.status || "unknown"}</p>`,
+      `<p><strong>Customer:</strong> ${escapeHtml(customerEmail)}<br/>`,
+      `<strong>Plan:</strong> ${escapeHtml(amount)} / ${escapeHtml(interval)}<br/>`,
+      `<strong>Subscription:</strong> ${escapeHtml(subscription?.id || "unknown")}<br/>`,
+      `<strong>Status:</strong> ${escapeHtml(subscription?.status || "unknown")}</p>`,
       "</div>",
     ].join("\n");
 

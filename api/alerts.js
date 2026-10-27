@@ -73,6 +73,9 @@ async function createAlert(req, res, { user, accessToken }) {
     .select("id, alert_type, target_id, target_label, threshold, active, created_at, last_fired_at, fire_count")
     .single();
 
+  if (error?.code === "P0001") {
+    return res.status(409).json({ error: `Limit of ${MAX_ALERTS_PER_USER} alerts reached.` });
+  }
   if (error) {
     console.error("[alerts/create]", error.message);
     return res.status(500).json({ error: "Failed to create alert." });

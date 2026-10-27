@@ -8,7 +8,7 @@ export async function getFunnelStats(supabase, { now = Date.now() } = {}) {
   const since7 = now - 7 * DAY_MS;
 
   const [active, recent, members] = await Promise.all([
-    supabase.from("subscribers").select("id", { count: "exact", head: true }).eq("active", true),
+    supabase.from("subscribers").select("id", { count: "exact", head: true }).eq("active", true).not("confirmed_at", "is", null),
     supabase.from("subscribers").select("created_at, source, campaign").gte("created_at", since30).limit(5000),
     supabase.from("billing_memberships").select("user_id", { count: "exact", head: true }).eq("terminal_access", true),
   ]);

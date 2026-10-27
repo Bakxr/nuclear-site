@@ -1,6 +1,8 @@
 import crypto from "node:crypto";
 
-const DEFAULT_MAX_AGE_MS = 45 * 24 * 60 * 60 * 1000;
+// Unsubscribe links must keep working long after the email was sent.
+const DEFAULT_MAX_AGE_MS = 365 * 24 * 60 * 60 * 1000;
+const CONFIRM_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
 function getSecret() {
   return process.env.UNSUBSCRIBE_SECRET?.trim() || "";
@@ -14,16 +16,27 @@ function base64UrlDecode(value) {
   return Buffer.from(value, "base64url").toString("utf8");
 }
 
-function signPayload(payload) {
-  return crypto.createHmac("sha256", getSecret()).update(payload).digest("hex");
+// `purpose` separates token kinds: a confirmation token must never verify as
+// an unsubscribe token and vice versa. Unsubscribe keeps the original
+// (unprefixed) scheme so links already in inboxes stay valid.
+function signPayload(payload, purpose = "") {
+  return crypto.createHmac("sha256", getSecret()).update(purpose ? `${purpose}:${payload}` : payload).digest("hex");
 }
 
-export function createUnsubscribeToken(email, timestamp = Date.now()) {
+function createToken(email, timestamp, purpose) {
   const normalisedEmail = email.toLowerCase().trim();
   const payload = `${normalisedEmail}:${timestamp}`;
   const encoded = base64UrlEncode(payload);
-  const signature = signPayload(encoded);
+  const signature = signPayload(encoded, purpose);
   return `${encoded}.${signature}`;
+}
+
+export function createUnsubscribeToken(email, timestamp = Date.now()) {
+  return createToken(email, timestamp, "");
+}
+
+export function createConfirmToken(email, timestamp = Date.now()) {
+  return createToken(email, timestamp, "confirm");
 }
 
 // RFC 2369 / RFC 8058 headers so Gmail/Yahoo show a native one-click unsubscribe.
@@ -37,6 +50,14 @@ export function buildUnsubscribeHeaders(unsubscribeUrl) {
 }
 
 export function verifyUnsubscribeToken(token, maxAgeMs = DEFAULT_MAX_AGE_MS) {
+  return verifyToken(token, maxAgeMs, "");
+}
+
+export function verifyConfirmToken(token, maxAgeMs = CONFIRM_MAX_AGE_MS) {
+  return verifyToken(token, maxAgeMs, "confirm");
+}
+
+function verifyToken(token, maxAgeMs, purpose) {
   const secret = getSecret();
   if (!secret || !token || typeof token !== "string" || !token.includes(".")) {
     return { valid: false };
@@ -47,7 +68,7 @@ export function verifyUnsubscribeToken(token, maxAgeMs = DEFAULT_MAX_AGE_MS) {
     return { valid: false };
   }
 
-  const expected = signPayload(encoded);
+  const expected = signPayload(encoded, purpose);
   let actual;
   let expectedBuffer;
   try {

@@ -147,7 +147,8 @@ async function runWeekly({ supabase, snapshot, dryRun }) {
   const subs = await supabase
     .from("subscribers")
     .select("email")
-    .eq("active", true);
+    .eq("active", true)
+    .not("confirmed_at", "is", null);
 
   if (subs.error) {
     return { error: subs.error.message, sent: 0, skipped: 0, failed: 0 };
@@ -224,7 +225,7 @@ async function sendInBatches({ supabase, items, label, batchKey, build, logRow }
 async function runAlerts({ supabase, snapshot, dryRun }) {
   const alerts = await supabase
     .from("terminal_alerts")
-    .select("id, user_id, alert_type, target_id, target_label, threshold")
+    .select("id, user_id, alert_type, target_id, target_label, threshold, fire_count")
     .eq("active", true);
 
   if (alerts.error) return { error: alerts.error.message, fired: 0, skipped: 0, failed: 0 };
@@ -234,11 +235,15 @@ async function runAlerts({ supabase, snapshot, dryRun }) {
   const index = buildSnapshotIndex(snapshot);
 
   // Bulk-load membership emails for all alert owners in one round-trip.
+  // Alerts are a paid feature: owners whose subscription lapsed are skipped
+  // (their rows stay, and fire again if they resubscribe).
   const userIds = [...new Set(rows.map((a) => a.user_id))];
-  const { data: memberships } = await supabase
+  const { data: memberships, error: membershipError } = await supabase
     .from("billing_memberships")
     .select("user_id, email")
-    .in("user_id", userIds);
+    .in("user_id", userIds)
+    .eq("terminal_access", true);
+  if (membershipError) return { error: membershipError.message, fired: 0, skipped: 0, failed: 0 };
   const emailByUser = new Map((memberships || []).map((m) => [m.user_id, m.email]));
 
   const hour = hourBucket();
@@ -451,6 +456,11 @@ export default async function handler(req, res) {
     const alerts = await runAlerts({ supabase, snapshot, dryRun });
     const { changeList = [], ...plants } = await runPlantRefresh({ supabase, snapshot, dryRun }).catch((err) => ({ error: err?.message || String(err) }));
     const xdrafts = await runXDrafts({ supabase, snapshot, plantChanges: changeList, dryRun }).catch((err) => ({ error: err?.message || String(err) }));
+    // Housekeeping: expired rate-limit buckets otherwise accumulate forever.
+    if (!dryRun) {
+      const { error: pruneError } = await supabase.rpc("prune_rate_limits");
+      if (pruneError) console.error("[cron/daily] prune_rate_limits failed", pruneError.message);
+    }
     return res.status(200).json({ job: "daily", dryRun, daily, alerts, xdrafts, plants });
   } catch (err) {
     console.error("[cron/dispatch] handler failed", err?.message || err);

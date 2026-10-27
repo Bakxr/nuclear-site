@@ -118,7 +118,7 @@
         if (!result.ok) throw new Error(result.data.error || "Something went wrong. Please try again.");
         try { window.localStorage.setItem("np-newsletter-subscribed", "1"); } catch { /* private mode */ }
         form.querySelector(".signup-row").remove();
-        show("You're in. Check your inbox for a welcome email.", "ok");
+        show("Almost there. Check your inbox and click the link to confirm.", "ok");
       })
       .catch(function (err) {
         button.disabled = false;

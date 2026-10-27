@@ -1627,7 +1627,7 @@ export default function NuclearPulse() {
                   surface="inline"
                   form={newsletterForms.inline}
                   success={isSubscribed}
-                  successMessage="Subscribed. You’ll get the next weekly atomic briefing in your inbox."
+                  successMessage="Almost there. Check your inbox and click the link to confirm your subscription."
                   onEmailChange={handleNewsletterEmailChange}
                   onWebsiteChange={handleNewsletterWebsiteChange}
                   onSubmit={handleSubscribe}

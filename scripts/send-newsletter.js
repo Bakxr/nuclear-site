@@ -219,7 +219,7 @@ async function fetchMarketData() {
 }
 
 async function getSubscribers() {
-  const { data, error } = await supabase.from('subscribers').select('email').eq('active', true);
+  const { data, error } = await supabase.from('subscribers').select('email').eq('active', true).not('confirmed_at', 'is', null);
   if (error) throw new Error(`Supabase error: ${error.message}`);
   return data.map((row) => row.email);
 }

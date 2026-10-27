@@ -6,7 +6,7 @@
 // single column, max ~600px, system fonts, all critical info above the
 // fold, plus an unsubscribe link.
 
-import { buildUnsubscribeHeaders, createUnsubscribeToken } from "./unsubscribe.js";
+import { buildUnsubscribeHeaders, createConfirmToken, createUnsubscribeToken } from "./unsubscribe.js";
 import { xLength } from "./socialDrafts.js";
 
 const SITE_URL = process.env.SITE_URL?.trim() || "https://thenuclearpulse.com";
@@ -49,7 +49,7 @@ function unsubHeaders(email) {
   return email ? buildUnsubscribeHeaders(buildUnsubLink(email)) : {};
 }
 
-function shell({ title, dateLine, greetingName, bodyHtml, unsubEmail, footerNote }) {
+function shell({ title, dateLine, greetingName, bodyHtml, unsubEmail, footerNote, transactional = false }) {
   const date = dateLine || formatDate(new Date());
   const unsubUrl = buildUnsubLink(unsubEmail);
   const greeting = greetingName
@@ -69,9 +69,9 @@ function shell({ title, dateLine, greetingName, bodyHtml, unsubEmail, footerNote
     ${bodyHtml}
   </td></tr>
   <tr><td style="padding:24px 0 0;border-top:1px solid rgba(245,240,232,0.06);text-align:center;">
-    <a href="${SITE_URL}/terminal" style="display:inline-block;padding:11px 20px;border-radius:4px;background:#d4a54a;color:#111;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">From the terminal</a>
+    ${transactional ? `<div style="font-size:11px;color:rgba(245,240,232,0.32);">${escapeHtml(footerNote)}</div>` : `<a href="${SITE_URL}/terminal" style="display:inline-block;padding:11px 20px;border-radius:4px;background:#d4a54a;color:#111;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">From the terminal</a>
     <div style="font-size:11px;color:rgba(245,240,232,0.32);margin-top:18px;">${escapeHtml(footerNote || "You're receiving this because you subscribed at Nuclear Pulse.")}</div>
-    <div style="margin-top:8px;"><a href="${unsubUrl}" style="font-size:11px;color:rgba(245,240,232,0.32);text-decoration:underline;">Unsubscribe</a></div>
+    <div style="margin-top:8px;"><a href="${unsubUrl}" style="font-size:11px;color:rgba(245,240,232,0.32);text-decoration:underline;">Unsubscribe</a></div>`}
   </td></tr>
 </table>
 </td></tr></table></body></html>`;
@@ -294,6 +294,39 @@ export function buildWelcomeEmail({ email }) {
   ].join("\n");
 
   return { subject, html, text, headers: unsubHeaders(email) };
+}
+
+// ---------------- CONFIRM SUBSCRIPTION (double opt-in) ----------------
+
+export function confirmUrl(email) {
+  return `${SITE_URL}/api/subscribe?confirm=${encodeURIComponent(createConfirmToken(email))}`;
+}
+
+export function buildConfirmEmail({ email }) {
+  const subject = "Confirm your Nuclear Pulse subscription";
+  const url = confirmUrl(email);
+  const bodyHtml = [
+    `<p style="font-size:15px;line-height:1.65;color:rgba(245,240,232,0.82);margin:0 0 20px;">Someone (hopefully you) asked to get the Nuclear Pulse weekly briefing at this address. Confirm and the first one arrives on Sunday.</p>`,
+    `<p style="margin:0 0 20px;"><a href="${url}" style="display:inline-block;padding:12px 22px;border-radius:4px;background:#d4a54a;color:#111;text-decoration:none;font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">Confirm subscription</a></p>`,
+    `<p style="font-size:13px;line-height:1.6;color:rgba(245,240,232,0.5);margin:0;">The link works for 7 days.</p>`,
+  ].join("");
+
+  const html = shell({
+    title: subject,
+    bodyHtml,
+    transactional: true,
+    footerNote: "If you didn't sign up, ignore this email. You won't hear from us again.",
+  });
+
+  const text = [
+    "Someone (hopefully you) asked to get the Nuclear Pulse weekly briefing at this address. Confirm and the first one arrives on Sunday:",
+    "",
+    url,
+    "",
+    "The link works for 7 days. If you didn't sign up, ignore this email. You won't hear from us again.",
+  ].join("\n");
+
+  return { subject, html, text };
 }
 
 // ---------------- PLANT CHANGES (owner only) ----------------

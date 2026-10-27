@@ -13,6 +13,7 @@ vi.mock('@supabase/supabase-js', () => ({
 vi.mock('./_lib/http.js', () => ({
   ensureAllowedOrigin,
   getClientAddress,
+  setNoStore: vi.fn(),
 }));
 
 vi.mock('./_lib/rateLimit.js', () => ({
@@ -75,21 +76,24 @@ describe('/api/subscribe', () => {
     );
   });
 
-  it('stores cleaned first-touch attribution for a new subscriber', async () => {
+  it('stores cleaned first-touch attribution for a new, unconfirmed subscriber', async () => {
     const attribution = { source: 'X', campaign: 'market-movers', referrer: 't.co', landing: '/uranium-stocks', surface: 'seo-uranium-stocks<script>', extra: 'ignored' };
     await handler(createMockReq({ method: 'POST', body: { email: 'a@b.co', attribution } }), createMockRes());
 
     expect(upsert.mock.calls[0][0]).toEqual({
-      email: 'a@b.co', active: true,
+      email: 'a@b.co', active: true, confirmed_at: null,
       source: 'x', campaign: 'market-movers', referrer: 't.co', landing: '/uranium-stocks', surface: 'seo-uranium-stocksscript',
     });
   });
 
-  it('keeps the original attribution when someone re-subscribes', async () => {
-    existingRow = { active: false };
-    await handler(createMockReq({ method: 'POST', body: { email: 'a@b.co', attribution: { source: 'reddit' } } }), createMockRes());
+  it('leaves an opted-out row untouched until the link is confirmed', async () => {
+    existingRow = { active: false, confirmed_at: '2026-01-01T00:00:00Z' };
+    const res = createMockRes();
+    await handler(createMockReq({ method: 'POST', body: { email: 'a@b.co', attribution: { source: 'reddit' } } }), res);
 
-    expect(upsert.mock.calls[0][0]).toEqual({ email: 'a@b.co', active: true });
+    expect(res.statusCode).toBe(200);
+    expect(upsert).not.toHaveBeenCalled();
+    expect(sendEmail.mock.calls[0][0].subject).toBe('Confirm your Nuclear Pulse subscription');
   });
 
   it('returns 500 when the service key is not configured', async () => {
@@ -128,35 +132,73 @@ describe('/api/subscribe', () => {
     expect(upsert).not.toHaveBeenCalled();
   });
 
-  it('sends a welcome email to a new subscriber', async () => {
+  it('emails a confirmation link, not the welcome, on sign-up', async () => {
     const res = createMockRes();
     await handler(createMockReq({ method: 'POST', body: { email: 'new@example.com' } }), res);
 
     expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual({ success: true, confirm: true });
     expect(sendEmail).toHaveBeenCalledTimes(1);
     expect(sendEmail.mock.calls[0][0]).toMatchObject({
       to: 'new@example.com',
-      subject: 'Welcome to Nuclear Pulse',
-      text: expect.stringContaining('Hit reply'),
-      headers: expect.objectContaining({ 'List-Unsubscribe': expect.any(String) }),
+      subject: 'Confirm your Nuclear Pulse subscription',
+      text: expect.stringContaining('/api/subscribe?confirm='),
     });
   });
 
-  it('does not re-send the welcome email to someone already subscribed', async () => {
-    existingRow = { active: true };
+  it('sends nothing to someone already confirmed, with the same response', async () => {
+    existingRow = { active: true, confirmed_at: '2026-01-01T00:00:00Z' };
     const res = createMockRes();
     await handler(createMockReq({ method: 'POST', body: { email: 'old@example.com' } }), res);
 
     expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual({ success: true, confirm: true });
     expect(sendEmail).not.toHaveBeenCalled();
   });
 
-  it('still subscribes when the welcome email fails', async () => {
+  it('reports a failed confirmation email', async () => {
     sendEmail.mockResolvedValueOnce({ ok: false, error: 'resend down' });
     const res = createMockRes();
     await handler(createMockReq({ method: 'POST', body: { email: 'new2@example.com' } }), res);
 
-    expect(res.statusCode).toBe(200);
-    expect(upsert).toHaveBeenCalled();
+    expect(res.statusCode).toBe(502);
+  });
+
+  describe('confirmation link', () => {
+    async function confirmToken(email) {
+      const { createConfirmToken } = await import('./_lib/unsubscribe.js');
+      return createConfirmToken(email);
+    }
+
+    it('GET only renders a button (mail scanners prefetch links)', async () => {
+      const res = createMockRes();
+      await handler(createMockReq({ method: 'GET', query: { confirm: await confirmToken('a@b.co') } }), res);
+
+      expect(res.statusCode).toBe(200);
+      expect(upsert).not.toHaveBeenCalled();
+      expect(sendEmail).not.toHaveBeenCalled();
+    });
+
+    it('POST confirms and sends the welcome email once', async () => {
+      const res = createMockRes();
+      await handler(createMockReq({ method: 'POST', query: { confirm: await confirmToken('a@b.co') } }), res);
+
+      expect(res.statusCode).toBe(200);
+      expect(upsert.mock.calls[0][0]).toMatchObject({ email: 'a@b.co', active: true, confirmed_at: expect.any(String) });
+      expect(sendEmail.mock.calls[0][0]).toMatchObject({
+        to: 'a@b.co',
+        subject: 'Welcome to Nuclear Pulse',
+        headers: expect.objectContaining({ 'List-Unsubscribe': expect.any(String) }),
+      });
+    });
+
+    it('rejects an unsubscribe token used as a confirm token', async () => {
+      const { createUnsubscribeToken } = await import('./_lib/unsubscribe.js');
+      const res = createMockRes();
+      await handler(createMockReq({ method: 'POST', query: { confirm: createUnsubscribeToken('a@b.co') } }), res);
+
+      expect(res.statusCode).toBe(400);
+      expect(upsert).not.toHaveBeenCalled();
+    });
   });
 });

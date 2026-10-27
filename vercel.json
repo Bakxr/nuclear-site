@@ -8,14 +8,6 @@
       "destination": "/"
     },
     {
-      "source": "/api/terminal/entity/:id",
-      "destination": "/api/terminal/entity?id=:id"
-    },
-    {
-      "source": "/api/terminal/panel/:key",
-      "destination": "/api/terminal/panel?key=:key"
-    },
-    {
       "source": "/api/social/post",
       "destination": "/api/social/card?view=post"
     }
@@ -44,5 +36,41 @@
       "maxDuration": 30,
       "includeFiles": "{api/_lib/fonts/**,node_modules/harfbuzzjs/hb.wasm,node_modules/satori/yoga.wasm}"
     }
-  }
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=63072000; includeSubDomains"
+        }
+      ]
+    },
+    {
+      "source": "/((?!api/).*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://upload.wikimedia.org https://tile.openstreetmap.org; connect-src 'self' https://oaqhashtklspvvnfumqv.supabase.co wss://oaqhashtklspvvnfumqv.supabase.co https://cdn.jsdelivr.net https://en.wikipedia.org; worker-src 'self'; manifest-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests"
+        }
+      ]
+    }
+  ]
 }

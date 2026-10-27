@@ -62,17 +62,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300;1,9..144,400;1,9..144,500&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
   </head>
   <body>
-    <!-- Apply the saved (or default dark) theme before first paint to avoid a light flash -->
-    <script>
-      (function () {
-        try {
-          var stored = localStorage.getItem("np-theme");
-          if (stored ? stored === "dark" : true) {
-            document.documentElement.classList.add("dark");
-          }
-        } catch (e) { /* storage unavailable — stay with default */ }
-      })();
-    </script>
+    <script src="/theme-init.js"></script>
     <div id="root"></div>
     <script src="/attribution.js"></script>
     <script type="module" src="/src/main.jsx"></script>

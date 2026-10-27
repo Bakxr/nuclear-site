@@ -21,15 +21,21 @@ export default async function handler(req, res) {
     console.error("[terminal/revalidate] TERMINAL_REVALIDATE_TOKEN is not configured");
     return res.status(503).json({ error: "Revalidation is not configured." });
   }
-  const provided = typeof req.query?.token === "string" ? req.query.token : "";
-  if (!timingSafeEqualStr(provided, secret)) {
-    return res.status(401).json({ error: "Invalid token." });
-  }
-
+  // Rate limit before checking the token so guesses are throttled too.
   const rateLimitKey = `terminal-revalidate:${getClientAddress(req)}`;
   if (!(await checkRateLimit(rateLimitKey, { limit: 10, windowMs: 15 * 60 * 1000 }))) {
     setRetryAfter(res, 15 * 60);
     return res.status(429).json({ error: "Too many revalidation attempts." });
+  }
+
+  // Prefer the Authorization header (query strings end up in access logs);
+  // ?token= still works for existing callers.
+  const header = String(req.headers.authorization || "");
+  const provided = header.toLowerCase().startsWith("bearer ")
+    ? header.slice(7).trim()
+    : typeof req.query?.token === "string" ? req.query.token : "";
+  if (!timingSafeEqualStr(provided, secret)) {
+    return res.status(401).json({ error: "Invalid token." });
   }
 
   try {

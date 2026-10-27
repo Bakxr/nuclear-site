@@ -148,7 +148,7 @@ export default function AlertsPanel() {
     <TerminalPanel
       panelId="terminal-panel-alerts"
       title="Alerts"
-      subtitle="Price + event triggers — fire by email."
+      subtitle="Price + event triggers — checked daily at 10:30 UTC, sent by email."
       actions={[
         <span key="count" style={terminalTagStyle({ tone: "amber", compact: true })}>
           {sortedAlerts.length} active

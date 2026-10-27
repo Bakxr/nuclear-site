@@ -6,9 +6,12 @@
 
 import crypto from "node:crypto";
 
+// CARD_SIGNING_SECRET keeps the link signatures independent of the cron
+// bearer secret. CRON_SECRET remains a fallback so links already sitting in
+// the owner's inbox keep working until the new secret is set.
 function cardSecret() {
-  const secret = process.env.CRON_SECRET?.trim();
-  if (!secret) throw new Error("CRON_SECRET missing");
+  const secret = process.env.CARD_SIGNING_SECRET?.trim() || process.env.CRON_SECRET?.trim();
+  if (!secret) throw new Error("CARD_SIGNING_SECRET missing");
   return secret;
 }
 
