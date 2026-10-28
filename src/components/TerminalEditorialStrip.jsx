@@ -183,7 +183,12 @@ export default function TerminalEditorialStrip({ signals, onOpenTerminal }) {
   return (
     <div style={{
       width: "100%",
-      borderRadius: 18,
+      // Always dark (a window onto the terminal), so it takes the dark-theme
+      // accent whatever the page theme is.
+      "--np-accent": "#8fa8ff",
+      "--np-accent-ink": "#8fa8ff",
+      "--np-accent-rgb": "143, 168, 255",
+      borderRadius: "var(--np-r-md)",
       border: "1px solid rgba(var(--np-accent-rgb), 0.18)",
       background: "#13100c",
       color: "#f5f0e8",

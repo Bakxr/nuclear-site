@@ -2,7 +2,9 @@
    from the theme tokens in index.css, so both themes work. */
 
 .np-wrap {
-  max-width: var(--np-content-max);
+  /* Content is --np-content-max wide; the padding sits outside it, matching
+     the older sections that pad a full-width band. */
+  max-width: calc(var(--np-content-max) + 2 * var(--np-section-x));
   margin: 0 auto;
   padding: 0 var(--np-section-x);
 }
@@ -380,7 +382,7 @@
 
 /* ---------- Markets table ---------- */
 .np-markets {
-  padding: var(--np-section-y) 0 0;
+  padding-top: var(--np-section-y);
 }
 .np-table-scroll {
   overflow-x: auto;

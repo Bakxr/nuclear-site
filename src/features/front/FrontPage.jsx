@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import ErrorBoundary from "../../components/ErrorBoundary.jsx";
 import NewsletterCapture from "../newsletter/NewsletterCapture.jsx";
-import { joinSources, pickFront } from "./pickFront.js";
+import { joinSources, pickFront, tidyExcerpt } from "./pickFront.js";
 import { useFrontSignals } from "./useFrontSignals.js";
 
 function signed(value, digits = 2) {
@@ -14,7 +14,7 @@ function Lead({ article }) {
     <article className="np-lead">
       <div className="np-kicker">Lead · {article.tag}</div>
       <h1><a href={article.url} target="_blank" rel="noopener noreferrer">{article.title}</a></h1>
-      {article.curiosityHook ? <p className="np-lead-dek">{article.curiosityHook}</p> : null}
+      {article.curiosityHook ? <p className="np-lead-dek">{tidyExcerpt(article.curiosityHook)}</p> : null}
       {article.whyItMatters ? (
         <div className="np-why"><b>Why it matters</b><span>{article.whyItMatters}</span></div>
       ) : null}
@@ -128,7 +128,7 @@ export default function FrontPage({
               <article key={s.url} className="np-story">
                 <div className="np-kicker" style={{ fontSize: 11 }}>{s.tag}</div>
                 <h2><a href={s.url} target="_blank" rel="noopener noreferrer">{s.title}</a></h2>
-                {s.whyItMatters || s.curiosityHook ? <p>{s.whyItMatters || s.curiosityHook}</p> : null}
+                {s.whyItMatters || s.curiosityHook ? <p>{s.whyItMatters || tidyExcerpt(s.curiosityHook)}</p> : null}
                 <div className="np-credit">{joinSources([s.source, ...(s.related || []).map((r) => r.source)])} · {s.date}</div>
               </article>
             ))}

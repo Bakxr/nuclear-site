@@ -104,6 +104,13 @@ tests/              Vitest setup
 
 - 2026-10-27: Audit pass — alerts/watchlist inserts require an active membership at the RLS level and the alert cron skips lapsed members; security headers + CSP in `vercel.json` (no inline scripts on pages: the theme bootstrap is `public/theme-init.js`); newsletter double opt-in; news "why it matters" lines written by Claude (`api/_lib/newsTakes.js`, cached by URL) instead of canned text; feed health in the owner's morning email; `/api/news` CDN-cached; uranium SPUT row validated + daily change.
 
+## Design system ("Broadsheet", 2026-10)
+
+- Paper and ink with one blue accent; Newsreader (display), Public Sans (UI), JetBrains Mono (numbers). Tokens in `src/index.css` (`--np-*`, both themes); use `rgba(var(--np-accent-rgb), a)` for tints, never hard-coded hex. Theme follows the OS until the reader toggles (`np-theme-v2`).
+- Never append hex alpha to a color token (`color + "18"`): tokens are `var()`s. Use `color-mix(in srgb, X 10%, transparent)`.
+- Three.js / canvas code (Globe, Reactor3D, `STATUS_COLORS_HEX`, `SUPPLY_STAGE_COLORS`) needs real hex values, not `var()`.
+- Home page = front page (`src/features/front/`): Masthead, FrontPage (lead + rail + secondary, chosen by `pickFront`), MarketsTable, then the wire (NewsSection), map, Pro, SMR. `/learn` holds reactor types, country data and the timeline. The news API clusters same-story articles (`clusterArticles`, `related`).
+
 ## CSP
 
 `vercel.json` sets a Content-Security-Policy on every non-`/api` path. A new third-party script, font, image host or fetch target must be added there, or it will be blocked in production (it still works in `vite dev`, which doesn't send the header). `/api` HTML pages (unsubscribe, confirm, posting page) are exempt because they use inline styles/scripts.

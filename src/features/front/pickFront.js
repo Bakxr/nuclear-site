@@ -49,3 +49,14 @@ export function joinSources(names) {
   if (unique.length <= 1) return unique[0] || "";
   return `${unique.slice(0, -1).join(", ")} and ${unique.at(-1)}`;
 }
+
+// Feed excerpts are cut at a fixed length, often mid-word. End at the last
+// full sentence when one is long enough, else the last whole word plus "…".
+export function tidyExcerpt(text = "") {
+  const clean = text.trim();
+  if (!clean || /[.!?…"”]$/.test(clean)) return clean;
+  const sentenceEnd = Math.max(clean.lastIndexOf(". "), clean.lastIndexOf("? "), clean.lastIndexOf("! "));
+  if (sentenceEnd > 80) return clean.slice(0, sentenceEnd + 1);
+  const space = clean.lastIndexOf(" ");
+  return `${(space > 40 ? clean.slice(0, space) : clean).replace(/[,;:—–-]+$/, "")}…`;
+}

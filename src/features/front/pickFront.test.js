@@ -45,3 +45,17 @@ describe("joinSources", () => {
     expect(joinSources(["A", "B", "C", "B"])).toBe("A, B and C");
   });
 });
+
+describe("tidyExcerpt", async () => {
+  const { tidyExcerpt } = await import("./pickFront.js");
+  it("ends at a whole word, never mid-word", () => {
+    expect(tidyExcerpt("Constellation Energy's nuclear fleet across three states and nuclear fl")).toBe("Constellation Energy's nuclear fleet across three states and nuclear…");
+  });
+  it("prefers the last full sentence", () => {
+    const text = "The DOE offered a conditional loan of up to $5 billion for uprates at eight plants in three states. It would fin";
+    expect(tidyExcerpt(text)).toBe("The DOE offered a conditional loan of up to $5 billion for uprates at eight plants in three states.");
+  });
+  it("leaves complete text alone", () => {
+    expect(tidyExcerpt("Done.")).toBe("Done.");
+  });
+});

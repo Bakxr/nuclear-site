@@ -89,7 +89,8 @@ describe('App smoke', () => {
   it('renders the public app shell', async () => {
     render(<App />);
 
-    expect(await screen.findByText(/Strategic Energy Briefing/i)).toBeInTheDocument();
-    expect(screen.getByText(/^Terminal$/)).toBeInTheDocument();
+    expect(await screen.findByText(/from primary sources, every day/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Terminal/ })).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: 'Learn' })[0]).toHaveAttribute('href', '/learn');
   });
 });
