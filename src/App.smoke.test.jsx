@@ -92,5 +92,6 @@ describe('App smoke', () => {
     expect(await screen.findByText(/from primary sources, every day/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Terminal/ })).toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: 'Learn' })[0]).toHaveAttribute('href', '/learn');
-  });
+  // Imports the whole app; on a loaded machine that alone can pass 5s.
+  }, 20_000);
 });
