@@ -119,10 +119,10 @@ export default function SearchOverlay({ query, plants, news, stocks, onSelectPla
   let globalIdx = 0;
 
   const sections = [
-    { key: "plant", label: "Plants", results: plantResults, prefix: "Plant" },
-    { key: "stock", label: "Stocks", results: stockResults, prefix: "Market" },
-    { key: "news", label: "News", results: newsResults, prefix: "News" },
-    { key: "country", label: "Countries", results: countryResults, prefix: "Map" },
+    { key: "plant", label: "Plants", results: plantResults },
+    { key: "stock", label: "Stocks", results: stockResults },
+    { key: "news", label: "News", results: newsResults },
+    { key: "country", label: "Countries", results: countryResults },
   ].filter((section) => section.results.length > 0);
 
   if (!q || totalCount === 0) return null;
@@ -140,14 +140,14 @@ export default function SearchOverlay({ query, plants, news, stocks, onSelectPla
         top: "calc(100% + 8px)",
         right: 0,
         left: "auto",
-        width: "min(420px, 100%)",
-        maxWidth: "100%",
+        width: "min(420px, calc(100vw - 32px))",
         maxHeight: 520,
         overflowY: "auto",
-        background: "var(--np-surface)",
-        border: "1px solid var(--np-border-strong)",
-        borderRadius: 14,
-        boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+        background: "var(--np-bg)",
+        border: "1px solid var(--np-rule)",
+        borderTop: "3px double var(--np-rule)",
+        borderRadius: "var(--np-r-sm)",
+        boxShadow: "0 16px 40px rgba(0,0,0,0.14)",
         zIndex: 200,
       }}
     >
@@ -156,15 +156,15 @@ export default function SearchOverlay({ query, plants, news, stocks, onSelectPla
           <div
             style={{
               padding: "10px 16px 6px",
-              fontSize: 10,
+              fontSize: 11,
               fontWeight: 700,
               textTransform: "uppercase",
-              letterSpacing: "0.1em",
-              color: "var(--np-text-faint)",
-              borderBottom: "1px solid var(--np-border)",
+              letterSpacing: "0.12em",
+              color: "var(--np-accent-ink)",
+              borderBottom: "1px solid var(--np-hairline)",
             }}
           >
-            {section.prefix} {section.label}
+            {section.label}
           </div>
 
           {section.results.map((result) => {
@@ -292,7 +292,7 @@ export default function SearchOverlay({ query, plants, news, stocks, onSelectPla
                       letterSpacing: "0.08em",
                       color: "var(--np-accent)",
                       background: "rgba(var(--np-accent-rgb), 0.1)",
-                      borderRadius: 6,
+                      borderRadius: "var(--np-r-sm)",
                       padding: "3px 7px",
                       marginTop: 2,
                     }}
@@ -348,15 +348,17 @@ export default function SearchOverlay({ query, plants, news, stocks, onSelectPla
         style={{
           padding: "8px 16px",
           borderTop: "1px solid var(--np-border)",
-          fontSize: 10,
+          fontSize: 12,
           color: "var(--np-text-faint)",
           display: "flex",
+          flexWrap: "wrap",
+          gap: "2px 12px",
           justifyContent: "space-between",
           alignItems: "center",
         }}
       >
-        <span>{totalCount} result{totalCount !== 1 ? "s" : ""} across all sections</span>
-        <span style={{ opacity: 0.5 }}>Up/down navigate | Enter select | Esc close</span>
+        <span>{totalCount} result{totalCount !== 1 ? "s" : ""}</span>
+        <span>↑↓ to move · Enter to open · Esc to close</span>
       </div>
     </motion.div>
   );

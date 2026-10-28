@@ -258,10 +258,10 @@ export default function TerminalAccessPage({ onExitTerminal }) {
       <header className="npa-top">
         <button type="button" className="npt-brand" onClick={onExitTerminal} aria-label="Back to Nuclear Pulse">
           <svg className="npt-brand-mark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <circle cx="12" cy="12" r="2.2" fill="#d4a54a" />
-            <ellipse cx="12" cy="12" rx="10" ry="4" stroke="#d4a54a" strokeWidth="1.2" opacity="0.9" />
-            <ellipse cx="12" cy="12" rx="10" ry="4" stroke="#d4a54a" strokeWidth="1.2" opacity="0.55" transform="rotate(60 12 12)" />
-            <ellipse cx="12" cy="12" rx="10" ry="4" stroke="#d4a54a" strokeWidth="1.2" opacity="0.35" transform="rotate(-60 12 12)" />
+            <circle cx="12" cy="12" r="2.2" fill="currentColor" />
+            <ellipse cx="12" cy="12" rx="10" ry="4" stroke="currentColor" strokeWidth="1.2" opacity="0.9" />
+            <ellipse cx="12" cy="12" rx="10" ry="4" stroke="currentColor" strokeWidth="1.2" opacity="0.55" transform="rotate(60 12 12)" />
+            <ellipse cx="12" cy="12" rx="10" ry="4" stroke="currentColor" strokeWidth="1.2" opacity="0.35" transform="rotate(-60 12 12)" />
           </svg>
           <span className="npt-brand-word">Nuclear <em>Pulse</em></span>
           <span className="npt-pro">PRO</span>

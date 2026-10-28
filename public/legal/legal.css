@@ -1,17 +1,34 @@
+/* Legal pages: the site's "broadsheet" palette (paper, ink, one blue
+   accent), dark when the reader's OS is dark. */
 :root {
-  color-scheme: dark;
-  --bg: #0e0b08;
-  --panel: #17140f;
-  --text: #f5f0e8;
-  --muted: #b3a489;
-  --subtle: #8b7d65;
-  --line: rgba(245, 240, 232, 0.112);
-  --gold: #d4a54a;
+  color-scheme: light dark;
+  --bg: #f5f2ea;
+  --panel: #eae5d8;
+  --text: #16140f;
+  --body: #2e2a22;
+  --muted: #4a453b;
+  --subtle: #5c564a;
+  --line: rgba(22, 20, 15, 0.18);
+  --rule: #16140f;
+  --accent: #1c44c9;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #121110;
+    --panel: #24221e;
+    --text: #ede8dc;
+    --body: #d9d3c6;
+    --muted: #b9b2a3;
+    --subtle: #9a9384;
+    --line: rgba(237, 232, 220, 0.16);
+    --rule: #ede8dc;
+    --accent: #8fa8ff;
+  }
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--text); }
 body {
-  font: 400 15.5px/1.7 "DM Sans", Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font: 400 16px/1.7 "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
   padding: env(safe-area-inset-top, 0px) 16px env(safe-area-inset-bottom, 0px);
 }
@@ -20,35 +37,36 @@ header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 22px 0;
-  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  padding: 22px 0 14px;
+  border-bottom: 3px double var(--rule);
 }
 header a { color: var(--text); text-decoration: none; }
-.brand { font: 500 17px/1 Fraunces, Georgia, serif; }
-.brand em { color: var(--gold); }
-nav { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13.5px; }
-nav a { color: var(--muted); }
-nav a[aria-current="page"] { color: var(--gold); }
-main { padding: 40px 0 56px; }
-h1 { font: 400 clamp(30px, 5vw, 40px)/1.15 Fraunces, Georgia, serif; letter-spacing: -0.02em; margin: 0 0 8px; }
+.brand { font: 500 26px/1 Newsreader, Georgia, serif; letter-spacing: -0.02em; }
+.brand em { font-style: normal; color: inherit; }
+nav { display: flex; gap: 18px; flex-wrap: wrap; font-size: 14px; font-weight: 600; }
+nav a { color: var(--text); text-decoration: none; padding: 10px 0; border-bottom: 2px solid transparent; }
+nav a:hover, nav a[aria-current="page"] { border-bottom-color: var(--accent); }
+main { padding: 36px 0 56px; }
+h1 { font: 500 clamp(32px, 5vw, 44px)/1.1 Newsreader, Georgia, serif; letter-spacing: -0.02em; margin: 0 0 8px; }
 .updated { color: var(--subtle); font-size: 13px; margin: 0 0 32px; }
-h2 { font-size: 17px; font-weight: 600; margin: 36px 0 8px; }
-p, li { color: #d9cfbe; }
+h2 { font: 500 22px/1.25 Newsreader, Georgia, serif; margin: 36px 0 8px; padding-top: 10px; border-top: 1px solid var(--line); }
+p, li { color: var(--body); }
 ul { padding-left: 20px; }
 li { margin: 4px 0; }
-a { color: var(--gold); }
+a { color: var(--accent); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .callout {
   margin: 24px 0;
   padding: 16px 18px;
-  border: 1px solid rgba(212, 165, 74, 0.3);
-  border-radius: 10px;
-  background: rgba(212, 165, 74, 0.06);
+  border-top: 2px solid var(--rule);
+  background: var(--panel);
 }
 .callout p { margin: 0; color: var(--text); }
 footer {
-  padding: 24px 0 40px;
-  border-top: 1px solid var(--line);
+  padding: 18px 0 40px;
+  border-top: 1px solid var(--rule);
   color: var(--subtle);
   font-size: 13px;
 }

@@ -42,7 +42,7 @@ export default function CountryModal({ country, onClose, onSelectPlant }) {
         style={{
           background: "var(--np-bg)", borderRadius: "var(--np-r-md)", borderTop: "3px double var(--np-rule)", maxWidth: 720, width: "100%",
           position: "relative", border: "1px solid rgba(var(--np-accent-rgb), 0.2)",
-          boxShadow: "0 24px 80px rgba(0,0,0,0.15)", overflow: "hidden",
+          boxShadow: "none", overflow: "hidden",
           maxHeight: "85vh", display: "flex", flexDirection: "column",
         }}
       >
@@ -78,7 +78,7 @@ export default function CountryModal({ country, onClose, onSelectPlant }) {
           <div className="np-country-stats" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 24 }}>
             {profile.keyFacts.map((fact, i) => (
               <div key={i} style={{
-                background: "var(--np-surface-dim)", borderRadius: 10, padding: "12px 14px", textAlign: "center",
+                background: "var(--np-surface-dim)", borderRadius: "var(--np-r-sm)", padding: "12px 14px", textAlign: "center",
               }}>
                 <div style={{ fontSize: 10, color: "var(--np-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>{fact.label}</div>
                 <div style={{ fontFamily: "var(--np-font-mono)", fontSize: 14, fontWeight: 600, color: "var(--np-text)" }}>{fact.value}</div>
@@ -94,7 +94,7 @@ export default function CountryModal({ country, onClose, onSelectPlant }) {
 
           {/* Policy callout */}
           <div style={{
-            padding: "16px 18px", borderRadius: 10, marginBottom: 20,
+            padding: "16px 18px", borderRadius: "var(--np-r-sm)", marginBottom: 20,
             borderLeft: "3px solid var(--np-accent)", background: "rgba(var(--np-accent-rgb), 0.06)",
           }}>
             <h4 style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--np-accent)", marginBottom: 6 }}>Policy</h4>
@@ -123,7 +123,7 @@ export default function CountryModal({ country, onClose, onSelectPlant }) {
                   }}
                   style={{
                     background: "var(--np-surface-dim)", border: "1px solid var(--np-card-border)",
-                    borderRadius: 8, padding: "6px 12px", fontSize: 12, cursor: "pointer",
+                    borderRadius: "var(--np-r-sm)", padding: "6px 12px", fontSize: 12, cursor: "pointer",
                     transition: "all 0.2s", display: "inline-flex", alignItems: "center", gap: 6,
                     color: "var(--np-text)", fontFamily: "var(--np-font-sans)",
                   }}

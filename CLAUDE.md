@@ -109,6 +109,7 @@ tests/              Vitest setup
 - Paper and ink with one blue accent; Newsreader (display), Public Sans (UI), JetBrains Mono (numbers). Tokens in `src/index.css` (`--np-*`, both themes); use `rgba(var(--np-accent-rgb), a)` for tints, never hard-coded hex. Theme follows the OS until the reader toggles (`np-theme-v2`).
 - Never append hex alpha to a color token (`color + "18"`): tokens are `var()`s. Use `color-mix(in srgb, X 10%, transparent)`.
 - Three.js / canvas code (Globe, Reactor3D, `STATUS_COLORS_HEX`, `SUPPLY_STAGE_COLORS`) needs real hex values, not `var()`.
+- No tinted bands, pills or big radii: sections sit on the page with ruled lines (`--np-rule` / `--np-hairline`), corners use `--np-r-sm`. The `--np-band-*` tokens now resolve to the page tokens. The editorial site's map is a flat SVG (`features/front/PrintMap.jsx`); the 3D `Globe.jsx` is terminal-only. The /terminal sign-up page remaps the terminal tokens to site tokens in `access.css` (`.npt.npa`); its small product preview stays dark on purpose.
 - Home page = front page (`src/features/front/`): Masthead, FrontPage (lead + rail + secondary, chosen by `pickFront`), MarketsTable, then the wire (NewsSection), map, Pro, SMR. `/learn` holds reactor types, country data and the timeline. The news API clusters same-story articles (`clusterArticles`, `related`).
 
 ## CSP

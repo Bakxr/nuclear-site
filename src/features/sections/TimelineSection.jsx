@@ -10,7 +10,7 @@ export default function TimelineSection({ sectionRef }) {
           index="07"
           label="History"
           meta="1942 — today"
-          title={<>Eight decades of <em>fission.</em></>}
+          title="Eight decades of fission"
           lede="From the first chain reaction to the SMR revolution — the milestones that built, broke, and rebuilt the nuclear century."
         />
         <Timeline />

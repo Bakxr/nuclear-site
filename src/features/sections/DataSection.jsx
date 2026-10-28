@@ -35,13 +35,13 @@ export default function DataSection({
   scrollTo,
 }) {
   return (
-    <section ref={sectionRef} className="np-data-section" style={{ padding: "var(--np-section-y) var(--np-section-x)", background: "var(--np-surface-dim)", scrollMarginTop: 80 }}>
+    <section ref={sectionRef} className="np-data-section" style={{ padding: "var(--np-section-y) var(--np-section-x)", background: "var(--np-bg)", scrollMarginTop: 80 }}>
       <div style={{ maxWidth: "var(--np-content-max)", margin: "0 auto" }}>
         <SectionHeader
           index="01"
           label="Global Data"
           meta="IAEA PRIS · Our World in Data"
-          title={<>Where nuclear is <em>already real.</em></>}
+          title="Where nuclear is already real"
           lede="See which countries are betting biggest on nuclear, and why the numbers keep making the case for it. This is the signal behind the weekly briefing."
         />
         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }} variants={staggerContainer}>
@@ -49,20 +49,20 @@ export default function DataSection({
             variants={fadeUp}
             className="np-data-shell"
             style={{
-              border: "1px solid var(--np-hairline)",
-              borderRadius: "var(--np-r-lg)",
-              background: "var(--np-surface)",
+              borderTop: "1px solid var(--np-rule)",
+              borderBottom: "1px solid var(--np-rule)",
+              background: "var(--np-bg)",
               overflow: "hidden",
             }}
           >
             <div
               className="np-data-toolbar"
               style={{
-                padding: "20px 24px 18px",
+                padding: "16px 0 14px",
                 borderBottom: "1px solid var(--np-hairline)",
                 display: "grid",
                 gap: 12,
-                background: "var(--np-surface-dim)",
+                background: "transparent",
               }}
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
@@ -80,9 +80,9 @@ export default function DataSection({
                           if (view.key !== "countries") setExpandedCountry(null);
                         }}
                         style={{
-                          background: dataView === view.key ? "var(--np-text)" : isDark ? "rgba(245,240,232,0.04)" : "var(--np-surface)",
-                          color: dataView === view.key ? "var(--np-bg)" : "var(--np-text-muted)",
-                          border: `1px solid ${dataView === view.key ? "var(--np-text)" : isDark ? "rgba(245,240,232,0.08)" : "var(--np-border)"}`,
+                          background: dataView === view.key ? "var(--np-text)" : "transparent",
+                          color: dataView === view.key ? "var(--np-bg)" : "var(--np-text)",
+                          border: `1px solid ${dataView === view.key ? "var(--np-text)" : "var(--np-border-strong)"}`,
                         }}
                       >
                         {view.label}
@@ -169,7 +169,7 @@ export default function DataSection({
                         gridTemplateColumns: "minmax(0, 1fr) auto",
                         gap: 14,
                         padding: "16px 18px",
-                        borderRadius: 16,
+                        borderRadius: "var(--np-r-sm)",
                         background: isDark ? "rgba(var(--np-accent-rgb), 0.1)" : "rgba(var(--np-accent-rgb), 0.06)",
                         border: `1px solid ${isDark ? "rgba(var(--np-accent-rgb), 0.22)" : "rgba(var(--np-accent-rgb), 0.16)"}`,
                         alignItems: "center",
@@ -222,13 +222,13 @@ export default function DataSection({
                               gap: 12,
                               padding: "14px 8px",
                               cursor: "pointer",
-                              borderRadius: 12,
+                              borderRadius: "var(--np-r-sm)",
                               transition: "background 0.2s ease",
                               background: hoveredCountry === c.country ? "rgba(var(--np-accent-rgb), 0.04)" : expandedCountry === c.country ? "rgba(var(--np-accent-rgb), 0.06)" : "transparent",
                             }}
                           >
                             <span style={{ fontWeight: 600, fontSize: 14, color: "var(--np-text)" }}>{c.country}</span>
-                            <div className="np-data-bar" style={{ position: "relative", height: 20, borderRadius: 999, background: "var(--np-surface-dim)", overflow: "hidden" }}>
+                            <div className="np-data-bar" style={{ position: "relative", height: 20, borderRadius: "var(--np-r-sm)", background: "var(--np-surface-dim)", overflow: "hidden" }}>
                               <motion.div
                                 initial={{ width: 0 }}
                                 animate={{ width: `${Math.max(getBarWidth(c), 1.5)}%` }}
@@ -237,8 +237,8 @@ export default function DataSection({
                                   position: "absolute",
                                   inset: 0,
                                   width: `${Math.max(getBarWidth(c), 1.5)}%`,
-                                  borderRadius: 999,
-                                  background: "linear-gradient(90deg, var(--np-accent) 0%, rgba(var(--np-accent-rgb), 0.55) 100%)",
+                                  borderRadius: "var(--np-r-sm)",
+                                  background: "var(--np-accent)",
                                 }}
                               />
                             </div>
@@ -278,7 +278,7 @@ export default function DataSection({
                                         style={{
                                           background: "var(--np-surface-dim)",
                                           border: "1px solid var(--np-border)",
-                                          borderRadius: 999,
+                                          borderRadius: "var(--np-r-sm)",
                                           padding: "8px 12px",
                                           fontSize: 12,
                                           cursor: "pointer",
@@ -384,7 +384,7 @@ export default function DataSection({
                               gap: 12,
                               padding: "14px 8px",
                               borderBottom: "1px solid var(--np-border)",
-                              borderRadius: 12,
+                              borderRadius: "var(--np-r-sm)",
                               background: hoveredSource === row.name ? "rgba(var(--np-accent-rgb), 0.04)" : "transparent",
                               transition: "background 0.2s ease",
                             }}
@@ -393,7 +393,7 @@ export default function DataSection({
                             <span style={{ fontWeight: isNuclear ? 700 : 600, fontSize: 14, color: isNuclear ? "var(--np-text)" : "var(--np-text-muted)" }}>
                               {row.name}
                             </span>
-                            <div className="np-data-bar" style={{ position: "relative", height: 20, borderRadius: 999, background: "var(--np-surface-dim)", overflow: "hidden" }}>
+                            <div className="np-data-bar" style={{ position: "relative", height: 20, borderRadius: "var(--np-r-sm)", background: "var(--np-surface-dim)", overflow: "hidden" }}>
                               <motion.div
                                 initial={{ width: 0 }}
                                 animate={{ width: `${Math.max(row.width, 1.5)}%` }}
@@ -402,8 +402,8 @@ export default function DataSection({
                                   position: "absolute",
                                   inset: 0,
                                   width: `${Math.max(row.width, 1.5)}%`,
-                                  borderRadius: 999,
-                                  background: isNuclear ? "linear-gradient(90deg, var(--np-accent) 0%, rgba(var(--np-accent-rgb), 0.6) 100%)" : color,
+                                  borderRadius: "var(--np-r-sm)",
+                                  background: isNuclear ? "var(--np-accent)" : color,
                                   opacity: isNuclear ? 1 : hoveredSource === row.name ? 0.82 : 0.64,
                                 }}
                               />
@@ -425,7 +425,7 @@ export default function DataSection({
                         gridTemplateColumns: "minmax(0, 1fr) auto",
                         gap: 18,
                         padding: "18px 20px",
-                        borderRadius: 18,
+                        borderRadius: "var(--np-r-sm)",
                         background: isDark ? "rgba(var(--np-accent-rgb), 0.1)" : "rgba(var(--np-accent-rgb), 0.06)",
                         border: `1px solid ${isDark ? "rgba(var(--np-accent-rgb), 0.22)" : "rgba(var(--np-accent-rgb), 0.14)"}`,
                         alignItems: "center",

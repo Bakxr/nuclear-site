@@ -82,7 +82,7 @@ export default function ProSection({ isMobileViewport, onOpenTerminal, preview =
                 maxWidth: "20ch",
               }}
             >
-              The terminal for people who <em style={{ fontStyle: "italic", fontWeight: 350, color: "var(--np-accent-ink)" }}>trade the buildout.</em>
+              The terminal for people who trade the buildout
             </div>
             <div style={{ fontSize: 15, color: "var(--np-text-muted)", lineHeight: 1.7, marginTop: 14, maxWidth: "58ch" }}>
               The free site tells you the story. PRO gives you the tape: filings, catalysts, operations
@@ -115,7 +115,7 @@ export default function ProSection({ isMobileViewport, onOpenTerminal, preview =
           <div
             style={{
               border: "1px solid var(--np-hairline)",
-              borderRadius: 14,
+              borderRadius: "var(--np-r-sm)",
               background: "var(--np-surface)",
               padding: "24px 22px 20px",
             }}
@@ -139,7 +139,7 @@ export default function ProSection({ isMobileViewport, onOpenTerminal, preview =
                     justifyContent: "space-between",
                     gap: 12,
                     border: plan.badge ? "1px solid var(--np-accent-ink)" : "1px solid var(--np-hairline)",
-                    borderRadius: 10,
+                    borderRadius: "var(--np-r-sm)",
                     padding: "14px 16px",
                     background: plan.badge ? "color-mix(in srgb, var(--np-accent) 8%, transparent)" : "transparent",
                     fontFamily: "inherit",
@@ -169,7 +169,7 @@ export default function ProSection({ isMobileViewport, onOpenTerminal, preview =
                 background: "var(--np-accent)",
                 color: "#14120e",
                 border: "none",
-                borderRadius: 8,
+                borderRadius: "var(--np-r-sm)",
                 padding: "14px 20px",
                 fontSize: 14,
                 fontWeight: 700,

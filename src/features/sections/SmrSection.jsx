@@ -38,7 +38,7 @@ export default function SmrSection({ sectionRef }) {
           index="05"
           label="Buildout"
           meta={`${SMR_PROJECTS.length} tracked programmes`}
-          title={<>Small modular <em>reactors.</em></>}
+          title="Small modular reactors"
           lede="The next generation of nuclear — factory-built, faster to deploy, and designed for a decarbonised grid."
         />
         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }} variants={staggerContainer}>
@@ -56,7 +56,7 @@ export default function SmrSection({ sectionRef }) {
         {/* SMR programmes as a table: one row per design, sorted by status */}
         <motion.div
           initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.05 }} transition={{ duration: 0.4 }}
-          style={{ overflowX: "auto", border: "1px solid var(--np-band-border)", borderRadius: 12, background: "var(--np-band-surface)" }}
+          style={{ overflowX: "auto", borderTop: "1px solid var(--np-rule)", borderBottom: "1px solid var(--np-rule)" }}
         >
           <table style={{ width: "100%", minWidth: 760, borderCollapse: "collapse", fontSize: 13 }}>
             <thead>
@@ -93,7 +93,7 @@ export default function SmrSection({ sectionRef }) {
                         fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
                         color: SMR_STATUS_COLORS[project.status],
                         background: tint(SMR_STATUS_COLORS[project.status], 12),
-                        padding: "3px 9px", borderRadius: 20,
+                        padding: "3px 9px", borderRadius: "var(--np-r-sm)",
                       }}>
                         <span style={{ width: 6, height: 6, borderRadius: "50%", background: SMR_STATUS_COLORS[project.status] }} />
                         {project.status}

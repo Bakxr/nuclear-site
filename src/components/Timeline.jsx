@@ -1,125 +1,25 @@
-import { motion, useInView } from "framer-motion";
-import { useRef } from "react";
 import { TIMELINE_EVENTS, ERA_COLORS } from "../data/timeline.js";
 
-const tint = (color, pct) => `color-mix(in srgb, ${color} ${pct}%, transparent)`;
-
-function TimelineCard({ event, isLeft }) {
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true, amount: 0.3 });
-  const eraColor = ERA_COLORS[event.era] || "var(--np-c-gold)";
-
-  return (
-    <div
-      ref={ref}
-      className="np-timeline-item"
-      style={{
-        display: "flex",
-        alignItems: isLeft ? "flex-end" : "flex-start",
-        flexDirection: isLeft ? "row" : "row-reverse",
-        gap: 24,
-        marginBottom: 40,
-        position: "relative",
-      }}
-    >
-      {/* Card */}
-      <motion.div
-        initial={{ opacity: 0, x: isLeft ? -40 : 40 }}
-        animate={inView ? { opacity: 1, x: 0 } : {}}
-        transition={{ duration: 0.5, ease: "easeOut", delay: 0.1 }}
-        style={{
-          flex: "0 0 calc(50% - 32px)",
-          background: "var(--np-card-bg)",
-          border: "1px solid var(--np-card-border)",
-          borderRadius: 14,
-          padding: "24px",
-          borderTop: `2px solid ${eraColor}`,
-          position: "relative",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-          <span style={{
-            fontFamily: "var(--np-font-display)", fontSize: 28, fontWeight: 700,
-            color: eraColor, lineHeight: 1,
-          }}>{event.year}</span>
-          <span style={{
-            fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em",
-            color: eraColor, background: tint(eraColor, 10), padding: "3px 8px", borderRadius: 4,
-          }}>{event.era}</span>
-        </div>
-        <h4 style={{
-          fontFamily: "var(--np-font-display)", fontSize: 18, fontWeight: 500,
-          margin: "0 0 4px", color: "var(--np-text)",
-        }}>{event.title}</h4>
-        <p style={{ fontSize: 12, color: "var(--np-text-muted)", margin: "0 0 10px", fontWeight: 600 }}>
-          {event.subtitle}
-        </p>
-        <p style={{ fontSize: 13, color: "var(--np-text-muted)", margin: "0 0 12px", lineHeight: 1.6, opacity: 0.85 }}>
-          {event.description}
-        </p>
-        <div style={{
-          fontSize: 11, color: eraColor, fontWeight: 600,
-          padding: "6px 10px", background: tint(eraColor, 7), borderRadius: 6,
-          display: "inline-block",
-        }}>
-          {event.significance}
-        </div>
-      </motion.div>
-
-      {/* Center dot + connector */}
-      <div style={{
-        position: "absolute", left: "50%", transform: "translateX(-50%)",
-        display: "flex", flexDirection: "column", alignItems: "center", zIndex: 2,
-      }}>
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={inView ? { scale: 1 } : {}}
-          transition={{ duration: 0.3, delay: 0.2 }}
-          style={{
-            width: 14, height: 14, borderRadius: "50%",
-            background: eraColor, border: "3px solid var(--np-band-bg)",
-            boxShadow: `0 0 0 2px ${tint(eraColor, 25)}`,
-          }}
-        />
-      </div>
-
-      {/* Year label on opposite side */}
-      <div style={{
-        flex: "0 0 calc(50% - 32px)",
-        display: "flex",
-        justifyContent: isLeft ? "flex-start" : "flex-end",
-        alignItems: "center",
-        paddingTop: 8,
-        // Keep the big year clear of the centre line and dot.
-        [isLeft ? "paddingLeft" : "paddingRight"]: 36,
-      }}>
-        <motion.span
-          initial={{ opacity: 0 }}
-          animate={inView ? { opacity: 1 } : {}}
-          transition={{ duration: 0.4, delay: 0.3 }}
-          style={{
-            fontFamily: "var(--np-font-display)", fontSize: 48, fontWeight: 700,
-            color: "var(--np-band-ghost)", lineHeight: 1,
-          }}
-        >{event.year}</motion.span>
-      </div>
-    </div>
-  );
-}
-
+// A ruled chronology: year in the margin, the entry beside it. One column
+// that reads the same on every screen size.
 export default function Timeline() {
   return (
-    <div style={{ position: "relative", maxWidth: 900, margin: "0 auto" }}>
-      {/* Center vertical line */}
-      <div style={{
-        position: "absolute", left: "50%", top: 0, bottom: 0, width: 2,
-        background: "linear-gradient(to bottom, transparent, var(--np-text-faint), var(--np-text-faint), transparent)",
-        opacity: 0.2, transform: "translateX(-50%)",
-      }} />
-
-      {TIMELINE_EVENTS.map((event, i) => (
-        <TimelineCard key={event.year} event={event} isLeft={i % 2 === 0} />
-      ))}
-    </div>
+    <ol className="np-chronology">
+      {TIMELINE_EVENTS.map((event) => {
+        const eraColor = ERA_COLORS[event.era] || "var(--np-c-gold)";
+        return (
+          <li key={event.year}>
+            <div className="np-chronology-year">{event.year}</div>
+            <div className="np-chronology-entry">
+              <div className="np-chronology-era" style={{ color: eraColor }}>{event.era}</div>
+              <h3>{event.title}</h3>
+              <p className="np-chronology-sub">{event.subtitle}</p>
+              <p>{event.description}</p>
+              <p className="np-chronology-why"><b>Why it mattered:</b> {event.significance}</p>
+            </div>
+          </li>
+        );
+      })}
+    </ol>
   );
 }

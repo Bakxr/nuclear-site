@@ -33,7 +33,7 @@ export default function LearnSection({
           index="06"
           label="Briefing"
           meta="Six designs power the world"
-          title={<>Know your <em>reactors.</em></>}
+          title="Know your reactors"
           lede="The six major reactor designs powering the world — click any card to explore advantages, deployments, and a working 3-D model."
         />
         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }} variants={staggerContainer} style={{ marginBottom: 72 }}>
@@ -42,7 +42,7 @@ export default function LearnSection({
               <motion.div key={r.type} variants={fadeUp} layout
                 onClick={() => setExpandedReactor(expandedReactor === r.type ? null : r.type)}
                 style={{
-                  background: "var(--np-card-bg)", borderRadius: 14, padding: "28px",
+                  background: "var(--np-card-bg)", borderRadius: "var(--np-r-sm)", padding: "28px",
                   display: "flex", flexDirection: "column",
                   border: "1px solid var(--np-card-border)", position: "relative", overflow: "hidden",
                   borderTop: `2px solid ${r.color}`, cursor: "pointer", transition: "transform 0.25s, box-shadow 0.25s",
@@ -53,7 +53,7 @@ export default function LearnSection({
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <div style={{ fontFamily: "var(--np-font-mono)", fontSize: 22, fontWeight: 700, color: r.color }}>{r.type}</div>
-                  {r.reactorCount && <span style={{ fontFamily: "var(--np-font-mono)", fontSize: 11, color: "var(--np-text-muted)", background: "var(--np-surface-dim)", borderRadius: 6, padding: "3px 8px" }}>{r.reactorCount} operating</span>}
+                  {r.reactorCount && <span style={{ fontFamily: "var(--np-font-mono)", fontSize: 11, color: "var(--np-text-muted)", background: "var(--np-surface-dim)", borderRadius: "var(--np-r-sm)", padding: "3px 8px" }}>{r.reactorCount} operating</span>}
                 </div>
                 <div style={{ fontSize: 12, fontWeight: 600, color: "var(--np-text-muted)", marginTop: 4 }}>{r.full}</div>
                 <div style={{ fontSize: 13, color: "var(--np-text-muted)", marginTop: 12, lineHeight: 1.55, opacity: 0.75 }}>{r.desc}</div>
@@ -101,7 +101,7 @@ export default function LearnSection({
                             <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: r.color, fontWeight: 700, marginBottom: 10 }}>Deployed In</div>
                             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                               {r.countries?.map((country, ci) => (
-                                <span key={ci} style={{ background: "var(--np-surface-dim)", borderRadius: 6, padding: "4px 10px", fontSize: 12, fontWeight: 500 }}>{country}</span>
+                                <span key={ci} style={{ background: "var(--np-surface-dim)", borderRadius: "var(--np-r-sm)", padding: "4px 10px", fontSize: 12, fontWeight: 500 }}>{country}</span>
                               ))}
                             </div>
                           </div>
@@ -114,7 +114,7 @@ export default function LearnSection({
                         </div>
 
                         {/* Reactor viewer */}
-                        <div style={{ background: "var(--np-surface-dim)", borderRadius: 12, overflow: "hidden", border: "1px solid var(--np-border)" }}
+                        <div style={{ background: "var(--np-surface-dim)", borderRadius: "var(--np-r-sm)", overflow: "hidden", border: "1px solid var(--np-border)" }}
                           onClick={e => e.stopPropagation()}
                         >
                           {/* Tab switcher header */}
@@ -128,7 +128,7 @@ export default function LearnSection({
                                   background: reactorViewMode === tab.key ? "var(--np-text)" : "transparent",
                                   color: reactorViewMode === tab.key ? "var(--np-bg)" : "var(--np-text-muted)",
                                   border: "1px solid " + (reactorViewMode === tab.key ? "var(--np-text)" : "var(--np-border)"),
-                                  borderRadius: 8, padding: "5px 14px", fontSize: 12, fontWeight: 600,
+                                  borderRadius: "var(--np-r-sm)", padding: "5px 14px", fontSize: 12, fontWeight: 600,
                                   cursor: "pointer", fontFamily: "var(--np-font-sans)", transition: "all 0.2s",
                                 }}>{tab.label}</button>
                               ))}
@@ -169,7 +169,7 @@ export default function LearnSection({
                 background: learnFilter === cat ? (cat === "All" ? "var(--np-text)" : `color-mix(in srgb, ${LEARN_COLORS[cat]} 10%, transparent)`) : "var(--np-surface-dim)",
                 color: learnFilter === cat ? (cat === "All" ? "var(--np-bg)" : LEARN_COLORS[cat]) : "var(--np-text-muted)",
                 border: `1px solid ${learnFilter === cat ? (cat === "All" ? "var(--np-text)" : `color-mix(in srgb, ${LEARN_COLORS[cat]} 30%, transparent)`) : "var(--np-border)"}`,
-                borderRadius: 8, padding: "7px 16px", fontSize: 12, fontWeight: 600,
+                borderRadius: "var(--np-r-sm)", padding: "7px 16px", fontSize: 12, fontWeight: 600,
                 cursor: "pointer", fontFamily: "var(--np-font-sans)", transition: "all 0.2s",
               }}>{cat}</button>
             ))}
@@ -181,7 +181,7 @@ export default function LearnSection({
               requestAnimationFrame(() => document.getElementById(`np-fact-row-${randomIndex}`)?.scrollIntoView({ behavior: "smooth", block: "center" }));
             }} style={{
               marginLeft: "auto", background: "none", border: "1px solid rgba(var(--np-accent-rgb), 0.3)",
-              borderRadius: 8, padding: "7px 16px", fontSize: 12, fontWeight: 600,
+              borderRadius: "var(--np-r-sm)", padding: "7px 16px", fontSize: 12, fontWeight: 600,
               cursor: "pointer", color: "var(--np-accent-ink)", fontFamily: "var(--np-font-sans)", transition: "all 0.2s",
             }}
               onMouseEnter={e => { e.currentTarget.style.background = "rgba(var(--np-accent-rgb), 0.08)"; }}
