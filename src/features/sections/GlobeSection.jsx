@@ -1,26 +1,29 @@
-import { lazy, Suspense } from "react";
-import { STATUS_COLORS, STATUS_TEXT_COLORS } from "../../data/constants.js";
+import { STATUS_TEXT_COLORS } from "../../data/constants.js";
 import { SUPPLY_STAGE_COLORS } from "../../data/supplySites.js";
+import { NUCLEAR_PLANTS } from "../../data/plants.js";
+import { URANIUM_SUPPLY_SITES } from "../../data/supplySites.js";
 import ErrorBoundary from "../../components/ErrorBoundary.jsx";
-import LazySectionFallback from "../../components/LazySectionFallback.jsx";
+import PrintMap from "../front/PrintMap.jsx";
 import { SectionHeader } from "./shared.jsx";
 
-const Globe = lazy(() => import("../../components/Globe.jsx"));
+const LAYERS = [
+  { key: "reactors", label: "Power plants" },
+  { key: "uranium", label: "Uranium sites" },
+];
 
+// The reactor map: a flat printed map (PrintMap) beside a ruled list. The 3D
+// globe now lives only in the terminal. Props are unchanged from the globe
+// version so App's filter state still drives everything.
 export default function GlobeSection({
   sectionRef,
   globeLayer,
   setGlobeLayer,
   plantFilter,
   setPlantFilter,
-  filteredPlants,
-  filteredSupplySites,
   activeGlobeItems,
   visibleGlobeItems,
   setSelectedPlant,
-  globePanelRef,
   globePanelListRef,
-  globeFiltersRef,
   shouldUseCompactGlobePanel,
   mobileGlobePanelExpanded,
   setMobileGlobePanelExpanded,
@@ -32,402 +35,118 @@ export default function GlobeSection({
   globeCountryOptions,
   globeReactorTypeOptions,
   hasActiveGlobeFilters,
-  globeFiltersOpen,
-  setGlobeFiltersOpen,
   searchQuery,
 }) {
+  const reactors = globeLayer === "reactors";
+  const legend = reactors ? STATUS_TEXT_COLORS : SUPPLY_STAGE_COLORS;
+  const totalCount = reactors ? NUCLEAR_PLANTS.length : URANIUM_SUPPLY_SITES.length;
+  const noun = reactors ? "plants" : "sites";
+  const narrowed = activeGlobeItems.length < totalCount;
+
   return (
-    <ErrorBoundary section="Globe">
-      <section ref={sectionRef} style={{ padding: "var(--np-section-y) var(--np-section-x) 48px", scrollMarginTop: 80, background: "var(--np-bg)" }}>
-        <div style={{ maxWidth: "var(--np-content-max)", margin: "0 auto" }}>
-          <SectionHeader
-            index="02"
-            label="Atlas"
-            meta="Drag to rotate · click any marker"
-            title={<>Every reactor on <em>Earth.</em></>}
-            lede={globeLayer === "reactors"
-              ? `Drag to rotate, click markers for details, and track ${filteredPlants.length} live plant profiles.`
-              : `Trace ${filteredSupplySites.length} uranium mines and fuel-cycle sites behind the reactor buildout story.`}
-          />
-          <div className="np-globe-header" style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", margin: "-24px 0 20px", gap: 20 }}>
-            <div style={{ display: "flex", gap: 14, fontSize: 11, alignItems: "center", flexWrap: "wrap" }}>
-              {Object.entries(globeLayer === "reactors" ? STATUS_COLORS : SUPPLY_STAGE_COLORS).map(([label, color]) => (
-                <span
-                  key={label}
-                  onClick={() => {
-                    if (globeLayer !== "reactors") return;
-                    setPlantFilter(plantFilter === label ? "All" : label);
-                  }}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 5,
-                    cursor: globeLayer === "reactors" ? "pointer" : "default",
-                    opacity: globeLayer === "reactors" && plantFilter !== "All" && plantFilter !== label ? 0.35 : 1,
-                    transition: "opacity 0.2s ease",
-                    color: "var(--np-text-muted)",
-                  }}
-                >
-                  <span style={{ width: 9, height: 9, borderRadius: "50%", background: color, display: "inline-block" }} />
-                  {label}
-                </span>
-              ))}
-            </div>
-          </div>
+    <ErrorBoundary section="Map">
+      <section ref={sectionRef} className="np-wrap" style={{ paddingTop: "var(--np-section-y)", scrollMarginTop: 60 }}>
+        <SectionHeader
+          label="Reactor map"
+          meta={reactors ? "IAEA PRIS · plant profiles" : "Uranium mines and fuel-cycle sites"}
+          title={reactors ? "Every reactor on Earth" : "Where the uranium comes from"}
+        />
 
-          <div className="np-globe-layout" style={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: 24, minHeight: 520 }}>
-            <div
-              className="np-globe-stage"
-              style={{
-                background: "var(--np-bg-alt)",
-                borderRadius: "var(--np-r-md)",
-                border: "1px solid var(--np-hairline)",
-                overflow: "hidden",
-                position: "relative",
-              }}
-            >
-              <Suspense fallback={<LazySectionFallback height={520} />}>
-                <Globe onSelectPlant={setSelectedPlant} plants={activeGlobeItems} mode={globeLayer} palette="print" />
-              </Suspense>
-            </div>
-
-            <div
-              ref={globePanelRef}
-              className={`np-globe-panel${shouldUseCompactGlobePanel ? " np-globe-panel-mobile" : ""}${mobileGlobePanelExpanded ? " is-expanded" : " is-collapsed"}`}
-              style={{
-                background: "var(--np-bg)",
-                borderRadius: "var(--np-r-md)",
-                border: "1px solid var(--np-hairline)",
-                padding: "16px 18px 28px",
-                overflowY: shouldUseCompactGlobePanel ? "visible" : "auto",
-                maxHeight: shouldUseCompactGlobePanel ? "none" : 520,
-              }}
-            >
-              <div className="np-globe-panel-header" style={{ position: shouldUseCompactGlobePanel ? "relative" : "sticky", top: 0, background: "var(--np-bg)", padding: "6px 0 14px", zIndex: 2, borderBottom: "1px solid var(--np-hairline)" }}>
-                <div className="np-globe-panel-top-row" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
-                  <div className="np-globe-toggle-row" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {[{ key: "reactors", label: "Plants" }, { key: "uranium", label: "Mines" }].map((view) => {
-                    const active = globeLayer === view.key;
-                    return (
-                      <button
-                        key={view.key}
-                        type="button"
-                        onClick={() => {
-                          setGlobeLayer(view.key);
-                          if (view.key === "reactors") setPlantFilter("All");
-                        }}
-                        style={{
-                          borderRadius: 999,
-                          border: `1px solid ${active ? "rgba(var(--np-accent-rgb), 0.45)" : "var(--np-border)"}`,
-                          background: active ? "var(--np-text)" : "transparent",
-                          color: active ? "var(--np-bg)" : "var(--np-text-muted)",
-                          padding: "8px 14px",
-                          fontSize: 12,
-                          fontWeight: 700,
-                          letterSpacing: "0.06em",
-                          textTransform: "uppercase",
-                          cursor: "pointer",
-                        }}
-                      >
-                        {view.label}
-                      </button>
-                    );
-                  })}
-                </div>
-                  <div ref={globeFiltersRef} className="np-globe-filters-menu" style={{ position: "relative", marginLeft: "auto" }}>
-                    <button
-                      type="button"
-                      className={`np-globe-filters-trigger${hasActiveGlobeFilters ? " is-active" : ""}`}
-                      onClick={() => setGlobeFiltersOpen((open) => !open)}
-                      aria-expanded={globeFiltersOpen}
-                      aria-haspopup="true"
-                      style={{
-                        borderRadius: 999,
-                        border: `1px solid ${hasActiveGlobeFilters ? "rgba(var(--np-accent-rgb), 0.42)" : "var(--np-border)"}`,
-                        background: hasActiveGlobeFilters ? "rgba(var(--np-accent-rgb), 0.12)" : "transparent",
-                        color: hasActiveGlobeFilters ? "var(--np-accent)" : "var(--np-text-muted)",
-                        padding: "8px 14px",
-                        fontSize: 12,
-                        fontWeight: 700,
-                        letterSpacing: "0.06em",
-                        textTransform: "uppercase",
-                        cursor: "pointer",
-                        fontFamily: "var(--np-font-sans)",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      Filters{hasActiveGlobeFilters ? ` (${Number(Boolean(globeCountryFilter)) + Number(Boolean(globeReactorTypeFilter))})` : ""}
-                    </button>
-                    {globeFiltersOpen && (
-                      <div
-                        className="np-globe-filters-dropdown"
-                        style={{
-                          position: "absolute",
-                          top: "calc(100% + 10px)",
-                          right: 0,
-                          width: shouldUseCompactGlobePanel ? "min(100vw - 64px, 280px)" : 280,
-                          padding: 14,
-                          borderRadius: 14,
-                          border: "1px solid var(--np-border-strong)",
-                          background: "var(--np-surface)",
-                          boxShadow: "0 24px 60px rgba(0, 0, 0, 0.16)",
-                          zIndex: 4,
-                        }}
-                      >
-                        <div className="np-globe-dropdown-fields" style={{ display: "grid", gap: 12 }}>
-                          <label className="np-globe-filter-field">
-                            <span>Country</span>
-                            <select
-                              className="np-globe-filter-select"
-                              value={globeCountryFilter}
-                              onChange={(e) => setGlobeCountryFilter(e.target.value)}
-                            >
-                              <option value="">All countries</option>
-                              {globeCountryOptions.map((country) => (
-                                <option key={country} value={country}>
-                                  {country}
-                                </option>
-                              ))}
-                            </select>
-                          </label>
-                          {globeLayer === "reactors" && (
-                            <label className="np-globe-filter-field">
-                              <span>Reactor type</span>
-                              <select
-                                className="np-globe-filter-select"
-                                value={globeReactorTypeFilter}
-                                onChange={(e) => setGlobeReactorTypeFilter(e.target.value)}
-                              >
-                                <option value="">All types</option>
-                                {globeReactorTypeOptions.map((reactorType) => (
-                                  <option key={reactorType} value={reactorType}>
-                                    {reactorType}
-                                  </option>
-                                ))}
-                              </select>
-                            </label>
-                          )}
-                          {hasActiveGlobeFilters && (
-                            <button
-                              type="button"
-                              className="np-globe-filter-clear"
-                              onClick={() => {
-                                setGlobeCountryFilter("");
-                                setGlobeReactorTypeFilter("");
-                              }}
-                            >
-                              Clear filters
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="np-globe-panel-meta" style={{ fontWeight: 600, fontSize: 13, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--np-text-muted)" }}>
-                  {activeGlobeItems.length} {globeLayer === "reactors" ? "Plants" : "Mines"} {searchQuery && `· "${searchQuery}"`}
-                </div>
-                <div className="np-globe-filter-bar">
-                  <label className="np-globe-filter-field">
-                    <span>Country</span>
-                    <select
-                      className="np-globe-filter-select"
-                      value={globeCountryFilter}
-                      onChange={(e) => setGlobeCountryFilter(e.target.value)}
-                    >
-                      <option value="">All countries</option>
-                      {globeCountryOptions.map((country) => (
-                        <option key={country} value={country}>
-                          {country}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  {globeLayer === "reactors" && (
-                    <label className="np-globe-filter-field">
-                      <span>Reactor type</span>
-                      <select
-                        className="np-globe-filter-select"
-                        value={globeReactorTypeFilter}
-                        onChange={(e) => setGlobeReactorTypeFilter(e.target.value)}
-                      >
-                        <option value="">All types</option>
-                        {globeReactorTypeOptions.map((reactorType) => (
-                          <option key={reactorType} value={reactorType}>
-                            {reactorType}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  )}
-                  {hasActiveGlobeFilters && (
-                    <button
-                      type="button"
-                      className="np-globe-filter-clear"
-                      onClick={() => {
-                        setGlobeCountryFilter("");
-                        setGlobeReactorTypeFilter("");
-                      }}
-                    >
-                      Clear filters
-                    </button>
-                  )}
-                </div>
-              </div>
-              <div style={{ display: "none", fontWeight: 600, fontSize: 13, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--np-text-muted)", marginBottom: 12 }}>
-                {filteredPlants.length} Plants {searchQuery && `· "${searchQuery}"`}
-              </div>
-              <div className="np-globe-filter-bar">
-                <label className="np-globe-filter-field">
-                  <span>Country</span>
-                  <select
-                    className="np-globe-filter-select"
-                    value={globeCountryFilter}
-                    onChange={(e) => setGlobeCountryFilter(e.target.value)}
-                  >
-                    <option value="">All countries</option>
-                    {globeCountryOptions.map((country) => (
-                      <option key={country} value={country}>
-                        {country}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                {globeLayer === "reactors" && (
-                  <label className="np-globe-filter-field">
-                    <span>Reactor type</span>
-                    <select
-                      className="np-globe-filter-select"
-                      value={globeReactorTypeFilter}
-                      onChange={(e) => setGlobeReactorTypeFilter(e.target.value)}
-                    >
-                      <option value="">All types</option>
-                      {globeReactorTypeOptions.map((reactorType) => (
-                        <option key={reactorType} value={reactorType}>
-                          {reactorType}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                )}
-                {hasActiveGlobeFilters && (
-                  <button
-                    type="button"
-                    className="np-globe-filter-clear"
-                    onClick={() => {
-                      setGlobeCountryFilter("");
-                      setGlobeReactorTypeFilter("");
-                    }}
-                  >
-                    Clear filters
-                  </button>
-                )}
-              </div>
-              <div
-                ref={globePanelListRef}
-                className={`np-globe-panel-list${shouldUseCompactGlobePanel ? " np-globe-panel-list-mobile" : ""}`}
-                style={{
-                  paddingBottom: 10,
-                  overflowY: shouldUseCompactGlobePanel && mobileGlobePanelExpanded ? "auto" : "visible",
-                  maxHeight: shouldUseCompactGlobePanel && mobileGlobePanelExpanded ? 320 : "none",
+        <div className="np-map-toolbar">
+          <div role="group" aria-label="Map layer" className="np-segmented">
+            {LAYERS.map((layer) => (
+              <button
+                key={layer.key}
+                type="button"
+                aria-pressed={globeLayer === layer.key}
+                onClick={() => {
+                  setGlobeLayer(layer.key);
+                  if (layer.key === "reactors") setPlantFilter("All");
                 }}
-              >
-              {globeLayer === "reactors" ? visibleGlobeItems.map((plant) => (
-                <div
-                  className="np-globe-list-item"
-                  key={plant.name}
-                  onClick={() => setSelectedPlant(plant)}
-                  style={{
-                    padding: "10px 12px",
-                    borderRadius: 8,
-                    cursor: "pointer",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    borderBottom: "1px solid var(--np-border)",
-                    transition: "background 0.15s ease",
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(var(--np-accent-rgb), 0.08)"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-                >
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, fontSize: 13.5, color: "var(--np-text)" }}>{plant.name}</div>
-                    <div style={{ fontSize: 11, color: "var(--np-text-muted)" }}>{plant.country} · {plant.type}</div>
-                  </div>
-                  <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 12 }}>
-                    <div style={{ fontFamily: "var(--np-font-mono)", fontSize: 12.5, fontWeight: 600, color: "var(--np-text)" }}>
-                      {plant.capacity.toLocaleString("en-US")} MW
+              >{layer.label}</button>
+            ))}
+          </div>
+          <label className="np-field">
+            <span>Country</span>
+            <select value={globeCountryFilter} onChange={(e) => setGlobeCountryFilter(e.target.value)}>
+              <option value="">All countries</option>
+              {globeCountryOptions.map((country) => <option key={country} value={country}>{country}</option>)}
+            </select>
+          </label>
+          {reactors ? (
+            <label className="np-field">
+              <span>Reactor type</span>
+              <select value={globeReactorTypeFilter} onChange={(e) => setGlobeReactorTypeFilter(e.target.value)}>
+                <option value="">All types</option>
+                {globeReactorTypeOptions.map((type) => <option key={type} value={type}>{type}</option>)}
+              </select>
+            </label>
+          ) : null}
+          {hasActiveGlobeFilters ? (
+            <button type="button" className="np-text-link" onClick={() => { setGlobeCountryFilter(""); setGlobeReactorTypeFilter(""); }}>
+              Clear filters
+            </button>
+          ) : null}
+        </div>
+
+        <div role="group" aria-label={reactors ? "Filter by status" : "Legend"} className="np-legend">
+          {Object.entries(legend).map(([label, color]) => {
+            const pressed = reactors && plantFilter === label;
+            const dimmed = reactors && plantFilter !== "All" && !pressed;
+            const swatch = <span className="np-legend-dot" style={{ background: color }} aria-hidden="true" />;
+            return reactors ? (
+              <button
+                key={label}
+                type="button"
+                aria-pressed={pressed}
+                className={dimmed ? "is-dimmed" : undefined}
+                onClick={() => setPlantFilter(pressed ? "All" : label)}
+              >{swatch}{label}</button>
+            ) : (
+              <span key={label}>{swatch}{label}</span>
+            );
+          })}
+          <span className="np-legend-count">
+            {activeGlobeItems.length} {noun}{narrowed ? ` of ${totalCount}` : ""}{searchQuery ? ` · “${searchQuery}”` : ""}
+          </span>
+        </div>
+
+        <div className="np-map-layout">
+          <PrintMap items={activeGlobeItems} mode={globeLayer} totalCount={totalCount} onSelectPlant={setSelectedPlant} />
+
+          <div className="np-map-list">
+            <ul ref={globePanelListRef}>
+              {visibleGlobeItems.map((item) => (
+                <li key={item.id || item.name}>
+                  {reactors ? (
+                    <button type="button" onClick={() => setSelectedPlant(item)}>
+                      <span className="np-map-list-name">{item.name}</span>
+                      <span className="np-map-list-meta">{item.country} · {item.type}</span>
+                      <span className="np-map-list-figure np-num">{Number(item.capacity || 0).toLocaleString("en-US")} MW</span>
+                      <span className="np-map-list-status" style={{ color: STATUS_TEXT_COLORS[item.status] ?? STATUS_TEXT_COLORS.Idle }}>{item.status}</span>
+                    </button>
+                  ) : (
+                    <div className="np-map-list-site">
+                      <span className="np-map-list-name">{item.name}</span>
+                      <span className="np-map-list-meta">{item.country} · {item.region} · {item.operator}</span>
+                      <span className="np-map-list-figure">{item.stage}</span>
+                      <span className="np-map-list-status">{item.status}</span>
+                      {item.detail ? <p>{item.detail}</p> : null}
                     </div>
-                    <div style={{ fontSize: 10, color: STATUS_TEXT_COLORS[plant.status] ?? STATUS_TEXT_COLORS.Idle }}>
-                      ● {plant.status}
-                    </div>
-                  </div>
-                </div>
-              )) : visibleGlobeItems.map((site) => (
-                <div
-                  className="np-globe-list-item"
-                  key={site.id}
-                  style={{
-                    padding: "12px 12px",
-                    borderRadius: 8,
-                    borderBottom: "1px solid var(--np-border)",
-                    display: "grid",
-                    gap: 6,
-                  }}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontWeight: 600, fontSize: 13.5, color: "var(--np-text)" }}>{site.name}</div>
-                      <div style={{ fontSize: 11, color: "var(--np-text-muted)" }}>{site.country} · {site.region}</div>
-                    </div>
-                    <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 12 }}>
-                      <div style={{ fontFamily: "var(--np-font-mono)", fontSize: 11.5, fontWeight: 700, color: SUPPLY_STAGE_COLORS[site.stage] || "var(--np-accent)" }}>
-                        {site.stage}
-                      </div>
-                      <div style={{ fontSize: 10, color: "var(--np-text-faint)" }}>{site.status}</div>
-                    </div>
-                  </div>
-                  <div style={{ fontSize: 11.5, color: "var(--np-text-muted)", lineHeight: 1.55 }}>{site.detail}</div>
-                  <div style={{ fontSize: 10.5, color: "var(--np-text-faint)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                    {site.operator}
-                  </div>
-                </div>
+                  )}
+                </li>
               ))}
-              </div>
-              {shouldUseCompactGlobePanel && activeGlobeItems.length > globePanelPreviewCount && (
-                <button
-                  type="button"
-                  className="np-globe-show-more"
-                  onClick={() => {
-                    if (mobileGlobePanelExpanded) {
-                      setMobileGlobePanelExpanded(false);
-                      globePanelListRef.current?.scrollTo?.({ top: 0, behavior: "smooth" });
-                    } else {
-                      setMobileGlobePanelExpanded(true);
-                    }
-                  }}
-                  style={{
-                    marginTop: 14,
-                    width: "100%",
-                    borderRadius: 999,
-                    border: "1px solid rgba(var(--np-accent-rgb), 0.28)",
-                    background: "transparent",
-                    color: "var(--np-accent)",
-                    padding: "10px 16px",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    letterSpacing: "0.08em",
-                    textTransform: "uppercase",
-                    cursor: "pointer",
-                    fontFamily: "var(--np-font-sans)",
-                  }}
-                >
-                  {mobileGlobePanelExpanded
-                    ? "Show less"
-                    : `Show ${activeGlobeItems.length - globePanelPreviewCount} more`}
-                </button>
-              )}
-            </div>
+            </ul>
+            {shouldUseCompactGlobePanel && activeGlobeItems.length > globePanelPreviewCount ? (
+              <button
+                type="button"
+                className="np-btn np-btn--ghost"
+                style={{ width: "100%", marginTop: 12 }}
+                onClick={() => setMobileGlobePanelExpanded(!mobileGlobePanelExpanded)}
+              >
+                {mobileGlobePanelExpanded ? "Show fewer" : `Show all ${activeGlobeItems.length} ${noun}`}
+              </button>
+            ) : null}
           </div>
         </div>
       </section>
