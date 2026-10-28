@@ -79,15 +79,15 @@ export default function GlobeSection({
             <div
               className="np-globe-stage"
               style={{
-                background: "radial-gradient(ellipse at 50% 40%, #1f1912 0%, #15110c 60%, #0b0907 100%)",
-                borderRadius: "var(--np-r-lg)",
+                background: "var(--np-bg-alt)",
+                borderRadius: "var(--np-r-md)",
                 border: "1px solid var(--np-hairline)",
                 overflow: "hidden",
                 position: "relative",
               }}
             >
               <Suspense fallback={<LazySectionFallback height={520} />}>
-                <Globe onSelectPlant={setSelectedPlant} plants={activeGlobeItems} mode={globeLayer} />
+                <Globe onSelectPlant={setSelectedPlant} plants={activeGlobeItems} mode={globeLayer} palette="print" />
               </Suspense>
             </div>
 
@@ -95,15 +95,15 @@ export default function GlobeSection({
               ref={globePanelRef}
               className={`np-globe-panel${shouldUseCompactGlobePanel ? " np-globe-panel-mobile" : ""}${mobileGlobePanelExpanded ? " is-expanded" : " is-collapsed"}`}
               style={{
-                background: "var(--np-surface-dim)",
-                borderRadius: "var(--np-r-lg)",
+                background: "var(--np-bg)",
+                borderRadius: "var(--np-r-md)",
                 border: "1px solid var(--np-hairline)",
                 padding: "16px 18px 28px",
                 overflowY: shouldUseCompactGlobePanel ? "visible" : "auto",
                 maxHeight: shouldUseCompactGlobePanel ? "none" : 520,
               }}
             >
-              <div className="np-globe-panel-header" style={{ position: shouldUseCompactGlobePanel ? "relative" : "sticky", top: 0, background: "linear-gradient(180deg, rgba(30,25,18,0.96) 0%, rgba(30,25,18,0.9) 72%, rgba(30,25,18,0) 100%)", padding: "6px 0 14px", backdropFilter: "blur(8px)", zIndex: 2, borderRadius: 14 }}>
+              <div className="np-globe-panel-header" style={{ position: shouldUseCompactGlobePanel ? "relative" : "sticky", top: 0, background: "var(--np-bg)", padding: "6px 0 14px", zIndex: 2, borderBottom: "1px solid var(--np-hairline)" }}>
                 <div className="np-globe-panel-top-row" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
                   <div className="np-globe-toggle-row" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   {[{ key: "reactors", label: "Plants" }, { key: "uranium", label: "Mines" }].map((view) => {
@@ -119,7 +119,7 @@ export default function GlobeSection({
                         style={{
                           borderRadius: 999,
                           border: `1px solid ${active ? "rgba(var(--np-accent-rgb), 0.45)" : "var(--np-border)"}`,
-                          background: active ? "var(--np-text)" : "rgba(255,255,255,0.02)",
+                          background: active ? "var(--np-text)" : "transparent",
                           color: active ? "var(--np-bg)" : "var(--np-text-muted)",
                           padding: "8px 14px",
                           fontSize: 12,
@@ -144,7 +144,7 @@ export default function GlobeSection({
                       style={{
                         borderRadius: 999,
                         border: `1px solid ${hasActiveGlobeFilters ? "rgba(var(--np-accent-rgb), 0.42)" : "var(--np-border)"}`,
-                        background: hasActiveGlobeFilters ? "rgba(var(--np-accent-rgb), 0.12)" : "rgba(255,255,255,0.02)",
+                        background: hasActiveGlobeFilters ? "rgba(var(--np-accent-rgb), 0.12)" : "transparent",
                         color: hasActiveGlobeFilters ? "var(--np-accent)" : "var(--np-text-muted)",
                         padding: "8px 14px",
                         fontSize: 12,

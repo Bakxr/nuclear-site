@@ -120,6 +120,56 @@ function fetchLand() {
   return landFetchPromise;
 }
 
+// Scene palettes. "night" is the original dark-space globe (the terminal
+// keeps it); "print" follows the editorial site: a printed map on paper in
+// light mode, a dim one in dark mode. WebGL needs real hex values, not CSS
+// variables, so these mirror the theme tokens in index.css.
+const LOOKS = {
+  night: {
+    ambient: 0.4, sun: 0.78,
+    ocean: 0x1a150f, oceanEmissive: 0x0d0a07, oceanSpecular: 0x3a3226, oceanShininess: 24,
+    landFill: "#a19687", landStroke: "#5a554c", landLine: 0.5, graticule: "rgba(212,165,74,0.05)",
+    globeTint: 0xb8aa95, globeSpecular: 0x2a241b,
+    stars: true, starColor: 0xbda98b, starOpacity: 0.18,
+    atmosphere: [0.83, 0.65, 0.35, 0.16], halo: 0.014,
+  },
+  printLight: {
+    ambient: 0.82, sun: 0.42,
+    ocean: 0xd3dae0, oceanEmissive: 0x1d2228, oceanSpecular: 0x111111, oceanShininess: 6,
+    landFill: "#fbf9f4", landStroke: "#16140f", landLine: 0.9, graticule: "rgba(22,20,15,0.10)",
+    globeTint: 0xffffff, globeSpecular: 0x111111,
+    stars: false, starColor: 0x16140f, starOpacity: 0,
+    atmosphere: null, halo: 0,
+  },
+  printDark: {
+    ambient: 0.62, sun: 0.5,
+    ocean: 0x1d2126, oceanEmissive: 0x07090b, oceanSpecular: 0x22262c, oceanShininess: 10,
+    landFill: "#3a3730", landStroke: "#b9b2a3", landLine: 0.7, graticule: "rgba(237,232,220,0.07)",
+    globeTint: 0xffffff, globeSpecular: 0x1a1a1a,
+    stars: true, starColor: 0xede8dc, starOpacity: 0.12,
+    atmosphere: [0.56, 0.66, 1.0, 0.10], halo: 0,
+  },
+};
+
+// Overlay chrome (controls, status, tooltip) to match the scene.
+const CHROME = {
+  night: { panel: "rgba(16,13,9,0.76)", tooltip: "rgba(16,13,9,0.94)", text: "rgba(245,240,232,0.88)", strong: "#f5f0e8", muted: "rgba(245,240,232,0.72)" },
+  print: { panel: "var(--np-nav-bg)", tooltip: "var(--np-surface)", text: "var(--np-text)", strong: "var(--np-text)", muted: "var(--np-text-muted)" },
+};
+
+// Tracks the site's dark class (set by useDarkMode / theme-init.js).
+function useHtmlDark(enabled) {
+  const [dark, setDark] = useState(() => typeof document !== "undefined" && document.documentElement.classList.contains("dark"));
+  useEffect(() => {
+    if (!enabled) return undefined;
+    const root = document.documentElement;
+    const observer = new MutationObserver(() => setDark(root.classList.contains("dark")));
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, [enabled]);
+  return dark;
+}
+
 // Cluster markets that share roughly the same anchor (within ~4° lat/lng).
 function clusterMarkets(markets) {
   const clusters = [];
@@ -149,6 +199,7 @@ export default function Globe({
   mode = "reactors",
   selectedEntity = null,
   highlightedEntityId = null,
+  palette = "night",
 }) {
   const mountRef = useRef(null);
   const cameraRef = useRef(null);
@@ -172,6 +223,12 @@ export default function Globe({
   const selectedEntityRef = useRef(selectedEntity);
   const hoveredPlantRef = useRef(hoveredPlant);
   const highlightedEntityIdRef = useRef(highlightedEntityId);
+
+  const htmlDark = useHtmlDark(palette === "print");
+  const lookKey = palette === "print" ? (htmlDark ? "printDark" : "printLight") : "night";
+  const lookRef = useRef(LOOKS[lookKey]);
+  const sceneRef = useRef(null);
+  const chrome = palette === "print" ? CHROME.print : CHROME.night;
 
   // Shared refs between the two effects
   const pivotGroupRef = useRef(null);
@@ -226,6 +283,31 @@ export default function Globe({
     canvas.style.pointerEvents = isInteractive ? "auto" : "none";
   }, [isInteractive]);
 
+  // Recolor the existing scene when the page theme flips (no rebuild).
+  useEffect(() => {
+    const look = LOOKS[lookKey];
+    lookRef.current = look;
+    const scene = sceneRef.current;
+    if (!scene) return;
+    scene.ambient.intensity = look.ambient;
+    scene.sun.intensity = look.sun;
+    scene.starField.visible = look.stars;
+    scene.starsMat.color.setHex(look.starColor);
+    scene.starsMat.opacity = look.starOpacity;
+    scene.oceanMat.color.setHex(look.ocean);
+    scene.oceanMat.emissive.setHex(look.oceanEmissive);
+    scene.oceanMat.specular.setHex(look.oceanSpecular);
+    scene.oceanMat.shininess = look.oceanShininess;
+    scene.atmosphere.visible = Boolean(look.atmosphere);
+    if (look.atmosphere) scene.atmosMat.uniforms.glow.value.set(...look.atmosphere);
+    scene.haloMat.opacity = look.halo;
+    if (scene.globeMat) {
+      scene.globeMat.color.setHex(look.globeTint);
+      scene.globeMat.specular.setHex(look.globeSpecular);
+    }
+    scene.paintLand(look);
+  }, [lookKey]);
+
   // ── Effect 1: One-time scene setup (renderer, lights, globe, atmosphere, animation loop) ──
   useEffect(() => {
     const mount = mountRef.current;
@@ -245,9 +327,12 @@ export default function Globe({
     renderer.domElement.style.pointerEvents = "none";
     mount.appendChild(renderer.domElement);
 
+    const look = lookRef.current;
+
     // Lights
-    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
-    const sun = new THREE.DirectionalLight(0xe1ceb0, 0.78);
+    const ambient = new THREE.AmbientLight(0xffffff, look.ambient);
+    scene.add(ambient);
+    const sun = new THREE.DirectionalLight(0xe1ceb0, look.sun);
     sun.position.set(5, 3, 5);
     scene.add(sun);
     const rim = new THREE.DirectionalLight(0x9a8c7c, 0.1);
@@ -267,8 +352,9 @@ export default function Globe({
       starPositions[i * 3 + 2] = radius * Math.sin(phi) * Math.sin(theta);
     }
     starsGeom.setAttribute("position", new THREE.BufferAttribute(starPositions, 3));
-    const starsMat = new THREE.PointsMaterial({ color: 0xbda98b, size: 0.022, transparent: true, opacity: 0.18 });
+    const starsMat = new THREE.PointsMaterial({ color: look.starColor, size: 0.022, transparent: true, opacity: look.starOpacity });
     const starField = new THREE.Points(starsGeom, starsMat);
+    starField.visible = look.stars;
     scene.add(starField);
 
     // Pivot group for all rotating elements
@@ -279,10 +365,10 @@ export default function Globe({
     // Ocean sphere
     const oceanGeom = new THREE.SphereGeometry(0.995, 96, 96);
     const oceanMat = new THREE.MeshPhongMaterial({
-      color: 0x1a150f,
-      emissive: 0x0d0a07,
-      specular: 0x3a3226,
-      shininess: 24,
+      color: look.ocean,
+      emissive: look.oceanEmissive,
+      specular: look.oceanSpecular,
+      shininess: look.oceanShininess,
       transparent: true,
       opacity: 0.97,
     });
@@ -301,36 +387,42 @@ export default function Globe({
     let globeGeom = null;
     let globeMat = null;
     let landTexture = null;
+    let landShape = null;
+
+    // Paints land + graticule into the texture canvas; rerun on theme change.
+    const paintLand = (paint) => {
+      if (!landShape) return;
+      ctx.clearRect(0, 0, 2048, 1024);
+      ctx.fillStyle = paint.landFill;
+      ctx.strokeStyle = paint.landStroke;
+      ctx.lineWidth = paint.landLine;
+      ctx.beginPath();
+      path(landShape);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.strokeStyle = paint.graticule;
+      ctx.lineWidth = 0.6;
+      const graticule = geoGraticule().step([15, 15])();
+      ctx.beginPath();
+      path(graticule);
+      ctx.stroke();
+      if (landTexture) landTexture.needsUpdate = true;
+    };
 
     fetchLand().then(land => {
       if (!mount.isConnected) return; // component unmounted before fetch resolved
-      ctx.clearRect(0, 0, 2048, 1024);
-      ctx.fillStyle = "rgba(0,0,0,0)";
-      ctx.fillRect(0, 0, 2048, 1024);
+      const paint = lookRef.current;
 
       if (land) {
-        ctx.fillStyle = "#a19687";
-        ctx.strokeStyle = "#5a554c";
-        ctx.lineWidth = 0.5;
-        ctx.beginPath();
-        path(land);
-        ctx.fill();
-        ctx.stroke();
-
-        ctx.strokeStyle = "rgba(212,165,74,0.05)";
-        ctx.lineWidth = 0.6;
-        const graticule = geoGraticule().step([15, 15])();
-        ctx.beginPath();
-        path(graticule);
-        ctx.stroke();
-
+        landShape = land;
         landTexture = new THREE.CanvasTexture(texCanvas);
-        landTexture.needsUpdate = true;
+        paintLand(paint);
         globeGeom = new THREE.SphereGeometry(1, 96, 96);
         globeMat = new THREE.MeshPhongMaterial({
           map: landTexture,
-          color: 0xb8aa95,
-          specular: 0x2a241b,
+          color: paint.globeTint,
+          specular: paint.globeSpecular,
           transparent: true,
           opacity: 0.93,
           shininess: 8,
@@ -340,28 +432,34 @@ export default function Globe({
         globeGeom = new THREE.SphereGeometry(1, 64, 64);
         globeMat = new THREE.MeshPhongMaterial({ color: 0xb8aa95, specular: 0x2a241b, shininess: 10 });
       }
+      if (sceneRef.current) sceneRef.current.globeMat = globeMat;
       pivotGroup.add(new THREE.Mesh(globeGeom, globeMat));
     });
 
     // Atmosphere
     const atmosGeom = new THREE.SphereGeometry(1.06, 64, 64);
     const atmosMat = new THREE.ShaderMaterial({
+      uniforms: { glow: { value: new THREE.Vector4(...(look.atmosphere || [0, 0, 0, 0])) } },
       vertexShader: `varying vec3 vNormal; void main(){ vNormal=normalize(normalMatrix*normal); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
-      fragmentShader: `varying vec3 vNormal; void main(){ float intensity=pow(0.7-dot(vNormal,vec3(0.0,0.0,1.0)),3.0); gl_FragColor=vec4(0.83,0.65,0.35,1.0)*intensity*0.16; }`,
+      fragmentShader: `uniform vec4 glow; varying vec3 vNormal; void main(){ float intensity=pow(0.7-dot(vNormal,vec3(0.0,0.0,1.0)),3.0); gl_FragColor=vec4(glow.rgb,1.0)*intensity*glow.a; }`,
       blending: THREE.AdditiveBlending,
       side: THREE.BackSide,
       transparent: true,
     });
-    scene.add(new THREE.Mesh(atmosGeom, atmosMat));
+    const atmosphere = new THREE.Mesh(atmosGeom, atmosMat);
+    atmosphere.visible = Boolean(look.atmosphere);
+    scene.add(atmosphere);
 
     const haloGeom = new THREE.SphereGeometry(1.12, 64, 64);
     const haloMat = new THREE.MeshBasicMaterial({
       color: 0xc9a46a,
       transparent: true,
-      opacity: 0.014,
+      opacity: look.halo,
       side: THREE.BackSide,
     });
     scene.add(new THREE.Mesh(haloGeom, haloMat));
+
+    sceneRef.current = { ambient, sun, starsMat, starField, oceanMat, atmosphere, atmosMat, haloMat, globeMat: null, paintLand };
 
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
@@ -752,9 +850,9 @@ export default function Globe({
 
   const controlButtonStyle = {
     border: "1px solid var(--np-hairline)",
-    background: "rgba(16,13,9,0.76)",
-    color: "rgba(245,240,232,0.88)",
-    fontFamily: "'DM Mono',monospace",
+    background: chrome.panel,
+    color: chrome.text,
+    fontFamily: "var(--np-font-mono)",
     fontWeight: 700,
     cursor: "pointer",
     backdropFilter: "blur(10px)",
@@ -882,9 +980,9 @@ export default function Globe({
         gap: 10,
         padding: "9px 12px",
         borderRadius: 2,
-        background: "rgba(16,13,9,0.72)",
+        background: chrome.panel,
         border: "1px solid var(--np-hairline)",
-        color: "rgba(245,240,232,0.78)",
+        color: chrome.text,
         fontSize: 11,
         fontWeight: 700,
         letterSpacing: "0.08em",
@@ -906,8 +1004,8 @@ export default function Globe({
           position: "absolute",
           left: `clamp(12px, ${tooltip.x + 14}px, calc(100% - 252px))`,
           top: Math.max(12, tooltip.y - 10),
-          background: "rgba(16,13,9,0.94)", color: "#f5f0e8", padding: "12px 16px", borderRadius: 2,
-          fontSize: 13, fontFamily: "'DM Sans',sans-serif", pointerEvents: "none", zIndex: 10,
+          background: chrome.tooltip, color: chrome.strong, padding: "12px 16px", borderRadius: 2,
+          fontSize: 13, fontFamily: "var(--np-font-sans)", pointerEvents: "none", zIndex: 10,
           border: "1px solid var(--np-hairline)", maxWidth: "min(240px, calc(100% - 24px))", lineHeight: 1.4,
           backdropFilter: "blur(8px)", boxShadow: "0 8px 28px rgba(0,0,0,0.28)",
         }}>
@@ -915,7 +1013,7 @@ export default function Globe({
           {mode === "markets" ? (
             <>
               <div style={{ opacity: 0.6, marginTop: 2 }}>{hoveredPlant.anchor?.anchorLabel || "Market"}</div>
-              <div style={{ color: hoveredPlant.source === "polymarket" ? "#d8a04a" : "#8fb8ad", marginTop: 6, fontFamily: "'DM Mono',monospace", fontSize: 14 }}>
+              <div style={{ color: hoveredPlant.source === "polymarket" ? "#d8a04a" : "#8fb8ad", marginTop: 6, fontFamily: "var(--np-font-mono)", fontSize: 14 }}>
                 {Number.isFinite(hoveredPlant.yesPrice) ? `${Math.round(hoveredPlant.yesPrice * 100)}% YES` : "—"}
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4, fontSize: 11, opacity: 0.7 }}>
@@ -938,11 +1036,11 @@ export default function Globe({
               <div style={{ color: SUPPLY_STAGE_COLORS[hoveredPlant.stage] || "#d4a54a", marginTop: 6, fontFamily: "var(--np-font-mono)", fontSize: 13 }}>
                 {hoveredPlant.stage}
               </div>
-              <div style={{ marginTop: 6, fontSize: 11, color: "rgba(245,240,232,0.7)", lineHeight: 1.5 }}>
+              <div style={{ marginTop: 6, fontSize: 11, color: chrome.muted, lineHeight: 1.5 }}>
                 {hoveredPlant.detail}
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, gap: 10 }}>
-                <span style={{ fontSize: 11, color: "rgba(245,240,232,0.72)" }}>{hoveredPlant.status}</span>
+                <span style={{ fontSize: 11, color: chrome.muted }}>{hoveredPlant.status}</span>
                 <span style={{ fontSize: 11, opacity: 0.5, textAlign: "right" }}>{hoveredPlant.operator}</span>
               </div>
             </>
