@@ -57,11 +57,11 @@ function layout({ slug, title, description, h1, body, faq }) {
 <meta property="og:title" content="${esc(title)}" />
 <meta property="og:description" content="${esc(description)}" />
 <meta property="og:url" content="${url}" />
-<meta property="og:image" content="${SITE}/og.png" />
+<meta property="og:image" content="${SITE}/og.png?v=2" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:image" content="${SITE}/og.png" />
+<meta name="twitter:image" content="${SITE}/og.png?v=2" />
 <meta name="theme-color" content="#f5f2ea" media="(prefers-color-scheme: light)" />
 <meta name="theme-color" content="#121110" media="(prefers-color-scheme: dark)" />
 <link rel="icon" type="image/png" href="/pwa-192.png" />
