@@ -431,6 +431,25 @@
   cursor: pointer;
   text-align: left;
 }
+/* Phones: ticker, price, today and one month fit without sideways scroll. */
+@media (max-width: 600px) {
+  .np-table {
+    min-width: 0;
+    font-size: 14px;
+  }
+  .np-table .np-col-spark,
+  .np-co-name {
+    display: none;
+  }
+}
+.np-table tbody th button {
+  min-height: 44px;
+}
+.np-wire-meta button {
+  padding: 10px 0;
+  margin: -10px 0;
+}
+
 .np-table-note {
   font-size: 12px;
   color: var(--np-text-faint);

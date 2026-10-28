@@ -57,7 +57,7 @@ export default function MarketsTable({ sectionRef, stocks, stocksLoading, stocks
                     <tr key={stock.ticker} onClick={() => onOpenStock(stock)}>
                       <th scope="row" className="np-col-name">
                         <button type="button" onClick={(e) => { e.stopPropagation(); onOpenStock(stock); }}>
-                          <b>{stock.ticker}</b> <span style={{ color: "var(--np-text-faint)", fontWeight: 400 }}>{stock.name}</span>
+                          <b>{stock.ticker}</b> <span className="np-co-name" style={{ color: "var(--np-text-faint)", fontWeight: 400 }}>{stock.name}</span>
                         </button>
                       </th>
                       <td className="np-num">{stocksLoading && !stock.price ? "…" : stock.price > 0 ? `$${stock.price.toFixed(2)}` : "—"}</td>
