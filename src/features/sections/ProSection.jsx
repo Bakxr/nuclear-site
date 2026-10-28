@@ -167,7 +167,7 @@ export default function ProSection({ isMobileViewport, onOpenTerminal, preview =
                 width: "100%",
                 marginTop: 16,
                 background: "var(--np-accent)",
-                color: "#14120e",
+                color: "var(--np-on-accent)",
                 border: "none",
                 borderRadius: "var(--np-r-sm)",
                 padding: "14px 20px",

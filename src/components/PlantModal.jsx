@@ -169,7 +169,7 @@ export default function PlantModal({ plant, onClose }) {
                 <span style={{ color: "rgba(255,255,255,0.85)", fontSize: 14 }}>{plant.country}</span>
                 <span style={{
                   display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 10px",
-                  borderRadius: 20, fontSize: 11, fontWeight: 600, color: "#fff",
+                  borderRadius: "var(--np-r-sm)", fontSize: 11, fontWeight: 600, color: "#fff",
                   background: "rgba(0,0,0,0.45)", backdropFilter: "blur(4px)",
                 }}>
                   <span style={{ width: 7, height: 7, borderRadius: "50%", background: statusColor }} />
@@ -188,7 +188,7 @@ export default function PlantModal({ plant, onClose }) {
             {/* Info cards */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               {infoCards.map((item, i) => (
-                <div key={i} style={{ background: "var(--np-surface-dim)", borderRadius: 10, padding: "12px 14px" }}>
+                <div key={i} style={{ background: "var(--np-surface-dim)", borderRadius: "var(--np-r-sm)", padding: "12px 14px" }}>
                   <div style={{ fontSize: 10, color: "var(--np-text-muted)", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>{item.label}</div>
                   <div style={{ fontFamily: "var(--np-font-mono)", fontSize: 15, fontWeight: 600, color: "var(--np-text)" }}>{item.val}</div>
                   {item.sub && <div style={{ fontSize: 10, color: "var(--np-text-faint)", marginTop: 2 }}>{item.sub}</div>}
@@ -197,7 +197,7 @@ export default function PlantModal({ plant, onClose }) {
             </div>
 
             {/* Mini map */}
-            <div style={{ borderRadius: 12, overflow: "hidden", border: "1px solid var(--np-border-strong)", position: "relative", background: "var(--np-containment-bg)" }}>
+            <div style={{ borderRadius: "var(--np-r-sm)", overflow: "hidden", border: "1px solid var(--np-border-strong)", position: "relative", background: "var(--np-containment-bg)" }}>
               <div style={{
                 display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gridTemplateRows: "repeat(3, 1fr)",
                 width: "100%", height: 180,
@@ -240,7 +240,7 @@ export default function PlantModal({ plant, onClose }) {
           </div>
 
           {/* === REACTOR VIEWER === */}
-          <div style={{ background: "var(--np-surface-dim)", borderRadius: 12, marginBottom: 16, overflow: "hidden" }}>
+          <div style={{ background: "var(--np-surface-dim)", borderRadius: "var(--np-r-sm)", marginBottom: 16, overflow: "hidden" }}>
             {/* Header + tab switcher */}
             <div className="np-reactor-header" style={{ padding: "16px 20px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>

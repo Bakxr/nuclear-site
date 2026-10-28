@@ -236,7 +236,7 @@ export default function Reactor3D({ type = "PWR" }) {
     background: "rgba(16, 13, 9, 0.8)",
     border: "1px solid rgba(255,255,255,0.1)",
     backdropFilter: "blur(12px)",
-    borderRadius: 12,
+    borderRadius: "var(--np-r-sm)",
   };
 
   return (
@@ -249,13 +249,13 @@ export default function Reactor3D({ type = "PWR" }) {
           width: "100%",
           height,
           cursor: "grab",
-          borderRadius: 10,
+          borderRadius: "var(--np-r-sm)",
           overflow: "hidden",
-          background: "radial-gradient(ellipse 80% 70% at 45% 40%, #221c14 0%, #0e0b08 70%)",
+          background: "radial-gradient(ellipse 80% 70% at 45% 40%, #24221e 0%, #121110 70%)",
         }}
       />
 
-      <div style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden", borderRadius: 10 }}>
+      <div style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden", borderRadius: "var(--np-r-sm)" }}>
         {hotspots.map((spot) => {
           const on = selectedId === spot.id;
           const showLabel = !isMobile && (on || hoveredId === spot.id);
@@ -284,15 +284,15 @@ export default function Reactor3D({ type = "PWR" }) {
                 height: on ? 20 : 16,
                 padding: 0,
                 borderRadius: "50%",
-                border: `2px solid ${on ? "#f5d082" : "rgba(255,255,255,0.85)"}`,
-                background: on ? "#d4a54a" : "rgba(16, 13, 9, 0.85)",
-                boxShadow: on ? "0 0 0 6px rgba(212,165,74,0.2), 0 0 22px rgba(212,165,74,0.5)" : "0 0 0 4px rgba(255,255,255,0.08)",
+                border: `2px solid ${on ? "#c9d5ff" : "rgba(255,255,255,0.85)"}`,
+                background: on ? "#8fa8ff" : "rgba(16, 13, 9, 0.85)",
+                boxShadow: on ? "0 0 0 6px rgba(143,168,255,0.22), 0 0 22px rgba(143,168,255,0.45)" : "0 0 0 4px rgba(255,255,255,0.08)",
                 opacity: 0,
                 cursor: "pointer",
                 transition: "width .2s, height .2s, background .2s",
               }}
             >
-              <span style={{ position: "absolute", inset: 3, borderRadius: "50%", background: on ? "#1a140c" : "#d4a54a" }} />
+              <span style={{ position: "absolute", inset: 3, borderRadius: "50%", background: on ? "#121110" : "#8fa8ff" }} />
               {showLabel ? (
                 <span
                   style={{
@@ -302,13 +302,13 @@ export default function Reactor3D({ type = "PWR" }) {
                     transform: "translateX(-50%)",
                     whiteSpace: "nowrap",
                     padding: "5px 9px",
-                    borderRadius: 999,
+                    borderRadius: "var(--np-r-sm)",
                     background: "rgba(16, 13, 9, 0.9)",
                     border: "1px solid rgba(255,255,255,0.1)",
                     color: "#fff",
                     fontSize: 11.5,
                     lineHeight: 1,
-                    fontFamily: "'DM Sans',sans-serif",
+                    fontFamily: "var(--np-font-sans)",
                   }}
                 >
                   {info?.label}
@@ -329,7 +329,7 @@ export default function Reactor3D({ type = "PWR" }) {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
-            <div style={{ fontSize: 10.5, letterSpacing: "0.1em", textTransform: "uppercase", color: "#d4a54a", fontWeight: 700 }}>Inside the reactor</div>
+            <div style={{ fontSize: 10.5, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8fa8ff", fontWeight: 700 }}>Inside the reactor</div>
             <button
               type="button"
               aria-label="Close"
@@ -376,7 +376,7 @@ export default function Reactor3D({ type = "PWR" }) {
           right: 14,
           fontSize: 11,
           color: "rgba(255,255,255,0.5)",
-          fontFamily: "'DM Sans',sans-serif",
+          fontFamily: "var(--np-font-sans)",
           pointerEvents: "none",
           whiteSpace: "nowrap",
         }}

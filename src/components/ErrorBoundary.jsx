@@ -29,7 +29,7 @@ export default class ErrorBoundary extends React.Component {
         textAlign: "center",
         background: "var(--np-surface-dim)",
         border: "1px solid var(--np-border)",
-        borderRadius: 16,
+        borderRadius: "var(--np-r-sm)",
         margin: "0 40px",
       }}>
         <div style={{ fontSize: 32, marginBottom: 16 }}>{"⚠︎"}</div>

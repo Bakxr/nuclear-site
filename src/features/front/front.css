@@ -496,6 +496,53 @@
   text-underline-offset: 3px;
 }
 
+/* ---------- Terminal sample: event odds (inside the PRO block) ---------- */
+.np-odds {
+  border-top: 1px solid var(--np-rule);
+  padding-top: 20px;
+}
+.np-odds-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  margin-bottom: 12px;
+}
+.np-odds-head h3 {
+  margin: 6px 0 0;
+  font-family: var(--np-font-display);
+  font-size: clamp(22px, 2.4vw, 28px);
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+.np-odds-table {
+  min-width: 0;
+}
+.np-odds-table tbody th {
+  font-weight: 500;
+  line-height: 1.4;
+  padding-right: 24px;
+}
+.np-odds-meta {
+  padding-left: 20px;
+  white-space: nowrap;
+  color: var(--np-text-muted);
+  font-size: 14px;
+}
+.np-odds-yes {
+  padding-left: 20px;
+  font-size: 20px;
+  font-weight: 600;
+  width: 4ch;
+}
+@media (max-width: 700px) {
+  .np-odds-meta {
+    display: none;
+  }
+}
+
 /* ---------- Learn promo ---------- */
 .np-learn-promo {
   margin-top: var(--np-section-y);

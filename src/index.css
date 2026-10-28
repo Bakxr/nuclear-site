@@ -1127,17 +1127,6 @@ video {
   color: var(--np-accent-ink);
 }
 
-.np-btn--light {
-  background: #f5f0e8;
-  color: #14110c;
-  border: 1px solid #f5f0e8;
-}
-
-.np-btn--light:hover {
-  background: var(--np-accent);
-  border-color: var(--np-accent);
-  color: #14110c;
-}
 
 .np-btn--ghost-dark {
   background: transparent;
@@ -1225,22 +1214,6 @@ video {
   border-color: rgba(var(--np-accent-rgb), 0.65);
 }
 
-/* Oversized footer wordmark */
-.np-footer-wordmark {
-  font-family: var(--np-font-display);
-  font-size: clamp(52px, 10.5vw, 170px);
-  font-weight: 400;
-  letter-spacing: -0.035em;
-  line-height: 0.92;
-  color: #f5f0e8;
-  margin: 0;
-}
-
-.np-footer-wordmark em {
-  font-style: italic;
-  font-weight: 350;
-  color: var(--np-accent);
-}
 
 .np-footer-link {
   font-family: var(--np-font-sans);

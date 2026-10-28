@@ -37,37 +37,35 @@ export default function LearnSection({
           lede="The six major reactor designs powering the world — click any card to explore advantages, deployments, and a working 3-D model."
         />
         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }} variants={staggerContainer} style={{ marginBottom: 72 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,340px),1fr))", gap: 18 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,340px),1fr))", columnGap: 32, rowGap: 8 }}>
             {REACTOR_TYPES.map((r, i) => (
               <motion.div key={r.type} variants={fadeUp} layout
                 onClick={() => setExpandedReactor(expandedReactor === r.type ? null : r.type)}
                 style={{
-                  background: "var(--np-card-bg)", borderRadius: "var(--np-r-sm)", padding: "28px",
+                  padding: "18px 0 26px",
                   display: "flex", flexDirection: "column",
-                  border: "1px solid var(--np-card-border)", position: "relative", overflow: "hidden",
-                  borderTop: `2px solid ${r.color}`, cursor: "pointer", transition: "transform 0.25s, box-shadow 0.25s",
+                  position: "relative", overflow: "hidden",
+                  borderTop: "2px solid var(--np-rule)", cursor: "pointer",
                   ...(expandedReactor === r.type ? { gridColumn: "1 / -1" } : {}),
                 }}
-                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = `0 8px 24px color-mix(in srgb, ${r.color} 14%, transparent)`; }}
-                onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <div style={{ fontFamily: "var(--np-font-mono)", fontSize: 22, fontWeight: 700, color: r.color }}>{r.type}</div>
-                  {r.reactorCount && <span style={{ fontFamily: "var(--np-font-mono)", fontSize: 11, color: "var(--np-text-muted)", background: "var(--np-surface-dim)", borderRadius: "var(--np-r-sm)", padding: "3px 8px" }}>{r.reactorCount} operating</span>}
+                  <div style={{ fontFamily: "var(--np-font-display)", fontSize: 28, fontWeight: 500, lineHeight: 1, color: "var(--np-text)" }}>{r.type}</div>
+                  {r.reactorCount && <span style={{ fontFamily: "var(--np-font-mono)", fontSize: 12, color: "var(--np-text-muted)" }}>{r.reactorCount} operating</span>}
                 </div>
                 <div style={{ fontSize: 12, fontWeight: 600, color: "var(--np-text-muted)", marginTop: 4 }}>{r.full}</div>
-                <div style={{ fontSize: 13, color: "var(--np-text-muted)", marginTop: 12, lineHeight: 1.55, opacity: 0.75 }}>{r.desc}</div>
+                <div style={{ fontSize: 14, color: "var(--np-text-muted)", marginTop: 10, lineHeight: 1.6 }}>{r.desc}</div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: "auto", paddingTop: 16, marginBottom: 6, fontSize: 10.5, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--np-text-faint)" }}>
                   <span>Share of global fleet</span>
-                  <span style={{ fontFamily: "var(--np-font-mono)", fontSize: 12, color: r.color, letterSpacing: 0 }}>{r.share}%</span>
+                  <span style={{ fontFamily: "var(--np-font-mono)", fontSize: 12, color: "var(--np-text)", letterSpacing: 0 }}>{r.share}%</span>
                 </div>
-                <div style={{ height: 3, borderRadius: 2, background: "var(--np-surface-dim)" }}>
+                <div style={{ height: 3, background: "var(--np-hairline)" }}>
                   <motion.div
                     initial={{ width: 0 }}
                     whileInView={{ width: `${r.share}%` }}
                     viewport={{ once: true }}
                     transition={{ duration: 1.2, ease: "easeOut", delay: i * 0.1 }}
-                    style={{ height: "100%", borderRadius: 2, background: r.color }}
+                    style={{ height: "100%", background: "var(--np-accent)" }}
                   />
                 </div>
                 <AnimatePresence>
@@ -90,15 +88,15 @@ export default function LearnSection({
                           }}
                         >
                           <div>
-                            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: r.color, fontWeight: 700, marginBottom: 10 }}>Advantages</div>
+                            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--np-accent-ink)", fontWeight: 700, marginBottom: 10 }}>Advantages</div>
                             {r.advantages?.map((a, ai) => (
                               <div key={ai} style={{ fontSize: 13, color: "var(--np-text)", lineHeight: 1.6, marginBottom: 4, paddingLeft: 12, position: "relative" }}>
-                                <span style={{ position: "absolute", left: 0, color: r.color }}>+</span>{a}
+                                <span style={{ position: "absolute", left: 0, color: "var(--np-accent-ink)" }}>+</span>{a}
                               </div>
                             ))}
                           </div>
                           <div>
-                            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: r.color, fontWeight: 700, marginBottom: 10 }}>Deployed In</div>
+                            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--np-accent-ink)", fontWeight: 700, marginBottom: 10 }}>Deployed In</div>
                             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                               {r.countries?.map((country, ci) => (
                                 <span key={ci} style={{ background: "var(--np-surface-dim)", borderRadius: "var(--np-r-sm)", padding: "4px 10px", fontSize: 12, fontWeight: 500 }}>{country}</span>
@@ -106,7 +104,7 @@ export default function LearnSection({
                             </div>
                           </div>
                           <div>
-                            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: r.color, fontWeight: 700, marginBottom: 10 }}>Example Plants</div>
+                            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--np-accent-ink)", fontWeight: 700, marginBottom: 10 }}>Example Plants</div>
                             {r.examples?.map((ex, ei) => (
                               <div key={ei} style={{ fontSize: 13, color: "var(--np-text)", lineHeight: 1.6, marginBottom: 4 }}>{ex}</div>
                             ))}

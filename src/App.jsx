@@ -29,7 +29,6 @@ import useBillingPortal from "./features/access/useBillingPortal.js";
 import { useTerminalAccess } from "./features/access/context.jsx";
 import TerminalRouteView from "./features/terminal/TerminalRouteView.jsx";
 import { mergeTerminalSnapshots } from "./features/terminal/mergeSnapshots.js";
-import { buildPublicTerminalSignals } from "./features/terminal/publicSignals.js";
 import { buildAppPath, getAppViewFromLocation } from "./features/terminal/route.js";
 import { useTerminalSnapshot } from "./features/terminal/useTerminalSnapshot.js";
 import TerminalEditorialStrip from "./components/TerminalEditorialStrip.jsx";
@@ -240,7 +239,7 @@ function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport
             </div>
 
             <div style={{
-              borderRadius: 18,
+              borderRadius: "var(--np-r-sm)",
               border: "1px solid var(--np-border)",
               background: "var(--np-surface-dim)",
               padding: "16px 16px 15px",
@@ -261,7 +260,7 @@ function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport
                   alignItems: "center",
                   gap: 8,
                   padding: "8px 10px",
-                  borderRadius: 999,
+                  borderRadius: "var(--np-r-sm)",
                   border: "1px solid var(--np-border)",
                   background: "var(--np-surface-dim)",
                   color: accountMeta.accent,
@@ -283,13 +282,13 @@ function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport
             </div>
 
             {!isConfigured ? (
-              <div style={{ borderRadius: 16, border: "1px solid rgba(248,113,113,0.24)", background: "rgba(127,29,29,0.18)", padding: "13px 14px", fontSize: 12.5, lineHeight: 1.6, color: "#f8c3c3" }}>
+              <div style={{ borderRadius: "var(--np-r-sm)", border: "1px solid color-mix(in srgb, var(--np-down) 35%, transparent)", background: "color-mix(in srgb, var(--np-down) 8%, transparent)", padding: "13px 14px", fontSize: 13, lineHeight: 1.6, color: "var(--np-down)" }}>
                 Supabase browser auth is not configured yet, so main-page sign-in is unavailable in this environment.
               </div>
             ) : null}
 
             {membershipError ? (
-              <div style={{ borderRadius: 16, border: "1px solid color-mix(in srgb, var(--np-c-amber) 35%, transparent)", background: "color-mix(in srgb, var(--np-c-amber) 8%, transparent)", padding: "13px 14px", fontSize: 13, lineHeight: 1.6, color: "var(--np-c-amber)" }}>
+              <div style={{ borderRadius: "var(--np-r-sm)", border: "1px solid color-mix(in srgb, var(--np-c-amber) 35%, transparent)", background: "color-mix(in srgb, var(--np-c-amber) 8%, transparent)", padding: "13px 14px", fontSize: 13, lineHeight: 1.6, color: "var(--np-c-amber)" }}>
                 {membershipError}
               </div>
             ) : null}
@@ -304,7 +303,7 @@ function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport
                   disabled={authBusy || !isConfigured}
                   style={{
                     width: "100%",
-                    borderRadius: 14,
+                    borderRadius: "var(--np-r-sm)",
                     border: "1px solid var(--np-border)",
                     background: "var(--np-surface-dim)",
                     color: "var(--np-text)",
@@ -325,7 +324,7 @@ function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport
                     disabled={authBusy}
                     style={{
                       width: "100%",
-                      borderRadius: 14,
+                      borderRadius: "var(--np-r-sm)",
                       border: "1px solid var(--np-border)",
                       background: "var(--np-surface-dim)",
                       color: "var(--np-text)",
@@ -343,7 +342,7 @@ function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport
                   disabled={authBusy || !isConfigured}
                   style={{
                     width: "100%",
-                    borderRadius: 14,
+                    borderRadius: "var(--np-r-sm)",
                     border: "1px solid rgba(var(--np-accent-rgb), 0.35)",
                     background: "var(--np-text)",
                     color: "var(--np-bg)",
@@ -366,7 +365,7 @@ function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport
                     disabled={authBusy}
                     style={{
                       width: "100%",
-                      borderRadius: 14,
+                      borderRadius: "var(--np-r-sm)",
                       border: "1px solid var(--np-border)",
                       background: "var(--np-surface-dim)",
                       color: "var(--np-text)",
@@ -390,7 +389,7 @@ function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport
                   onClick={handleOpenTerminal}
                   style={{
                     width: "100%",
-                    borderRadius: 14,
+                    borderRadius: "var(--np-r-sm)",
                     border: "1px solid rgba(var(--np-accent-rgb), 0.35)",
                     background: "var(--np-text)",
                     color: "var(--np-bg)",
@@ -411,7 +410,7 @@ function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport
                     disabled={portalBusy}
                     style={{
                       width: "100%",
-                      borderRadius: 14,
+                      borderRadius: "var(--np-r-sm)",
                       border: "1px solid rgba(var(--np-accent-rgb), 0.22)",
                       background: "var(--np-surface-dim)",
                       color: "var(--np-text)",
@@ -432,7 +431,7 @@ function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport
                   onClick={handleSignOut}
                   style={{
                     width: "100%",
-                    borderRadius: 14,
+                    borderRadius: "var(--np-r-sm)",
                     border: "1px solid var(--np-border)",
                     background: "var(--np-surface-dim)",
                     color: "var(--np-text)",
@@ -450,12 +449,12 @@ function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport
             )}
 
             {errorMessage || portalError ? (
-              <div style={{ borderRadius: 16, border: "1px solid color-mix(in srgb, var(--np-c-amber) 35%, transparent)", background: "color-mix(in srgb, var(--np-c-amber) 8%, transparent)", padding: "13px 14px", fontSize: 13, lineHeight: 1.6, color: "var(--np-c-amber)" }}>
+              <div style={{ borderRadius: "var(--np-r-sm)", border: "1px solid color-mix(in srgb, var(--np-c-amber) 35%, transparent)", background: "color-mix(in srgb, var(--np-c-amber) 8%, transparent)", padding: "13px 14px", fontSize: 13, lineHeight: 1.6, color: "var(--np-c-amber)" }}>
                 {errorMessage || portalError}
               </div>
             ) : null}
             {successMessage ? (
-              <div style={{ borderRadius: 16, border: "1px solid color-mix(in srgb, var(--np-up) 35%, transparent)", background: "color-mix(in srgb, var(--np-up) 8%, transparent)", padding: "13px 14px", fontSize: 13, lineHeight: 1.6, color: "var(--np-up)" }}>
+              <div style={{ borderRadius: "var(--np-r-sm)", border: "1px solid color-mix(in srgb, var(--np-up) 35%, transparent)", background: "color-mix(in srgb, var(--np-up) 8%, transparent)", padding: "13px 14px", fontSize: 13, lineHeight: 1.6, color: "var(--np-up)" }}>
                 {successMessage}
               </div>
             ) : null}
@@ -772,7 +771,6 @@ export default function NuclearPulse() {
     [stocks, remoteTerminalSnapshot],
   );
 
-  const editorialSignals = useMemo(() => buildPublicTerminalSignals({ stocks, news }), [stocks, news]);
 
   const uniqueNewsSources = useMemo(() => new Set(news.map((item) => item.source)).size, [news]);
 
@@ -1162,7 +1160,7 @@ export default function NuclearPulse() {
           <ProSection
             isMobileViewport={isMobileViewport}
             onOpenTerminal={() => switchAppView("terminal")}
-            preview={<TerminalEditorialStrip signals={editorialSignals} onOpenTerminal={() => switchAppView("terminal")} />}
+            preview={<TerminalEditorialStrip onOpenTerminal={() => switchAppView("terminal")} />}
           />
 
           <SmrSection sectionRef={sectionRefs.smr} />

@@ -4,7 +4,7 @@ export default function LazySectionFallback({ height = 320 }) {
       aria-hidden="true"
       style={{
         minHeight: height,
-        borderRadius: 16,
+        borderRadius: "var(--np-r-sm)",
         background: "var(--np-surface-dim)",
         border: "1px solid var(--np-border)",
       }}
