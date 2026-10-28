@@ -67,16 +67,25 @@ function page(message, { success = false, confirmToken = '' } = {}) {
   <meta name="robots" content="noindex" />
   <title>Nuclear Pulse — Unsubscribe</title>
   <style>
-    body { margin: 0; background: #14120e; color: #f5f0e8; font-family: 'DM Sans', sans-serif;
+    body { margin: 0; background: #f5f2ea; color: #16140f; font-family: 'Public Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
            display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 0 16px; }
-    .card { text-align: center; max-width: 420px; padding: 48px 40px;
-            border: 1px solid rgba(212,165,74,0.2); border-radius: 16px; }
-    h1 { font-family: Georgia, serif; font-size: 28px; font-weight: 400; margin: 0 0 12px; color: #d4a54a; }
-    p  { font-size: 15px; color: rgba(245,240,232,0.55); line-height: 1.6; margin: 0 0 28px; }
-    a  { color: #d4a54a; font-size: 13px; }
-    form { margin: 0 0 24px; }
-    button { background: #d4a54a; color: #14120e; border: 0; border-radius: 999px; padding: 10px 24px;
-             font: 600 14px 'DM Sans', sans-serif; cursor: pointer; }
+    .card { text-align: center; max-width: 440px; padding: 36px 32px 32px; border-top: 3px double #16140f; }
+    h1 { font-family: Newsreader, Georgia, serif; font-size: 34px; font-weight: 500; margin: 0 0 12px; color: #16140f; }
+    p  { font-size: 16px; color: #4a453b; line-height: 1.6; margin: 0 0 24px; }
+    a  { color: #1c44c9; font-size: 14px; }
+    form { margin: 0 0 22px; }
+    button { background: #16140f; color: #f5f2ea; border: 0; border-radius: 2px; padding: 12px 24px; min-height: 44px;
+             font: 600 15px system-ui, sans-serif; cursor: pointer; }
+    button:hover { background: #1c44c9; color: #ffffff; }
+    @media (prefers-color-scheme: dark) {
+      body { background: #121110; color: #ede8dc; }
+      .card { border-top-color: #ede8dc; }
+      h1 { color: #ede8dc; }
+      p { color: #b9b2a3; }
+      a { color: #8fa8ff; }
+      button { background: #ede8dc; color: #121110; }
+      button:hover { background: #8fa8ff; color: #0b1430; }
+    }
   </style>
 </head>
 <body>

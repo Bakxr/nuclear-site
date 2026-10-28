@@ -134,8 +134,9 @@ const LOOKS = {
     atmosphere: [0.83, 0.65, 0.35, 0.16], halo: 0.014,
   },
   printLight: {
-    ambient: 0.82, sun: 0.42,
-    ocean: 0xd3dae0, oceanEmissive: 0x1d2228, oceanSpecular: 0x111111, oceanShininess: 6,
+    // Brighter than it looks: Phong shading darkens these colors a lot.
+    ambient: 2.1, sun: 0.7,
+    ocean: 0xc9d3dc, oceanEmissive: 0x2a3138, oceanSpecular: 0x111111, oceanShininess: 6,
     landFill: "#fbf9f4", landStroke: "#16140f", landLine: 0.9, graticule: "rgba(22,20,15,0.10)",
     globeTint: 0xffffff, globeSpecular: 0x111111,
     stars: false, starColor: 0x16140f, starOpacity: 0,

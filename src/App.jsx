@@ -138,7 +138,7 @@ function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport
       await refreshMembership();
       setCode("");
       setOtpSent(false);
-      setSuccessMessage("You are signed in. Your account status is now available from the main page.");
+      setSuccessMessage("You're signed in.");
     } catch (error) {
       setErrorMessage(error.message || "That code could not be verified.");
     } finally {
@@ -194,12 +194,12 @@ function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport
             transition={{ type: "spring", damping: 28, stiffness: 320 }}
             style={{
               width: "min(92vw, 540px)",
-              borderRadius: 18,
-              border: "1px solid rgba(var(--np-accent-rgb), 0.2)",
-              background: "linear-gradient(180deg, rgba(22,18,13,0.98) 0%, rgba(12,10,8,0.98) 100%)",
+              borderRadius: "var(--np-r-md)",
+              borderTop: "3px double var(--np-rule)",
+              background: "var(--np-bg)",
               boxShadow: "0 30px 90px rgba(0,0,0,0.35)",
               padding: isMobileViewport ? "24px 18px 20px" : "28px 26px 24px",
-              color: "#f5f0e8",
+              color: "var(--np-text)",
               position: "relative",
               display: "grid",
               gap: 16,
@@ -216,9 +216,9 @@ function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport
                 width: 34,
                 height: 34,
                 borderRadius: "50%",
-                border: "1px solid rgba(245,240,232,0.12)",
-                background: "rgba(255,255,255,0.04)",
-                color: "#f5f0e8",
+                border: "1px solid var(--np-border)",
+                background: "var(--np-surface-dim)",
+                color: "var(--np-text)",
                 cursor: "pointer",
                 fontSize: 20,
                 lineHeight: 1,
@@ -232,27 +232,27 @@ function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport
                 Account access
               </div>
               <h3 id="account-access-title" style={{ fontFamily: "var(--np-font-display)", fontSize: "clamp(28px,4vw,40px)", lineHeight: 1.08, margin: "10px 0 8px" }}>
-                {user ? "You're signed in." : "Sign in from the main page."}
+                {user ? "You're signed in." : "Sign in"}
               </h3>
-              <p style={{ fontSize: 15, color: "rgba(245,240,232,0.72)", lineHeight: 1.7, margin: 0 }}>
+              <p style={{ fontSize: 15, color: "var(--np-text-muted)", lineHeight: 1.7, margin: 0 }}>
                 {accessSummary}
               </p>
             </div>
 
             <div style={{
               borderRadius: 18,
-              border: "1px solid rgba(245,240,232,0.08)",
-              background: "rgba(255,255,255,0.04)",
+              border: "1px solid var(--np-border)",
+              background: "var(--np-surface-dim)",
               padding: "16px 16px 15px",
               display: "grid",
               gap: 10,
             }}>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.12em", color: "rgba(245,240,232,0.48)", fontWeight: 700, marginBottom: 6 }}>
+                  <div style={{ fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--np-text-muted)", fontWeight: 700, marginBottom: 6 }}>
                     Current status
                   </div>
-                  <div style={{ fontSize: 18, fontWeight: 700, color: "#f5f0e8", lineHeight: 1.3, wordBreak: "break-word" }}>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: "var(--np-text)", lineHeight: 1.3, wordBreak: "break-word" }}>
                     {user ? user.email : "Not signed in"}
                   </div>
                 </div>
@@ -262,8 +262,8 @@ function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport
                   gap: 8,
                   padding: "8px 10px",
                   borderRadius: 999,
-                  border: "1px solid rgba(245,240,232,0.08)",
-                  background: "rgba(255,255,255,0.03)",
+                  border: "1px solid var(--np-border)",
+                  background: "var(--np-surface-dim)",
                   color: accountMeta.accent,
                   fontSize: 11,
                   fontWeight: 700,
@@ -276,7 +276,7 @@ function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport
                 </span>
               </div>
               {describePlan(membership) ? (
-                <div style={{ fontSize: 13, lineHeight: 1.6, color: "rgba(245,240,232,0.66)" }}>
+                <div style={{ fontSize: 13, lineHeight: 1.6, color: "var(--np-text-muted)" }}>
                   {describePlan(membership)}
                 </div>
               ) : null}
@@ -289,7 +289,7 @@ function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport
             ) : null}
 
             {membershipError ? (
-              <div style={{ borderRadius: 16, border: "1px solid rgba(251,191,36,0.22)", background: "rgba(251,191,36,0.08)", padding: "13px 14px", fontSize: 12.5, lineHeight: 1.6, color: "#f6d98a" }}>
+              <div style={{ borderRadius: 16, border: "1px solid color-mix(in srgb, var(--np-c-amber) 35%, transparent)", background: "color-mix(in srgb, var(--np-c-amber) 8%, transparent)", padding: "13px 14px", fontSize: 13, lineHeight: 1.6, color: "var(--np-c-amber)" }}>
                 {membershipError}
               </div>
             ) : null}
@@ -305,9 +305,9 @@ function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport
                   style={{
                     width: "100%",
                     borderRadius: 14,
-                    border: "1px solid rgba(245,240,232,0.12)",
-                    background: "rgba(255,255,255,0.04)",
-                    color: "#f5f0e8",
+                    border: "1px solid var(--np-border)",
+                    background: "var(--np-surface-dim)",
+                    color: "var(--np-text)",
                     padding: "14px 15px",
                     fontSize: 14,
                     outline: "none",
@@ -326,9 +326,9 @@ function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport
                     style={{
                       width: "100%",
                       borderRadius: 14,
-                      border: "1px solid rgba(245,240,232,0.12)",
-                      background: "rgba(255,255,255,0.04)",
-                      color: "#f5f0e8",
+                      border: "1px solid var(--np-border)",
+                      background: "var(--np-surface-dim)",
+                      color: "var(--np-text)",
                       padding: "14px 15px",
                       fontSize: 14,
                       outline: "none",
@@ -345,8 +345,8 @@ function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport
                     width: "100%",
                     borderRadius: 14,
                     border: "1px solid rgba(var(--np-accent-rgb), 0.35)",
-                    background: "#f5f0e8",
-                    color: "#14120e",
+                    background: "var(--np-text)",
+                    color: "var(--np-bg)",
                     padding: "13px 16px",
                     cursor: authBusy || !isConfigured ? "not-allowed" : "pointer",
                     fontSize: 12,
@@ -367,9 +367,9 @@ function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport
                     style={{
                       width: "100%",
                       borderRadius: 14,
-                      border: "1px solid rgba(245,240,232,0.12)",
-                      background: "rgba(255,255,255,0.03)",
-                      color: "#f5f0e8",
+                      border: "1px solid var(--np-border)",
+                      background: "var(--np-surface-dim)",
+                      color: "var(--np-text)",
                       padding: "12px 16px",
                       cursor: authBusy ? "not-allowed" : "pointer",
                       fontSize: 12,
@@ -392,8 +392,8 @@ function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport
                     width: "100%",
                     borderRadius: 14,
                     border: "1px solid rgba(var(--np-accent-rgb), 0.35)",
-                    background: "#f5f0e8",
-                    color: "#14120e",
+                    background: "var(--np-text)",
+                    color: "var(--np-bg)",
                     padding: "13px 16px",
                     cursor: "pointer",
                     fontSize: 12,
@@ -413,8 +413,8 @@ function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport
                       width: "100%",
                       borderRadius: 14,
                       border: "1px solid rgba(var(--np-accent-rgb), 0.22)",
-                      background: "rgba(255,255,255,0.03)",
-                      color: "#f5f0e8",
+                      background: "var(--np-surface-dim)",
+                      color: "var(--np-text)",
                       padding: "12px 16px",
                       cursor: portalBusy ? "wait" : "pointer",
                       fontSize: 12,
@@ -433,9 +433,9 @@ function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport
                   style={{
                     width: "100%",
                     borderRadius: 14,
-                    border: "1px solid rgba(245,240,232,0.12)",
-                    background: "rgba(255,255,255,0.03)",
-                    color: "#f5f0e8",
+                    border: "1px solid var(--np-border)",
+                    background: "var(--np-surface-dim)",
+                    color: "var(--np-text)",
                     padding: "12px 16px",
                     cursor: "pointer",
                     fontSize: 12,
@@ -450,12 +450,12 @@ function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport
             )}
 
             {errorMessage || portalError ? (
-              <div style={{ borderRadius: 16, border: "1px solid rgba(251,191,36,0.22)", background: "rgba(251,191,36,0.08)", padding: "13px 14px", fontSize: 12.5, lineHeight: 1.6, color: "#f6d98a" }}>
+              <div style={{ borderRadius: 16, border: "1px solid color-mix(in srgb, var(--np-c-amber) 35%, transparent)", background: "color-mix(in srgb, var(--np-c-amber) 8%, transparent)", padding: "13px 14px", fontSize: 13, lineHeight: 1.6, color: "var(--np-c-amber)" }}>
                 {errorMessage || portalError}
               </div>
             ) : null}
             {successMessage ? (
-              <div style={{ borderRadius: 16, border: "1px solid rgba(74,222,128,0.22)", background: "rgba(74,222,128,0.08)", padding: "13px 14px", fontSize: 12.5, lineHeight: 1.6, color: "#b5f5cd" }}>
+              <div style={{ borderRadius: 16, border: "1px solid color-mix(in srgb, var(--np-up) 35%, transparent)", background: "color-mix(in srgb, var(--np-up) 8%, transparent)", padding: "13px 14px", fontSize: 13, lineHeight: 1.6, color: "var(--np-up)" }}>
                 {successMessage}
               </div>
             ) : null}
@@ -1310,7 +1310,6 @@ export default function NuclearPulse() {
 
       <style>{`
         @keyframes tickerScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
-        ::selection{background:rgba(var(--np-accent-rgb), 0.25);color:#1e1912}
       `}</style>
     </div>
     </MotionConfig>

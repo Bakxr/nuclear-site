@@ -53,25 +53,25 @@ function shell({ title, dateLine, greetingName, bodyHtml, unsubEmail, footerNote
   const date = dateLine || formatDate(new Date());
   const unsubUrl = buildUnsubLink(unsubEmail);
   const greeting = greetingName
-    ? `<div style="font-size:14px;color:rgba(245,240,232,0.62);margin:0 0 16px;">Good morning, ${escapeHtml(greetingName)}.</div>`
+    ? `<div style="font-size:14px;color:#4a453b;margin:0 0 16px;">Good morning, ${escapeHtml(greetingName)}.</div>`
     : "";
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>${escapeHtml(title)}</title></head>
-<body style="margin:0;padding:0;background:#0f0e0b;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#0f0e0b;padding:28px 14px;"><tr><td align="center">
+<body style="margin:0;padding:0;background:#f5f2ea;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f2ea;padding:28px 14px;"><tr><td align="center">
 <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
-  <tr><td style="padding:0 0 20px;text-align:center;border-bottom:1px solid rgba(212,165,74,0.18);">
-    <div style="font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:#d4a54a;font-weight:700;margin-bottom:8px;">Nuclear Pulse</div>
-    <div style="font-size:13px;color:rgba(245,240,232,0.38);">${escapeHtml(date)}</div>
+  <tr><td style="padding:0 0 14px;text-align:center;border-bottom:3px double #16140f;">
+    <div style="font-family:Georgia,'Times New Roman',serif;font-size:34px;line-height:1.1;color:#16140f;">Nuclear Pulse</div>
+    <div style="font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#4a453b;margin-top:6px;">${escapeHtml(date)}</div>
   </td></tr>
-  <tr><td style="padding:22px 0 0;color:#f5f0e8;">
+  <tr><td style="padding:22px 0 0;color:#16140f;">
     ${greeting}
     ${bodyHtml}
   </td></tr>
-  <tr><td style="padding:24px 0 0;border-top:1px solid rgba(245,240,232,0.06);text-align:center;">
-    ${transactional ? `<div style="font-size:11px;color:rgba(245,240,232,0.32);">${escapeHtml(footerNote)}</div>` : `<a href="${SITE_URL}/terminal" style="display:inline-block;padding:11px 20px;border-radius:4px;background:#d4a54a;color:#111;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">From the terminal</a>
-    <div style="font-size:11px;color:rgba(245,240,232,0.32);margin-top:18px;">${escapeHtml(footerNote || "You're receiving this because you subscribed at Nuclear Pulse.")}</div>
-    <div style="margin-top:8px;"><a href="${unsubUrl}" style="font-size:11px;color:rgba(245,240,232,0.32);text-decoration:underline;">Unsubscribe</a></div>`}
+  <tr><td style="padding:24px 0 0;border-top:1px solid #d8d1c1;text-align:center;">
+    ${transactional ? `<div style="font-size:11px;color:#5c564a;">${escapeHtml(footerNote)}</div>` : `<a href="${SITE_URL}/terminal" style="display:inline-block;padding:11px 20px;border-radius:4px;background:#1c44c9;color:#ffffff;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">From the terminal</a>
+    <div style="font-size:11px;color:#5c564a;margin-top:18px;">${escapeHtml(footerNote || "You're receiving this because you subscribed at Nuclear Pulse.")}</div>
+    <div style="margin-top:8px;"><a href="${unsubUrl}" style="font-size:11px;color:#5c564a;text-decoration:underline;">Unsubscribe</a></div>`}
   </td></tr>
 </table>
 </td></tr></table></body></html>`;
@@ -79,41 +79,41 @@ function shell({ title, dateLine, greetingName, bodyHtml, unsubEmail, footerNote
 
 function moduleBlock(label, innerHtml) {
   return `<div style="margin:0 0 18px;">
-    <div style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(212,165,74,0.85);font-weight:700;margin-bottom:10px;">${escapeHtml(label)}</div>
-    <div style="background:#1a1611;border:1px solid rgba(245,240,232,0.08);border-radius:6px;padding:14px 16px;">${innerHtml}</div>
+    <div style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#1c44c9;font-weight:700;margin-bottom:10px;">${escapeHtml(label)}</div>
+    <div style="background:#fbf9f4;border:1px solid #d8d1c1;border-radius:6px;padding:14px 16px;">${innerHtml}</div>
   </div>`;
 }
 
 function moverRow(m) {
   const up = (m.pct ?? 0) >= 0;
-  const color = up ? "#4ade80" : "#f87171";
+  const color = up ? "#0b6b3a" : "#a3231a";
   return `<tr>
-    <td style="padding:6px 0;font-family:'Courier New',monospace;font-size:13px;color:#d4a54a;font-weight:700;">${escapeHtml(m.ticker)}</td>
-    <td style="padding:6px 0;font-size:13px;color:rgba(245,240,232,0.78);">${escapeHtml(m.name || "")}</td>
-    <td style="padding:6px 0;text-align:right;font-family:'Courier New',monospace;font-size:13px;color:#f5f0e8;">${formatPrice(m.price)}</td>
+    <td style="padding:6px 0;font-family:'Courier New',monospace;font-size:13px;color:#1c44c9;font-weight:700;">${escapeHtml(m.ticker)}</td>
+    <td style="padding:6px 0;font-size:13px;color:#2e2a22;">${escapeHtml(m.name || "")}</td>
+    <td style="padding:6px 0;text-align:right;font-family:'Courier New',monospace;font-size:13px;color:#16140f;">${formatPrice(m.price)}</td>
     <td style="padding:6px 0;text-align:right;font-family:'Courier New',monospace;font-size:13px;font-weight:700;color:${color};">${formatPercent(m.pct)}</td>
   </tr>`;
 }
 
 function moversTable(movers) {
   if (!movers || movers.length === 0) {
-    return `<div style="font-size:13px;color:rgba(245,240,232,0.55);">No movers data available.</div>`;
+    return `<div style="font-size:13px;color:#4a453b;">No movers data available.</div>`;
   }
   return `<table width="100%" cellpadding="0" cellspacing="0">${movers.map(moverRow).join("")}</table>`;
 }
 
 function bulletList(items) {
-  if (!items?.length) return `<div style="font-size:13px;color:rgba(245,240,232,0.55);">Nothing new in this slice today.</div>`;
+  if (!items?.length) return `<div style="font-size:13px;color:#4a453b;">Nothing new in this slice today.</div>`;
   return items
     .map((it) => {
       const href = it.url ? ` href="${escapeHtml(it.url)}"` : "";
       const tag = href ? "a" : "div";
       const style = href
-        ? "display:block;text-decoration:none;color:inherit;padding:8px 0;border-top:1px solid rgba(245,240,232,0.06);"
-        : "display:block;padding:8px 0;border-top:1px solid rgba(245,240,232,0.06);";
+        ? "display:block;text-decoration:none;color:inherit;padding:8px 0;border-top:1px solid #d8d1c1;"
+        : "display:block;padding:8px 0;border-top:1px solid #d8d1c1;";
       return `<${tag}${href} style="${style}">
-        <div style="font-size:13px;line-height:1.45;color:#f5f0e8;margin-bottom:3px;">${escapeHtml(it.title)}</div>
-        ${it.meta ? `<div style="font-size:11px;color:rgba(245,240,232,0.45);">${escapeHtml(it.meta)}</div>` : ""}
+        <div style="font-size:13px;line-height:1.45;color:#16140f;margin-bottom:3px;">${escapeHtml(it.title)}</div>
+        ${it.meta ? `<div style="font-size:11px;color:#5c564a;">${escapeHtml(it.meta)}</div>` : ""}
       </${tag}>`;
     })
     .join("");
@@ -126,12 +126,12 @@ function uraniumBlock(uranium) {
   const up = (pct ?? 0) >= 0;
   return `<div style="display:flex;justify-content:space-between;align-items:center;">
     <div>
-      <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#d4a54a;font-weight:700;margin-bottom:4px;">Uranium spot</div>
-      <div style="font-size:12px;color:rgba(245,240,232,0.55);">${escapeHtml(uranium.source || "Spot proxy")}</div>
+      <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#1c44c9;font-weight:700;margin-bottom:4px;">Uranium spot</div>
+      <div style="font-size:12px;color:#4a453b;">${escapeHtml(uranium.source || "Spot proxy")}</div>
     </div>
     <div style="text-align:right;">
-      <div style="font-family:'Courier New',monospace;font-size:18px;color:#f5f0e8;font-weight:700;">${formatPrice(price)}</div>
-      ${Number.isFinite(pct) ? `<div style="font-family:'Courier New',monospace;font-size:12px;font-weight:700;color:${up ? "#4ade80" : "#f87171"};">${formatPercent(pct)}</div>` : ""}
+      <div style="font-family:'Courier New',monospace;font-size:18px;color:#16140f;font-weight:700;">${formatPrice(price)}</div>
+      ${Number.isFinite(pct) ? `<div style="font-family:'Courier New',monospace;font-size:12px;font-weight:700;color:${up ? "#0b6b3a" : "#a3231a"};">${formatPercent(pct)}</div>` : ""}
     </div>
   </div>`;
 }
@@ -168,7 +168,7 @@ export function buildDailyEmail({ user, email, movers = [], filings = [], operat
   const subject = `Nuclear Pulse · ${dateStr} · ${topSignal}`;
 
   const watchlistLine = watchlistLabels.length
-    ? `<div style="font-size:12px;color:rgba(245,240,232,0.5);margin-bottom:18px;">Tracking ${escapeHtml(watchlistLabels.slice(0, 6).join(", "))}${watchlistLabels.length > 6 ? ` and ${watchlistLabels.length - 6} more` : ""}.</div>`
+    ? `<div style="font-size:12px;color:#4a453b;margin-bottom:18px;">Tracking ${escapeHtml(watchlistLabels.slice(0, 6).join(", "))}${watchlistLabels.length > 6 ? ` and ${watchlistLabels.length - 6} more` : ""}.</div>`
     : "";
 
   const bodyHtml = [
@@ -251,12 +251,12 @@ export function buildWeeklyEmail({ email, headlines = [], movers = [], uranium =
 
 export function buildWelcomeEmail({ email }) {
   const subject = "Welcome to Nuclear Pulse";
-  const p = (text) => `<p style="font-size:15px;line-height:1.65;color:rgba(245,240,232,0.82);margin:0 0 16px;">${text}</p>`;
-  const link = (path, label) => `<a href="${SITE_URL}${path}" style="color:#d4a54a;">${label}</a>`;
+  const p = (text) => `<p style="font-size:15px;line-height:1.65;color:#2e2a22;margin:0 0 16px;">${text}</p>`;
+  const link = (path, label) => `<a href="${SITE_URL}${path}" style="color:#1c44c9;">${label}</a>`;
 
   const bodyHtml = [
     p("Thanks for subscribing. Every Sunday you'll get one short email: the week's most important nuclear news, the uranium price, and the stocks that moved most."),
-    moduleBlock("While you wait for Sunday", `<div style="font-size:14px;line-height:1.8;color:#f5f0e8;">
+    moduleBlock("While you wait for Sunday", `<div style="font-size:14px;line-height:1.8;color:#16140f;">
       ${link("/", "The reactor globe")}: every plant on Earth, clickable<br/>
       ${link("/uranium-stocks", "Uranium and nuclear stocks")}: 39 names with live prices<br/>
       ${link("/reactor-outages", "US reactor outages today")}: straight from the NRC<br/>
@@ -264,7 +264,7 @@ export function buildWelcomeEmail({ email }) {
     </div>`),
     p(`If you want the full picture every day, the ${link("/terminal", "Nuclear Pulse terminal")} adds insider buying from SEC filings, daily status for every US reactor, and prediction-market odds. The first 7 days are free.`),
     p("One question: what part of nuclear do you follow most closely? Hit reply and tell me. I read every reply, and it shapes what goes into the briefing."),
-    `<p style="font-size:15px;line-height:1.65;color:rgba(245,240,232,0.82);margin:0;">Adam<br/>Nuclear Pulse</p>`,
+    `<p style="font-size:15px;line-height:1.65;color:#2e2a22;margin:0;">Adam<br/>Nuclear Pulse</p>`,
   ].join("");
 
   const html = shell({
@@ -306,9 +306,9 @@ export function buildConfirmEmail({ email }) {
   const subject = "Confirm your Nuclear Pulse subscription";
   const url = confirmUrl(email);
   const bodyHtml = [
-    `<p style="font-size:15px;line-height:1.65;color:rgba(245,240,232,0.82);margin:0 0 20px;">Someone (hopefully you) asked to get the Nuclear Pulse weekly briefing at this address. Confirm and the first one arrives on Sunday.</p>`,
-    `<p style="margin:0 0 20px;"><a href="${url}" style="display:inline-block;padding:12px 22px;border-radius:4px;background:#d4a54a;color:#111;text-decoration:none;font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">Confirm subscription</a></p>`,
-    `<p style="font-size:13px;line-height:1.6;color:rgba(245,240,232,0.5);margin:0;">The link works for 7 days.</p>`,
+    `<p style="font-size:15px;line-height:1.65;color:#2e2a22;margin:0 0 20px;">Someone (hopefully you) asked to get the Nuclear Pulse weekly briefing at this address. Confirm and the first one arrives on Sunday.</p>`,
+    `<p style="margin:0 0 20px;"><a href="${url}" style="display:inline-block;padding:12px 22px;border-radius:4px;background:#1c44c9;color:#ffffff;text-decoration:none;font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">Confirm subscription</a></p>`,
+    `<p style="font-size:13px;line-height:1.6;color:#4a453b;margin:0;">The link works for 7 days.</p>`,
   ].join("");
 
   const html = shell({
@@ -340,10 +340,10 @@ export function buildPlantChangesEmail({ changes = [], headlines = [], deployTri
   const bodyHtml = [
     changes.length ? moduleBlock("IAEA PRIS changes since yesterday", changeList) : "",
     changes.length
-      ? `<p style="font-size:13px;line-height:1.6;color:rgba(245,240,232,0.6);margin:0 0 18px;">${deployTriggered ? "The site is rebuilding with this data now; it will be live in about a minute." : "The site could not be rebuilt automatically; it will pick these up on the next deploy."}</p>`
+      ? `<p style="font-size:13px;line-height:1.6;color:#4a453b;margin:0 0 18px;">${deployTriggered ? "The site is rebuilding with this data now; it will be live in about a minute." : "The site could not be rebuilt automatically; it will pick these up on the next deploy."}</p>`
       : "",
     headlines.length ? moduleBlock("Milestones in the news (the IAEA may not have updated yet)", newsList) : "",
-    `<p style="font-size:13px;line-height:1.6;color:rgba(245,240,232,0.6);margin:0;">Each of these is a ready-made post: "First concrete at …", "… connected to the grid".</p>`,
+    `<p style="font-size:13px;line-height:1.6;color:#4a453b;margin:0;">Each of these is a ready-made post: "First concrete at …", "… connected to the grid".</p>`,
   ].join("");
   const html = shell({ title: subject, bodyHtml, footerNote: "Owner-only email from the Nuclear Pulse morning job." });
   const text = [
@@ -357,10 +357,10 @@ export function buildPlantChangesEmail({ changes = [], headlines = [], deployTri
 
 function funnelBlock(funnel) {
   if (!funnel) return "";
-  const stat = (value, label) => `<td style="padding:0 18px 0 0;vertical-align:top;"><div style="font-family:Georgia,serif;font-size:22px;color:#f5f0e8;">${escapeHtml(String(value ?? "—"))}</div><div style="font-size:11px;color:rgba(245,240,232,0.5);text-transform:uppercase;letter-spacing:0.06em;">${label}</div></td>`;
+  const stat = (value, label) => `<td style="padding:0 18px 0 0;vertical-align:top;"><div style="font-family:Georgia,serif;font-size:22px;color:#16140f;">${escapeHtml(String(value ?? "—"))}</div><div style="font-size:11px;color:#4a453b;text-transform:uppercase;letter-spacing:0.06em;">${label}</div></td>`;
   const sources = funnel.topSources?.length
-    ? `<div style="margin-top:12px;font-size:12px;line-height:1.7;color:rgba(245,240,232,0.72);">Sign-ups by source, last 30 days: ${funnel.topSources.map((s) => `${escapeHtml(s.label)} <strong style="color:#d4a54a;">${s.count}</strong>`).join(" · ")}</div>`
-    : `<div style="margin-top:12px;font-size:12px;color:rgba(245,240,232,0.5);">No sign-ups in the last 30 days yet.</div>`;
+    ? `<div style="margin-top:12px;font-size:12px;line-height:1.7;color:#4a453b;">Sign-ups by source, last 30 days: ${funnel.topSources.map((s) => `${escapeHtml(s.label)} <strong style="color:#1c44c9;">${s.count}</strong>`).join(" · ")}</div>`
+    : `<div style="margin-top:12px;font-size:12px;color:#4a453b;">No sign-ups in the last 30 days yet.</div>`;
   return moduleBlock("Funnel", `<table role="presentation" cellpadding="0" cellspacing="0"><tr>${stat(funnel.subscribers, "Subscribers")}${stat(`+${funnel.new7}`, "This week")}${stat(funnel.terminalMembers, "Terminal members")}</tr></table>${sources}`);
 }
 
@@ -374,8 +374,8 @@ function funnelText(funnel) {
 function feedHealthBlock(feedHealth) {
   const problems = (feedHealth || []).filter((f) => f.status !== "ok");
   if (!problems.length) return "";
-  const rows = problems.map((f) => `${escapeHtml(f.name)}: <strong style="color:${f.status === "error" ? "#f87171" : "#d4a54a"};">${f.status === "error" ? `error (${escapeHtml(f.error || "unknown")})` : "nothing in the last 30 days"}</strong>`).join("<br/>");
-  return moduleBlock("News feeds to check", `<div style="font-size:12px;line-height:1.8;color:rgba(245,240,232,0.78);">${rows}</div>`);
+  const rows = problems.map((f) => `${escapeHtml(f.name)}: <strong style="color:${f.status === "error" ? "#a3231a" : "#1c44c9"};">${f.status === "error" ? `error (${escapeHtml(f.error || "unknown")})` : "nothing in the last 30 days"}</strong>`).join("<br/>");
+  return moduleBlock("News feeds to check", `<div style="font-size:12px;line-height:1.8;color:#2e2a22;">${rows}</div>`);
 }
 
 function feedHealthText(feedHealth) {
@@ -386,25 +386,25 @@ function feedHealthText(feedHealth) {
 
 export function buildXDraftsEmail({ drafts, intentUrl, funnel = null, cardUrl = null, shareUrl = null, feedHealth = null }) {
   const subject = `X drafts for today (${drafts.length})`;
-  const button = (href, label) => `<a href="${escapeHtml(href)}" style="display:inline-block;padding:9px 16px;border-radius:4px;background:#d4a54a;color:#111;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">${label}</a>`;
-  const step = (n, label) => `<div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(245,240,232,0.5);font-weight:700;margin:16px 0 8px;">${n}. ${label}</div>`;
+  const button = (href, label) => `<a href="${escapeHtml(href)}" style="display:inline-block;padding:9px 16px;border-radius:4px;background:#1c44c9;color:#ffffff;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">${label}</a>`;
+  const step = (n, label) => `<div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#4a453b;font-weight:700;margin:16px 0 8px;">${n}. ${label}</div>`;
 
   const blocks = drafts.map((d) => {
     const image = d.card && cardUrl ? cardUrl(d.card) : null;
     return moduleBlock(d.postAt ? `${d.kind} · post ${d.postAt}` : d.kind, `
-    ${shareUrl ? `<div style="margin:0 0 6px;">${button(shareUrl(d), "Open posting page")} <span style="font-size:12px;color:rgba(245,240,232,0.55);margin-left:8px;">copy the image and text in one tap each</span></div>` : ""}
-    ${image ? `${step(1, "Save the image")}<a href="${escapeHtml(image)}"><img src="${escapeHtml(image)}" width="536" alt="${escapeHtml(d.kind)} chart" style="display:block;width:100%;max-width:536px;height:auto;border-radius:6px;border:1px solid rgba(245,240,232,0.08);" /></a>
-    <div style="font-size:12px;margin-top:6px;"><a href="${escapeHtml(image)}" style="color:#d4a54a;">Open full size to save</a></div>` : ""}
+    ${shareUrl ? `<div style="margin:0 0 6px;">${button(shareUrl(d), "Open posting page")} <span style="font-size:12px;color:#4a453b;margin-left:8px;">copy the image and text in one tap each</span></div>` : ""}
+    ${image ? `${step(1, "Save the image")}<a href="${escapeHtml(image)}"><img src="${escapeHtml(image)}" width="536" alt="${escapeHtml(d.kind)} chart" style="display:block;width:100%;max-width:536px;height:auto;border-radius:6px;border:1px solid #d8d1c1;" /></a>
+    <div style="font-size:12px;margin-top:6px;"><a href="${escapeHtml(image)}" style="color:#1c44c9;">Open full size to save</a></div>` : ""}
     ${step(image ? 2 : 1, image ? "Post it, with the image attached" : "Post it")}
-    <div style="font-size:14px;line-height:1.6;color:#f5f0e8;white-space:pre-wrap;">${escapeHtml(d.text)}</div>
-    <div style="margin-top:12px;">${button(intentUrl(d.text), "Post on X")} <span style="font-size:11px;color:rgba(245,240,232,0.4);margin-left:10px;">${xLength(d.text)}/280</span></div>
+    <div style="font-size:14px;line-height:1.6;color:#16140f;white-space:pre-wrap;">${escapeHtml(d.text)}</div>
+    <div style="margin-top:12px;">${button(intentUrl(d.text), "Post on X")} <span style="font-size:11px;color:#5c564a;margin-left:10px;">${xLength(d.text)}/280</span></div>
     ${d.reply ? `${step(image ? 3 : 2, "Reply to your own post with the link")}
-    <div style="font-size:13px;line-height:1.6;color:#f5f0e8;white-space:pre-wrap;background:#100d09;border:1px dashed rgba(212,165,74,0.35);border-radius:4px;padding:10px 12px;font-family:'Courier New',monospace;">${escapeHtml(d.reply)}</div>` : ""}`);
+    <div style="font-size:13px;line-height:1.6;color:#16140f;white-space:pre-wrap;background:#f5f2ea;border:1px dashed #9fb1ec;border-radius:4px;padding:10px 12px;font-family:'Courier New',monospace;">${escapeHtml(d.reply)}</div>` : ""}`);
   }).join("");
 
   const html = shell({
     title: subject,
-    bodyHtml: `<p style="font-size:14px;line-height:1.6;color:rgba(245,240,232,0.72);margin:0 0 18px;">Weekdays: post two, at 8:00am and 12:30pm ET, plus any reactor milestone right away. Weekends: one, mid-morning. Attach the image, post, then reply to your own post with the link: the post is built to get replies, which X ranks far above link clicks. Links are tagged, so the sign-ups they bring in show up in the funnel below.</p>${funnelBlock(funnel)}${feedHealthBlock(feedHealth)}${blocks}`,
+    bodyHtml: `<p style="font-size:14px;line-height:1.6;color:#4a453b;margin:0 0 18px;">Weekdays: post two, at 8:00am and 12:30pm ET, plus any reactor milestone right away. Weekends: one, mid-morning. Attach the image, post, then reply to your own post with the link: the post is built to get replies, which X ranks far above link clicks. Links are tagged, so the sign-ups they bring in show up in the funnel below.</p>${funnelBlock(funnel)}${feedHealthBlock(feedHealth)}${blocks}`,
     footerNote: "Owner-only email from the Nuclear Pulse morning job.",
   });
   const text = funnelText(funnel) + feedHealthText(feedHealth) + drafts.map((d) => [
@@ -438,14 +438,14 @@ export function buildAlertEmail({ alert, observed, email, user }) {
 
   const bodyHtml = [
     moduleBlock("Alert fired", `
-      <div style="font-family:Georgia,serif;font-size:22px;line-height:1.3;color:#f5f0e8;margin-bottom:10px;">${escapeHtml(alert.target_label)}</div>
-      <div style="font-size:14px;color:rgba(245,240,232,0.72);line-height:1.6;">
-        Your <strong style="color:#d4a54a;">${escapeHtml(alert.alert_type.replace("_", " "))}</strong> trigger ${escapeHtml(direction)} <strong>${escapeHtml(thresholdStr)}</strong>.
+      <div style="font-family:Georgia,serif;font-size:22px;line-height:1.3;color:#16140f;margin-bottom:10px;">${escapeHtml(alert.target_label)}</div>
+      <div style="font-size:14px;color:#4a453b;line-height:1.6;">
+        Your <strong style="color:#1c44c9;">${escapeHtml(alert.alert_type.replace("_", " "))}</strong> trigger ${escapeHtml(direction)} <strong>${escapeHtml(thresholdStr)}</strong>.
         ${observedStr ? `Currently at <strong>${escapeHtml(observedStr)}</strong>.` : ""}
       </div>
     `),
     `<div style="text-align:center;margin:8px 0 0;">
-      <a href="${SITE_URL}/terminal" style="font-size:12px;color:#d4a54a;text-decoration:underline;">Open the terminal →</a>
+      <a href="${SITE_URL}/terminal" style="font-size:12px;color:#1c44c9;text-decoration:underline;">Open the terminal →</a>
     </div>`,
   ].join("");
 

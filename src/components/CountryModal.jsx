@@ -40,7 +40,7 @@ export default function CountryModal({ country, onClose, onSelectPlant }) {
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         transition={{ type: "spring", damping: 25, stiffness: 300 }}
         style={{
-          background: "var(--np-bg)", borderRadius: 20, maxWidth: 720, width: "100%",
+          background: "var(--np-bg)", borderRadius: "var(--np-r-md)", borderTop: "3px double var(--np-rule)", maxWidth: 720, width: "100%",
           position: "relative", border: "1px solid rgba(var(--np-accent-rgb), 0.2)",
           boxShadow: "0 24px 80px rgba(0,0,0,0.15)", overflow: "hidden",
           maxHeight: "85vh", display: "flex", flexDirection: "column",

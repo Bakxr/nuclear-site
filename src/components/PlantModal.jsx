@@ -89,7 +89,7 @@ export default function PlantModal({ plant, onClose }) {
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         transition={{ type: "spring", damping: 25, stiffness: 300 }}
         style={{
-          background: "var(--np-bg)", borderRadius: 20, maxWidth: 780, width: "100%",
+          background: "var(--np-bg)", borderRadius: "var(--np-r-md)", borderTop: "3px double var(--np-rule)", maxWidth: 780, width: "100%",
           position: "relative", border: "1px solid rgba(var(--np-accent-rgb), 0.2)",
           boxShadow: "0 24px 80px rgba(0,0,0,0.15)", overflow: "hidden",
           maxHeight: "85vh", display: "flex", flexDirection: "column",
@@ -100,7 +100,7 @@ export default function PlantModal({ plant, onClose }) {
           position: "absolute", top: 12, right: 12, width: 36, height: 36,
           background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)",
           border: "none", borderRadius: "50%", fontSize: 22, cursor: "pointer",
-          color: "rgba(255,255,255,0.9)", lineHeight: 1, display: "flex",
+          color: "#fff", lineHeight: 1, display: "flex",
           alignItems: "center", justifyContent: "center", zIndex: 10,
         }}>
           &times;
@@ -110,12 +110,12 @@ export default function PlantModal({ plant, onClose }) {
         <div className="np-plant-modal-body" style={{ overflowY: "auto", flex: 1 }}>
 
           {/* === HERO PHOTO — inside scroll so it slides away === */}
-          <div style={{ position: "relative", width: "100%", aspectRatio: "16/9", background: "#1e1912", overflow: "hidden", flexShrink: 0 }}>
+          <div style={{ position: "relative", width: "100%", aspectRatio: "16/9", background: "var(--np-surface)", overflow: "hidden", flexShrink: 0 }}>
             {/* Loading skeleton */}
             {imageLoading && (
               <div style={{
                 position: "absolute", inset: 0,
-                background: "linear-gradient(135deg, #2a241c 0%, #3a342a 50%, #2a241c 100%)",
+                background: "var(--np-bg-alt)",
                 backgroundSize: "200% 200%",
                 animation: "shimmer 1.5s ease infinite",
               }} />
@@ -138,7 +138,7 @@ export default function PlantModal({ plant, onClose }) {
             {!imageLoading && !imageUrl && (
               <div style={{
                 position: "absolute", inset: 0,
-                background: "linear-gradient(135deg, #1e1912 0%, #2a241c 40%, #3a342a 100%)",
+                background: "var(--np-bg-alt)",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
                 <svg width="64" height="64" viewBox="0 0 64 64" opacity="0.3">
@@ -157,20 +157,20 @@ export default function PlantModal({ plant, onClose }) {
               background: "linear-gradient(transparent, rgba(14,12,10,0.85))",
             }} />
 
-            {/* Plant name overlaid */}
+            {/* Plant name overlaid on the photo: always light text on the dark gradient. */}
             <div style={{ position: "absolute", bottom: 16, left: 24, right: 60, zIndex: 1 }}>
-              <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--np-accent)", fontWeight: 700, marginBottom: 4 }}>
+              <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.85)", fontWeight: 700, marginBottom: 4 }}>
                 Nuclear Power Station
               </div>
               <h3 id="plant-modal-title" style={{ fontFamily: "var(--np-font-display)", fontSize: "clamp(22px, 4vw, 32px)", fontWeight: 500, margin: 0, color: "#fff", lineHeight: 1.15 }}>
                 {plant.name}
               </h3>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6 }}>
-                <span style={{ color: "rgba(255,255,255,0.8)", fontSize: 14 }}>{plant.country}</span>
+                <span style={{ color: "rgba(255,255,255,0.85)", fontSize: 14 }}>{plant.country}</span>
                 <span style={{
                   display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 10px",
-                  borderRadius: 20, fontSize: 11, fontWeight: 600, color: statusColor,
-                  background: "rgba(255,255,255,0.12)", backdropFilter: "blur(4px)",
+                  borderRadius: 20, fontSize: 11, fontWeight: 600, color: "#fff",
+                  background: "rgba(0,0,0,0.45)", backdropFilter: "blur(4px)",
                 }}>
                   <span style={{ width: 7, height: 7, borderRadius: "50%", background: statusColor }} />
                   {plant.status}
@@ -288,7 +288,7 @@ export default function PlantModal({ plant, onClose }) {
               <button onClick={copyLink} style={{
                 background: "none", border: "1px solid var(--np-border)", borderRadius: 6,
                 padding: "4px 10px", fontSize: 12, cursor: "pointer", fontFamily: "var(--np-font-sans)",
-                color: copied ? "#4ade80" : "var(--np-text-muted)", transition: "all 0.2s",
+                color: copied ? "var(--np-up)" : "var(--np-text-muted)", transition: "all 0.2s",
                 display: "flex", alignItems: "center", gap: 5,
               }}>
                 <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor">

@@ -44,25 +44,25 @@ export default function StockModal({ stock, onClose }) {
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         transition={{ type: "spring", damping: 25, stiffness: 300 }}
         style={{
-          background: "var(--np-dark-bg)", borderRadius: 20, padding: "36px 40px", maxWidth: 640, width: "100%",
-          color: "var(--np-dark-text)", border: "1px solid rgba(var(--np-accent-rgb), 0.15)", position: "relative",
+          background: "var(--np-bg)", borderRadius: "var(--np-r-md)", borderTop: "3px double var(--np-rule)", padding: "36px 40px", maxWidth: 640, width: "100%",
+          color: "var(--np-text)", border: "1px solid rgba(var(--np-accent-rgb), 0.15)", position: "relative",
           boxShadow: "0 24px 80px rgba(0,0,0,0.5)",
         }}
       >
         <button aria-label="Close stock details" onClick={onClose} style={{
           position: "absolute", top: 16, right: 20, background: "none", border: "none",
-          color: "var(--np-dark-text-muted)", fontSize: 28, cursor: "pointer", lineHeight: 1,
+          color: "var(--np-text-muted)", fontSize: 28, cursor: "pointer", lineHeight: 1,
         }}>×</button>
 
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24, paddingRight: 36 }}>
           <div>
-            <div style={{ fontFamily: "var(--np-font-mono)", fontSize: 13, color: "var(--np-accent)", fontWeight: 600, letterSpacing: "0.08em", marginBottom: 4 }}>{stock.sector}</div>
-            <div id="stock-modal-title" style={{ fontFamily: "var(--np-font-mono)", fontSize: 28, fontWeight: 700, color: "var(--np-accent)" }}>{stock.ticker}</div>
-            <div style={{ fontSize: 14, color: "rgba(245,240,232,0.5)", marginTop: 2 }}>{stock.name}</div>
+            <div style={{ fontFamily: "var(--np-font-mono)", fontSize: 12, color: "var(--np-accent-ink)", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>{stock.sector}</div>
+            <div id="stock-modal-title" style={{ fontFamily: "var(--np-font-mono)", fontSize: 28, fontWeight: 700, color: "var(--np-text)" }}>{stock.ticker}</div>
+            <div style={{ fontSize: 14, color: "var(--np-text-muted)", marginTop: 2 }}>{stock.name}</div>
           </div>
           <div style={{ textAlign: "right" }}>
-            <div style={{ fontFamily: "var(--np-font-display)", fontSize: 36, fontWeight: 700 }}>${stock.price.toFixed(2)}</div>
-            <div style={{ color: stock.change >= 0 ? "#4ade80" : "#f87171", fontSize: 14, fontFamily: "var(--np-font-mono)", marginTop: 2 }}>
+            <div style={{ fontFamily: "var(--np-font-display)", fontSize: 36, fontWeight: 500 }}>${stock.price.toFixed(2)}</div>
+            <div style={{ color: stock.change >= 0 ? "var(--np-up)" : "var(--np-down)", fontSize: 14, fontFamily: "var(--np-font-mono)", marginTop: 2 }}>
               {stock.change >= 0 ? "+" : ""}{stock.change.toFixed(2)} ({stock.change >= 0 ? "+" : ""}{stock.pct.toFixed(2)}%) today
             </div>
           </div>
@@ -72,13 +72,13 @@ export default function StockModal({ stock, onClose }) {
         <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
           {["1W", "1M", "3M", "6M"].map(r => (
             <button key={r} onClick={() => setTimeRange(r)} style={{
-              background: timeRange === r ? "rgba(var(--np-accent-rgb), 0.2)" : "rgba(245,240,232,0.05)",
-              border: `1px solid ${timeRange === r ? "rgba(var(--np-accent-rgb), 0.4)" : "rgba(245,240,232,0.08)"}`,
-              borderRadius: 8, padding: "6px 16px", color: timeRange === r ? "var(--np-accent)" : "rgba(245,240,232,0.5)",
+              background: timeRange === r ? "rgba(var(--np-accent-rgb), 0.2)" : "var(--np-surface-dim)",
+              border: `1px solid ${timeRange === r ? "rgba(var(--np-accent-rgb), 0.4)" : "var(--np-border)"}`,
+              borderRadius: 8, padding: "6px 16px", color: timeRange === r ? "var(--np-accent)" : "var(--np-text-muted)",
               fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "var(--np-font-mono)",
             }}>{r}</button>
           ))}
-          <div style={{ marginLeft: "auto", fontSize: 13, color: isUp ? "#4ade80" : "#f87171", fontFamily: "var(--np-font-mono)", alignSelf: "center" }}>
+          <div style={{ marginLeft: "auto", fontSize: 13, color: isUp ? "var(--np-up)" : "var(--np-down)", fontFamily: "var(--np-font-mono)", alignSelf: "center" }}>
             {isUp ? "+" : ""}{rangePct}% ({timeRange})
           </div>
         </div>
@@ -89,35 +89,36 @@ export default function StockModal({ stock, onClose }) {
             <AreaChart data={rangeData}>
               <defs>
                 <linearGradient id="stockGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={isUp ? "#4ade80" : "#f87171"} stopOpacity={0.3} />
-                  <stop offset="100%" stopColor={isUp ? "#4ade80" : "#f87171"} stopOpacity={0} />
+                  <stop offset="0%" stopColor={isUp ? "var(--np-up)" : "var(--np-down)"} stopOpacity={0.3} />
+                  <stop offset="100%" stopColor={isUp ? "var(--np-up)" : "var(--np-down)"} stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <XAxis dataKey="date" tick={{ fontSize: 10, fill: "rgba(245,240,232,0.3)" }} axisLine={false} tickLine={false} interval={Math.floor(rangeData.length / 5)} />
-              <YAxis domain={[minP * 0.98, maxP * 1.02]} tick={{ fontSize: 10, fill: "rgba(245,240,232,0.3)" }} axisLine={false} tickLine={false} tickFormatter={v => `$${v.toFixed(0)}`} />
-              <Tooltip contentStyle={{ background: "#2a241c", border: "1px solid rgba(var(--np-accent-rgb), 0.3)", borderRadius: 8, fontSize: 12, color: "#f5f0e8" }}
+              <XAxis dataKey="date" tick={{ fontSize: 10, fill: "var(--np-text-faint)" }} axisLine={false} tickLine={false} interval={Math.floor(rangeData.length / 5)} />
+              <YAxis domain={[minP * 0.98, maxP * 1.02]} tick={{ fontSize: 10, fill: "var(--np-text-faint)" }} axisLine={false} tickLine={false} tickFormatter={v => `$${v.toFixed(0)}`} />
+              <Tooltip contentStyle={{ background: "var(--np-surface)", border: "1px solid rgba(var(--np-accent-rgb), 0.3)", borderRadius: 8, fontSize: 12, color: "var(--np-text)" }}
                        formatter={(v) => [`$${v.toFixed(2)}`, "Price"]} labelStyle={{ color: "var(--np-accent)" }} />
-              <Area type="monotone" dataKey="price" stroke={isUp ? "#4ade80" : "#f87171"} strokeWidth={2} fill="url(#stockGrad)" />
+              <Area type="monotone" dataKey="price" stroke={isUp ? "var(--np-up)" : "var(--np-down)"} strokeWidth={2} fill="url(#stockGrad)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
 
         {/* Details grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 20 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginBottom: 20 }}>
+          {/* Only facts we actually have: no blank tiles. */}
           {[
-            { label: "Market Cap", val: stock.mktCap },
-            { label: "P/E Ratio", val: stock.pe },
+            { label: "Market cap", val: stock.mktCap },
+            { label: "P/E ratio", val: stock.pe },
             { label: "Sector", val: stock.sector },
-          ].map((item, i) => (
-            <div key={i} style={{ background: "rgba(245,240,232,0.04)", borderRadius: 10, padding: "12px 14px" }}>
-              <div style={{ fontSize: 11, color: "rgba(245,240,232,0.4)", marginBottom: 4 }}>{item.label}</div>
+          ].filter((item) => item.val !== undefined && item.val !== null && item.val !== "").map((item, i) => (
+            <div key={i} style={{ background: "var(--np-surface-dim)", borderRadius: "var(--np-r-sm)", padding: "12px 14px" }}>
+              <div style={{ fontSize: 11, color: "var(--np-text-faint)", marginBottom: 4 }}>{item.label}</div>
               <div style={{ fontSize: 15, fontWeight: 600 }}>{item.val}</div>
             </div>
           ))}
         </div>
 
-        <p style={{ fontSize: 13, lineHeight: 1.6, color: "rgba(245,240,232,0.6)", margin: 0 }}>{stock.desc}</p>
-        <p style={{ fontSize: 10, color: "rgba(245,240,232,0.2)", marginTop: 16 }}>Prices via Finnhub; daily history via Yahoo Finance. For information only — not investment advice.</p>
+        <p style={{ fontSize: 13, lineHeight: 1.6, color: "var(--np-text-muted)", margin: 0 }}>{stock.desc}</p>
+        <p style={{ fontSize: 10, color: "var(--np-text-faint)", marginTop: 16 }}>Prices via Finnhub; daily history via Yahoo Finance. For information only — not investment advice.</p>
       </motion.div>
     </motion.div>
   );
