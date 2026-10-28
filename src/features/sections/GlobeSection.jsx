@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { STATUS_TEXT_COLORS } from "../../data/constants.js";
 import { SUPPLY_STAGE_COLORS } from "../../data/supplySites.js";
 import { NUCLEAR_PLANTS } from "../../data/plants.js";
 import { URANIUM_SUPPLY_SITES } from "../../data/supplySites.js";
 import ErrorBoundary from "../../components/ErrorBoundary.jsx";
+import PrintGlobe from "../front/PrintGlobe.jsx";
 import PrintMap from "../front/PrintMap.jsx";
 import { SectionHeader } from "./shared.jsx";
 
@@ -11,9 +13,33 @@ const LAYERS = [
   { key: "uranium", label: "Uranium sites" },
 ];
 
-// The reactor map: a flat printed map (PrintMap) beside a ruled list. The 3D
-// globe now lives only in the terminal. Props are unchanged from the globe
-// version so App's filter state still drives everything.
+const VIEWS = [
+  { key: "globe", label: "Globe" },
+  { key: "flat", label: "Flat" },
+];
+
+// "By the numbers" for whatever the map is showing.
+function figures(items, reactors) {
+  const countries = new Set(items.map((item) => item.country)).size;
+  if (!reactors) {
+    return [
+      { value: items.length, label: "sites" },
+      { value: countries, label: countries === 1 ? "country" : "countries" },
+      { value: items.filter((item) => /mine/i.test(item.stage || "")).length, label: "mines" },
+    ];
+  }
+  const operating = items.filter((item) => item.status === "Operating");
+  const gigawatts = operating.reduce((sum, item) => sum + (Number(item.capacity) || 0), 0) / 1000;
+  return [
+    { value: gigawatts >= 10 ? Math.round(gigawatts) : gigawatts.toFixed(1), unit: "GW", label: "operating" },
+    { value: operating.length, label: operating.length === 1 ? "plant running" : "plants running" },
+    { value: items.filter((item) => item.status === "Construction").length, label: "under construction", pulse: true },
+    { value: countries, label: countries === 1 ? "country" : "countries" },
+  ];
+}
+
+// The reactor map: an engraved globe (PrintGlobe) or a flat printed map
+// (PrintMap) beside a ruled list. App's filter state drives both.
 export default function GlobeSection({
   sectionRef,
   globeLayer,
@@ -42,6 +68,7 @@ export default function GlobeSection({
   const totalCount = reactors ? NUCLEAR_PLANTS.length : URANIUM_SUPPLY_SITES.length;
   const noun = reactors ? "plants" : "sites";
   const narrowed = activeGlobeItems.length < totalCount;
+  const [view, setView] = useState("globe");
 
   return (
     <ErrorBoundary section="Map">
@@ -52,7 +79,23 @@ export default function GlobeSection({
           title={reactors ? "Every reactor on Earth" : "Where the uranium comes from"}
         />
 
+        <dl className="np-figures">
+          {figures(activeGlobeItems, reactors).map((figure) => (
+            <div key={figure.label}>
+              <dt>{figure.pulse ? <span className="np-figures-pulse" aria-hidden="true" /> : null}{figure.label}</dt>
+              <dd className="np-num">{figure.value}{figure.unit ? <small> {figure.unit}</small> : null}</dd>
+            </div>
+          ))}
+        </dl>
+
         <div className="np-map-toolbar">
+          <div role="group" aria-label="Map view" className="np-segmented">
+            {VIEWS.map((option) => (
+              <button key={option.key} type="button" aria-pressed={view === option.key} onClick={() => setView(option.key)}>
+                {option.label}
+              </button>
+            ))}
+          </div>
           <div role="group" aria-label="Map layer" className="np-segmented">
             {LAYERS.map((layer) => (
               <button
@@ -112,7 +155,11 @@ export default function GlobeSection({
         </div>
 
         <div className="np-map-layout">
-          <PrintMap items={activeGlobeItems} mode={globeLayer} totalCount={totalCount} onSelectPlant={setSelectedPlant} />
+          {view === "globe" ? (
+            <PrintGlobe items={activeGlobeItems} mode={globeLayer} totalCount={totalCount} onSelectPlant={setSelectedPlant} />
+          ) : (
+            <PrintMap items={activeGlobeItems} mode={globeLayer} totalCount={totalCount} onSelectPlant={setSelectedPlant} />
+          )}
 
           <div className="np-map-list">
             <ul ref={globePanelListRef}>

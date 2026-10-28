@@ -751,6 +751,107 @@
   color: var(--np-accent-ink);
 }
 
+/* ---------- Print globe ---------- */
+.np-globe {
+  border-top: 0;
+  border-bottom: 0;
+  background: none;
+}
+.np-globe canvas {
+  display: block;
+  width: 100%;
+  touch-action: pan-y;
+  user-select: none;
+}
+.np-globe-readout {
+  position: absolute;
+  left: 0;
+  top: 12px;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: var(--np-text-faint);
+}
+.np-globe .np-map-hint {
+  bottom: 4px;
+}
+
+/* ---------- By the numbers (map section) ---------- */
+.np-figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  margin: 0 0 20px;
+  border-bottom: 1px solid var(--np-hairline);
+}
+.np-figures > div {
+  padding: 4px 20px 16px 0;
+}
+.np-figures > div + div {
+  padding-left: 20px;
+  border-left: 1px solid var(--np-hairline);
+}
+.np-figures dd {
+  order: -1;
+  margin: 0;
+  font-family: var(--np-font-display);
+  font-size: clamp(34px, 4vw, 48px);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--np-text);
+}
+.np-figures > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.np-figures dd small {
+  font-family: var(--np-font-sans);
+  font-size: 15px;
+  letter-spacing: 0;
+  color: var(--np-text-muted);
+}
+.np-figures dt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--np-text-muted);
+}
+.np-figures-pulse {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--np-c-amber);
+}
+.np-figures-pulse::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: 50%;
+  border: 1.5px solid var(--np-c-amber);
+  animation: np-pulse-ring 2.2s ease-out infinite;
+}
+@keyframes np-pulse-ring {
+  from { transform: scale(1); opacity: 0.8; }
+  to { transform: scale(3); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .np-figures-pulse::after { animation: none; }
+}
+@media (max-width: 600px) {
+  .np-figures {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .np-figures > div:nth-child(odd) {
+    padding-left: 0;
+    border-left: 0;
+  }
+  .np-globe-readout {
+    display: none;
+  }
+}
+
 /* ---------- Map section: toolbar, legend, ruled list ---------- */
 .np-map-toolbar {
   display: flex;
