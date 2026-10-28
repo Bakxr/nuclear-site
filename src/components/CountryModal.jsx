@@ -41,7 +41,7 @@ export default function CountryModal({ country, onClose, onSelectPlant }) {
         transition={{ type: "spring", damping: 25, stiffness: 300 }}
         style={{
           background: "var(--np-bg)", borderRadius: 20, maxWidth: 720, width: "100%",
-          position: "relative", border: "1px solid rgba(212,165,74,0.2)",
+          position: "relative", border: "1px solid rgba(var(--np-accent-rgb), 0.2)",
           boxShadow: "0 24px 80px rgba(0,0,0,0.15)", overflow: "hidden",
           maxHeight: "85vh", display: "flex", flexDirection: "column",
         }}
@@ -81,7 +81,7 @@ export default function CountryModal({ country, onClose, onSelectPlant }) {
                 background: "var(--np-surface-dim)", borderRadius: 10, padding: "12px 14px", textAlign: "center",
               }}>
                 <div style={{ fontSize: 10, color: "var(--np-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>{fact.label}</div>
-                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 14, fontWeight: 600, color: "var(--np-text)" }}>{fact.value}</div>
+                <div style={{ fontFamily: "var(--np-font-mono)", fontSize: 14, fontWeight: 600, color: "var(--np-text)" }}>{fact.value}</div>
               </div>
             ))}
           </div>
@@ -95,7 +95,7 @@ export default function CountryModal({ country, onClose, onSelectPlant }) {
           {/* Policy callout */}
           <div style={{
             padding: "16px 18px", borderRadius: 10, marginBottom: 20,
-            borderLeft: "3px solid var(--np-accent)", background: "rgba(212,165,74,0.06)",
+            borderLeft: "3px solid var(--np-accent)", background: "rgba(var(--np-accent-rgb), 0.06)",
           }}>
             <h4 style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--np-accent)", marginBottom: 6 }}>Policy</h4>
             <p style={{ fontSize: 13, color: "var(--np-text)", lineHeight: 1.6, margin: 0 }}>{profile.policy}</p>
@@ -125,9 +125,9 @@ export default function CountryModal({ country, onClose, onSelectPlant }) {
                     background: "var(--np-surface-dim)", border: "1px solid var(--np-card-border)",
                     borderRadius: 8, padding: "6px 12px", fontSize: 12, cursor: "pointer",
                     transition: "all 0.2s", display: "inline-flex", alignItems: "center", gap: 6,
-                    color: "var(--np-text)", fontFamily: "'DM Sans',sans-serif",
+                    color: "var(--np-text)", fontFamily: "var(--np-font-sans)",
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(212,165,74,0.3)"; e.currentTarget.style.background = "rgba(212,165,74,0.08)"; }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(var(--np-accent-rgb), 0.3)"; e.currentTarget.style.background = "rgba(var(--np-accent-rgb), 0.08)"; }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--np-card-border)"; e.currentTarget.style.background = "var(--np-surface-dim)"; }}
                 >
                   <span style={{ fontWeight: 600 }}>{p.name}</span>

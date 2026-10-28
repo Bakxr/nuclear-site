@@ -45,7 +45,7 @@ export default function StockModal({ stock, onClose }) {
         transition={{ type: "spring", damping: 25, stiffness: 300 }}
         style={{
           background: "var(--np-dark-bg)", borderRadius: 20, padding: "36px 40px", maxWidth: 640, width: "100%",
-          color: "var(--np-dark-text)", border: "1px solid rgba(212,165,74,0.15)", position: "relative",
+          color: "var(--np-dark-text)", border: "1px solid rgba(var(--np-accent-rgb), 0.15)", position: "relative",
           boxShadow: "0 24px 80px rgba(0,0,0,0.5)",
         }}
       >
@@ -56,13 +56,13 @@ export default function StockModal({ stock, onClose }) {
 
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24 }}>
           <div>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 13, color: "#d4a54a", fontWeight: 600, letterSpacing: "0.08em", marginBottom: 4 }}>{stock.sector}</div>
-            <div id="stock-modal-title" style={{ fontFamily: "'DM Mono',monospace", fontSize: 28, fontWeight: 700, color: "#d4a54a" }}>{stock.ticker}</div>
+            <div style={{ fontFamily: "var(--np-font-mono)", fontSize: 13, color: "var(--np-accent)", fontWeight: 600, letterSpacing: "0.08em", marginBottom: 4 }}>{stock.sector}</div>
+            <div id="stock-modal-title" style={{ fontFamily: "var(--np-font-mono)", fontSize: 28, fontWeight: 700, color: "var(--np-accent)" }}>{stock.ticker}</div>
             <div style={{ fontSize: 14, color: "rgba(245,240,232,0.5)", marginTop: 2 }}>{stock.name}</div>
           </div>
           <div style={{ textAlign: "right" }}>
             <div style={{ fontFamily: "var(--np-font-display)", fontSize: 36, fontWeight: 700 }}>${stock.price.toFixed(2)}</div>
-            <div style={{ color: stock.change >= 0 ? "#4ade80" : "#f87171", fontSize: 14, fontFamily: "'DM Mono',monospace", marginTop: 2 }}>
+            <div style={{ color: stock.change >= 0 ? "#4ade80" : "#f87171", fontSize: 14, fontFamily: "var(--np-font-mono)", marginTop: 2 }}>
               {stock.change >= 0 ? "+" : ""}{stock.change.toFixed(2)} ({stock.change >= 0 ? "+" : ""}{stock.pct.toFixed(2)}%) today
             </div>
           </div>
@@ -72,13 +72,13 @@ export default function StockModal({ stock, onClose }) {
         <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
           {["1W", "1M", "3M", "6M"].map(r => (
             <button key={r} onClick={() => setTimeRange(r)} style={{
-              background: timeRange === r ? "rgba(212,165,74,0.2)" : "rgba(245,240,232,0.05)",
-              border: `1px solid ${timeRange === r ? "rgba(212,165,74,0.4)" : "rgba(245,240,232,0.08)"}`,
-              borderRadius: 8, padding: "6px 16px", color: timeRange === r ? "#d4a54a" : "rgba(245,240,232,0.5)",
-              fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Mono',monospace",
+              background: timeRange === r ? "rgba(var(--np-accent-rgb), 0.2)" : "rgba(245,240,232,0.05)",
+              border: `1px solid ${timeRange === r ? "rgba(var(--np-accent-rgb), 0.4)" : "rgba(245,240,232,0.08)"}`,
+              borderRadius: 8, padding: "6px 16px", color: timeRange === r ? "var(--np-accent)" : "rgba(245,240,232,0.5)",
+              fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "var(--np-font-mono)",
             }}>{r}</button>
           ))}
-          <div style={{ marginLeft: "auto", fontSize: 13, color: isUp ? "#4ade80" : "#f87171", fontFamily: "'DM Mono',monospace", alignSelf: "center" }}>
+          <div style={{ marginLeft: "auto", fontSize: 13, color: isUp ? "#4ade80" : "#f87171", fontFamily: "var(--np-font-mono)", alignSelf: "center" }}>
             {isUp ? "+" : ""}{rangePct}% ({timeRange})
           </div>
         </div>
@@ -95,8 +95,8 @@ export default function StockModal({ stock, onClose }) {
               </defs>
               <XAxis dataKey="date" tick={{ fontSize: 10, fill: "rgba(245,240,232,0.3)" }} axisLine={false} tickLine={false} interval={Math.floor(rangeData.length / 5)} />
               <YAxis domain={[minP * 0.98, maxP * 1.02]} tick={{ fontSize: 10, fill: "rgba(245,240,232,0.3)" }} axisLine={false} tickLine={false} tickFormatter={v => `$${v.toFixed(0)}`} />
-              <Tooltip contentStyle={{ background: "#2a241c", border: "1px solid rgba(212,165,74,0.3)", borderRadius: 8, fontSize: 12, color: "#f5f0e8" }}
-                       formatter={(v) => [`$${v.toFixed(2)}`, "Price"]} labelStyle={{ color: "#d4a54a" }} />
+              <Tooltip contentStyle={{ background: "#2a241c", border: "1px solid rgba(var(--np-accent-rgb), 0.3)", borderRadius: 8, fontSize: 12, color: "#f5f0e8" }}
+                       formatter={(v) => [`$${v.toFixed(2)}`, "Price"]} labelStyle={{ color: "var(--np-accent)" }} />
               <Area type="monotone" dataKey="price" stroke={isUp ? "#4ade80" : "#f87171"} strokeWidth={2} fill="url(#stockGrad)" />
             </AreaChart>
           </ResponsiveContainer>

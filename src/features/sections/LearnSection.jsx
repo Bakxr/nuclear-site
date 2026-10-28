@@ -48,12 +48,12 @@ export default function LearnSection({
                   borderTop: `2px solid ${r.color}`, cursor: "pointer", transition: "transform 0.25s, box-shadow 0.25s",
                   ...(expandedReactor === r.type ? { gridColumn: "1 / -1" } : {}),
                 }}
-                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = `0 8px 24px ${r.color}20`; }}
+                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = `0 8px 24px color-mix(in srgb, ${r.color} 14%, transparent)`; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 22, fontWeight: 700, color: r.color }}>{r.type}</div>
-                  {r.reactorCount && <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 11, color: "var(--np-text-muted)", background: "var(--np-surface-dim)", borderRadius: 6, padding: "3px 8px" }}>{r.reactorCount} operating</span>}
+                  <div style={{ fontFamily: "var(--np-font-mono)", fontSize: 22, fontWeight: 700, color: r.color }}>{r.type}</div>
+                  {r.reactorCount && <span style={{ fontFamily: "var(--np-font-mono)", fontSize: 11, color: "var(--np-text-muted)", background: "var(--np-surface-dim)", borderRadius: 6, padding: "3px 8px" }}>{r.reactorCount} operating</span>}
                 </div>
                 <div style={{ fontSize: 12, fontWeight: 600, color: "var(--np-text-muted)", marginTop: 4 }}>{r.full}</div>
                 <div style={{ fontSize: 13, color: "var(--np-text-muted)", marginTop: 12, lineHeight: 1.55, opacity: 0.75 }}>{r.desc}</div>
@@ -129,7 +129,7 @@ export default function LearnSection({
                                   color: reactorViewMode === tab.key ? "var(--np-bg)" : "var(--np-text-muted)",
                                   border: "1px solid " + (reactorViewMode === tab.key ? "var(--np-text)" : "var(--np-border)"),
                                   borderRadius: 8, padding: "5px 14px", fontSize: 12, fontWeight: 600,
-                                  cursor: "pointer", fontFamily: "'DM Sans',sans-serif", transition: "all 0.2s",
+                                  cursor: "pointer", fontFamily: "var(--np-font-sans)", transition: "all 0.2s",
                                 }}>{tab.label}</button>
                               ))}
                             </div>
@@ -166,11 +166,11 @@ export default function LearnSection({
           <motion.div variants={fadeUp} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
             {["All", "Environment", "Technology", "History", "Economics"].map(cat => (
               <button key={cat} onClick={() => { setLearnFilter(cat); setFlippedCards({}); }} style={{
-                background: learnFilter === cat ? (cat === "All" ? "var(--np-text)" : LEARN_COLORS[cat] + "18") : "var(--np-surface-dim)",
+                background: learnFilter === cat ? (cat === "All" ? "var(--np-text)" : `color-mix(in srgb, ${LEARN_COLORS[cat]} 10%, transparent)`) : "var(--np-surface-dim)",
                 color: learnFilter === cat ? (cat === "All" ? "var(--np-bg)" : LEARN_COLORS[cat]) : "var(--np-text-muted)",
-                border: `1px solid ${learnFilter === cat ? (cat === "All" ? "var(--np-text)" : LEARN_COLORS[cat] + "40") : "var(--np-border)"}`,
+                border: `1px solid ${learnFilter === cat ? (cat === "All" ? "var(--np-text)" : `color-mix(in srgb, ${LEARN_COLORS[cat]} 30%, transparent)`) : "var(--np-border)"}`,
                 borderRadius: 8, padding: "7px 16px", fontSize: 12, fontWeight: 600,
-                cursor: "pointer", fontFamily: "'DM Sans',sans-serif", transition: "all 0.2s",
+                cursor: "pointer", fontFamily: "var(--np-font-sans)", transition: "all 0.2s",
               }}>{cat}</button>
             ))}
             <button onClick={() => {
@@ -180,11 +180,11 @@ export default function LearnSection({
               setTimeout(() => setHighlightedFact(null), 2000);
               requestAnimationFrame(() => document.getElementById(`np-fact-row-${randomIndex}`)?.scrollIntoView({ behavior: "smooth", block: "center" }));
             }} style={{
-              marginLeft: "auto", background: "none", border: "1px solid rgba(212,165,74,0.3)",
+              marginLeft: "auto", background: "none", border: "1px solid rgba(var(--np-accent-rgb), 0.3)",
               borderRadius: 8, padding: "7px 16px", fontSize: 12, fontWeight: 600,
-              cursor: "pointer", color: "var(--np-accent-ink)", fontFamily: "'DM Sans',sans-serif", transition: "all 0.2s",
+              cursor: "pointer", color: "var(--np-accent-ink)", fontFamily: "var(--np-font-sans)", transition: "all 0.2s",
             }}
-              onMouseEnter={e => { e.currentTarget.style.background = "rgba(212,165,74,0.08)"; }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(var(--np-accent-rgb), 0.08)"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "none"; }}
             >
               Surprise me
@@ -209,7 +209,7 @@ export default function LearnSection({
         <ul key={ci} style={{ listStyle: "none", margin: 0, padding: 0, borderTop: "1px solid var(--np-hairline)" }}>
           {column.map(([item, i]) => {
             const open = Boolean(flippedCards[i]);
-            const catColor = LEARN_COLORS[item.category] || "#d4a54a";
+            const catColor = LEARN_COLORS[item.category] || "var(--np-accent)";
             const isHighlighted = highlightedFact === i;
             const panelId = `np-fact-${i}`;
             return (
@@ -265,7 +265,7 @@ export default function LearnSection({
                                   <div style={{ flex: 1, height: 6, borderRadius: 3, background: "var(--np-surface-dim)" }}>
                                     <div style={{ height: "100%", borderRadius: 3, background: catColor, width: `${(bar.value / maxVal) * 100}%` }} />
                                   </div>
-                                  <span style={{ fontSize: 11, fontFamily: "'DM Mono',monospace", color: "var(--np-text)", fontWeight: 600, width: 44, flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>{bar.value}</span>
+                                  <span style={{ fontSize: 11, fontFamily: "var(--np-font-mono)", color: "var(--np-text)", fontWeight: 600, width: 44, flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>{bar.value}</span>
                                 </div>
                               );
                             })}

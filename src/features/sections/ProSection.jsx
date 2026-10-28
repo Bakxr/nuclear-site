@@ -166,7 +166,7 @@ export default function ProSection({ isMobileViewport, onOpenTerminal, preview =
               style={{
                 width: "100%",
                 marginTop: 16,
-                background: "#d4a54a",
+                background: "var(--np-accent)",
                 color: "#14120e",
                 border: "none",
                 borderRadius: 8,
@@ -174,7 +174,7 @@ export default function ProSection({ isMobileViewport, onOpenTerminal, preview =
                 fontSize: 14,
                 fontWeight: 700,
                 cursor: "pointer",
-                fontFamily: "'DM Sans',sans-serif",
+                fontFamily: "var(--np-font-sans)",
               }}
             >
               Start 7-day free trial

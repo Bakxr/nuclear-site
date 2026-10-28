@@ -1,89 +1,62 @@
+const SOURCES = [
+  ["IAEA PRIS", "https://pris.iaea.org/"],
+  ["US NRC", "https://www.nrc.gov/reading-rm/doc-collections/event-status/reactor-status/"],
+  ["SEC EDGAR", "https://www.sec.gov/edgar/search/"],
+  ["World Nuclear Association", "https://world-nuclear.org/"],
+  ["US EIA", "https://www.eia.gov/"],
+];
+
+const PAGES = [
+  ["Uranium stocks", "/uranium-stocks"],
+  ["SMR tracker", "/smr-tracker"],
+  ["Reactor outages", "/reactor-outages"],
+  ["Learn", "/learn"],
+  ["Terminal", "/terminal"],
+];
+
+const LEGAL = [
+  ["Terms", "/legal/terms.html"],
+  ["Privacy", "/legal/privacy.html"],
+  ["Refunds", "/legal/refunds.html"],
+  ["support@thenuclearpulse.com", "mailto:support@thenuclearpulse.com"],
+];
+
+function Column({ title, links, external = false }) {
+  return (
+    <div style={{ display: "grid", gap: 4, alignContent: "start" }}>
+      <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>{title}</div>
+      {links.map(([label, href]) => (
+        <a key={href} className="np-footer-link" href={href} {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}>{label}</a>
+      ))}
+    </div>
+  );
+}
+
 export default function FooterSection() {
   const year = new Date().getFullYear();
   return (
-    <footer style={{
-      background: "var(--np-dark-bg)",
-      color: "rgba(245,240,232,0.55)",
-      padding: "clamp(64px, 9vw, 120px) var(--np-section-x) 36px",
-      borderTop: "1px solid rgba(212,165,74,0.12)",
-      overflow: "hidden",
-    }}>
-      <div style={{ maxWidth: "var(--np-content-max)", margin: "0 auto" }}>
-        {/* Oversized wordmark */}
-        <button
-          type="button"
-          aria-label="Back to top"
-          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "block", textAlign: "left" }}
-        >
-          <h2 className="np-footer-wordmark">
-            Nuclear<em>Pulse</em>
-          </h2>
-        </button>
-
-        <div style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          gap: "28px 48px",
-          flexWrap: "wrap",
-          marginTop: "clamp(36px, 5vw, 64px)",
-          paddingTop: 28,
-          borderTop: "1px solid rgba(245,240,232,0.12)",
-        }}>
-          <div style={{ maxWidth: 360, display: "grid", gap: 10 }}>
-            <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(212,165,74,0.8)" }}>
-              The Buildout Briefing
-            </div>
-            <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.7 }}>
-              Live nuclear intelligence for the next industrial century — reactors, uranium,
-              markets, and the politics of firm power.
+    <footer style={{ marginTop: "var(--np-section-y)", borderTop: "3px double var(--np-rule)", color: "var(--np-text-muted)" }}>
+      <div className="np-wrap" style={{ padding: "28px var(--np-section-x) 40px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "28px 40px" }}>
+          <div style={{ display: "grid", gap: 8, alignContent: "start" }}>
+            <button
+              type="button"
+              aria-label="Back to top"
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+              style={{ background: "none", border: 0, padding: 0, cursor: "pointer", textAlign: "left", fontFamily: "var(--np-font-display)", fontSize: 30, fontWeight: 500, letterSpacing: "-0.02em", color: "var(--np-text)" }}
+            >
+              Nuclear Pulse
+            </button>
+            <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6 }}>
+              Reactors, uranium, markets and the politics of firm power, from primary sources every day.
             </p>
           </div>
-
-          <div style={{ display: "grid", gap: 8 }}>
-            <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(245,240,232,0.35)" }}>
-              Sources
-            </div>
-            <a className="np-footer-link" href="https://pris.iaea.org/" target="_blank" rel="noopener noreferrer">IAEA PRIS</a>
-            <a className="np-footer-link" href="https://world-nuclear.org/" target="_blank" rel="noopener noreferrer">World Nuclear Association</a>
-            <a className="np-footer-link" href="https://www.eia.gov/" target="_blank" rel="noopener noreferrer">US EIA</a>
-          </div>
-
-          <div style={{ display: "grid", gap: 8, textAlign: "left" }}>
-            <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(245,240,232,0.35)" }}>
-              Colophon
-            </div>
-            <span style={{ fontSize: 13 }}>Set in Fraunces &amp; DM Sans</span>
-            <span style={{ fontSize: 13 }}>Data refreshed continuously</span>
-          </div>
+          <Column title="Pages" links={PAGES} />
+          <Column title="Sources" links={SOURCES} external />
+          <Column title="Company" links={LEGAL} />
         </div>
-
-        <div className="np-footer-inner" style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: 16,
-          flexWrap: "wrap",
-          marginTop: 40,
-          paddingTop: 20,
-          borderTop: "1px solid rgba(245,240,232,0.08)",
-          fontSize: 11.5,
-          color: "rgba(245,240,232,0.35)",
-        }}>
-          <div>
-            © {year} Nuclear Pulse · For informational purposes only, not investment advice ·{" "}
-            <a className="np-footer-link" href="/uranium-stocks">Uranium stocks</a> ·{" "}
-            <a className="np-footer-link" href="/smr-tracker">SMR tracker</a> ·{" "}
-            <a className="np-footer-link" href="/reactor-outages">Reactor outages</a> ·{" "}
-            <a className="np-footer-link" href="/legal/terms.html">Terms</a> ·{" "}
-            <a className="np-footer-link" href="/legal/privacy.html">Privacy</a> ·{" "}
-            <a className="np-footer-link" href="/legal/refunds.html">Refunds</a> ·{" "}
-            <a className="np-footer-link" href="mailto:support@thenuclearpulse.com">support@thenuclearpulse.com</a>
-          </div>
-          <div style={{ fontFamily: "var(--np-font-mono)", letterSpacing: "0.06em" }}>
-            Data sourced from IAEA PRIS, WNA, and public markets.
-          </div>
+        <div style={{ marginTop: 28, paddingTop: 14, borderTop: "1px solid var(--np-hairline)", fontSize: 13 }}>
+          © {year} Nuclear Pulse · For information only, not investment advice.
         </div>
       </div>
     </footer>

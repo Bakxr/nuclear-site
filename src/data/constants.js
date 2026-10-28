@@ -112,20 +112,20 @@ export const NUCLEAR_SHARE = [
 
 // Reactor types
 export const REACTOR_TYPES = [
-  { type: "PWR", full: "Pressurized Water Reactor", share: 67, desc: "Most common globally. Uses pressurized water as coolant and moderator in a two-loop system.", color: "#d4a54a", reactorCount: 302, advantages: ["Proven 60+ year track record", "High thermal efficiency (~33%)", "Extensive global operational experience"], countries: ["USA", "France", "China", "S. Korea", "Japan"], examples: ["Vogtle (USA)", "Gravelines (France)", "Shin-Kori (S. Korea)"] },
-  { type: "BWR", full: "Boiling Water Reactor", share: 14, desc: "Water boils directly in the reactor core, producing steam that drives the turbine.", color: "#c4935a", reactorCount: 63, advantages: ["Simpler single-loop design", "Lower operating pressure than PWR", "No steam generators needed"], countries: ["USA", "Japan", "Sweden", "Finland", "Germany"], examples: ["Browns Ferry (USA)", "Fukushima Daini (Japan)", "Forsmark (Sweden)"] },
-  { type: "PHWR", full: "Pressurized Heavy Water", share: 11, desc: "Uses heavy water as moderator. Includes CANDU reactors. Can run on natural uranium.", color: "#8b7355", reactorCount: 49, advantages: ["Runs on natural uranium — no enrichment needed", "Online refueling capability", "Flexible fuel cycle (can use thorium)"], countries: ["Canada", "India", "Romania", "S. Korea", "Argentina"], examples: ["Bruce A & B (Canada)", "Rajasthan (India)", "Cernavoda (Romania)"] },
-  { type: "VVER", full: "Russian Water-Water Reactor", share: 5, desc: "Soviet-designed PWR variant. Widely exported to Eastern Europe, Asia, and Middle East.", color: "#6b8e5a", reactorCount: 22, advantages: ["Robust containment design", "Proven export model", "Enhanced passive safety (VVER-1200)"], countries: ["Russia", "Ukraine", "Czech Rep.", "Hungary", "India"], examples: ["Novovoronezh (Russia)", "Paks (Hungary)", "Kudankulam (India)"] },
-  { type: "SMR", full: "Small Modular Reactor", share: 1, desc: "Factory-built, under 300 MW. NuScale VOYGR, GE BWRX-300, and many more in development.", color: "#5a7d8b", reactorCount: 3, advantages: ["Factory-built and transportable", "Scalable — add modules as needed", "Passive safety systems (no operator action required)"], countries: ["Canada", "USA", "UK", "Poland", "Estonia"], examples: ["Darlington SMR (Canada)", "VOYGR (NuScale, USA)", "Rolls-Royce SMR (UK)"] },
-  { type: "Other", full: "AGR, FBR, HTGR, MSR", share: 2, desc: "Gas-cooled (UK), fast breeders, high-temp gas, molten salt — advanced and legacy designs.", color: "#7a6b8b", reactorCount: 15, advantages: ["Higher outlet temperatures for industrial heat", "Breed more fuel than they consume (FBR)", "Inherent safety properties (MSR, HTGR)"], countries: ["UK", "Russia", "China", "Japan", "France"], examples: ["Hinkley Point B (UK, AGR)", "BN-800 (Russia, FBR)", "HTR-PM (China, HTGR)"] },
+  { type: "PWR", full: "Pressurized Water Reactor", share: 67, desc: "Most common globally. Uses pressurized water as coolant and moderator in a two-loop system.", color: "var(--np-c-blue)", reactorCount: 302, advantages: ["Proven 60+ year track record", "High thermal efficiency (~33%)", "Extensive global operational experience"], countries: ["USA", "France", "China", "S. Korea", "Japan"], examples: ["Vogtle (USA)", "Gravelines (France)", "Shin-Kori (S. Korea)"] },
+  { type: "BWR", full: "Boiling Water Reactor", share: 14, desc: "Water boils directly in the reactor core, producing steam that drives the turbine.", color: "var(--np-c-amber)", reactorCount: 63, advantages: ["Simpler single-loop design", "Lower operating pressure than PWR", "No steam generators needed"], countries: ["USA", "Japan", "Sweden", "Finland", "Germany"], examples: ["Browns Ferry (USA)", "Fukushima Daini (Japan)", "Forsmark (Sweden)"] },
+  { type: "PHWR", full: "Pressurized Heavy Water", share: 11, desc: "Uses heavy water as moderator. Includes CANDU reactors. Can run on natural uranium.", color: "var(--np-c-teal)", reactorCount: 49, advantages: ["Runs on natural uranium — no enrichment needed", "Online refueling capability", "Flexible fuel cycle (can use thorium)"], countries: ["Canada", "India", "Romania", "S. Korea", "Argentina"], examples: ["Bruce A & B (Canada)", "Rajasthan (India)", "Cernavoda (Romania)"] },
+  { type: "VVER", full: "Russian Water-Water Reactor", share: 5, desc: "Soviet-designed PWR variant. Widely exported to Eastern Europe, Asia, and Middle East.", color: "var(--np-c-green)", reactorCount: 22, advantages: ["Robust containment design", "Proven export model", "Enhanced passive safety (VVER-1200)"], countries: ["Russia", "Ukraine", "Czech Rep.", "Hungary", "India"], examples: ["Novovoronezh (Russia)", "Paks (Hungary)", "Kudankulam (India)"] },
+  { type: "SMR", full: "Small Modular Reactor", share: 1, desc: "Factory-built, under 300 MW. NuScale VOYGR, GE BWRX-300, and many more in development.", color: "var(--np-c-violet)", reactorCount: 3, advantages: ["Factory-built and transportable", "Scalable — add modules as needed", "Passive safety systems (no operator action required)"], countries: ["Canada", "USA", "UK", "Poland", "Estonia"], examples: ["Darlington SMR (Canada)", "VOYGR (NuScale, USA)", "Rolls-Royce SMR (UK)"] },
+  { type: "Other", full: "AGR, FBR, HTGR, MSR", share: 2, desc: "Gas-cooled (UK), fast breeders, high-temp gas, molten salt — advanced and legacy designs.", color: "var(--np-c-slate)", reactorCount: 15, advantages: ["Higher outlet temperatures for industrial heat", "Breed more fuel than they consume (FBR)", "Inherent safety properties (MSR, HTGR)"], countries: ["UK", "Russia", "China", "Japan", "France"], examples: ["Hinkley Point B (UK, AGR)", "BN-800 (Russia, FBR)", "HTR-PM (China, HTGR)"] },
 ];
 
 // Learn section category colors
 export const LEARN_COLORS = {
-  Environment: "#6b9e7a",
-  Technology: "#5a8596",
-  History: "#d4a54a",
-  Economics: "#c4714a",
+  Environment: "var(--np-c-green)",
+  Technology: "var(--np-c-teal)",
+  History: "var(--np-c-blue)",
+  Economics: "var(--np-c-amber)",
 };
 
 // Educational facts for the Learn section
@@ -221,7 +221,7 @@ export const LEARN_FACTS = [
 
 // Energy source colors for comparison charts
 export const ENERGY_SOURCE_COLORS = {
-  Nuclear: "#d4a54a",
+  Nuclear: "var(--np-accent)",
   Wind:    "#7a9ea8",
   Solar:   "#c4935a",
   Hydro:   "#6b9e7a",

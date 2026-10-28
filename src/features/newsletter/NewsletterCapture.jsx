@@ -17,6 +17,7 @@ export default function NewsletterCapture({
   buttonStyle,
   successStyle,
   errorStyle,
+  noteStyle,
 }) {
   if (success) {
     return (
@@ -53,21 +54,22 @@ export default function NewsletterCapture({
           onKeyDown={(e) => e.key === "Enter" && onSubmit(surface)}
           disabled={form.status === "loading"}
           style={{
-            padding: "15px 20px",
-            fontSize: 14,
-            fontFamily: "'DM Sans',sans-serif",
+            padding: "13px 14px",
+            fontSize: 15,
+            fontFamily: "var(--np-font-sans)",
             background: "var(--np-surface)",
             color: "var(--np-text)",
             border: `1px solid ${form.status === "error" ? "rgba(248,113,113,0.5)" : "var(--np-border-strong)"}`,
-            borderRadius: "6px 0 0 6px",
+            borderRadius: "var(--np-r-sm) 0 0 var(--np-r-sm)",
             width: 320,
+            minWidth: 0,
             outline: "none",
             borderRight: "none",
             transition: "border-color 0.2s",
             opacity: form.status === "loading" ? 0.6 : 1,
             ...inputStyle,
           }}
-          onFocus={(e) => { e.currentTarget.style.borderColor = "rgba(212,165,74,0.4)"; }}
+          onFocus={(e) => { e.currentTarget.style.borderColor = "var(--np-accent)"; }}
           onBlur={(e) => { e.currentTarget.style.borderColor = form.status === "error" ? "rgba(248,113,113,0.5)" : "var(--np-border)"; }}
         />
         <button
@@ -75,17 +77,17 @@ export default function NewsletterCapture({
           onClick={() => onSubmit(surface)}
           disabled={form.status === "loading"}
           style={{
-            padding: "15px 30px",
-            fontSize: 12,
-            fontFamily: "'DM Sans',sans-serif",
+            padding: "13px 18px",
+            fontSize: 14,
+            fontFamily: "var(--np-font-sans)",
             fontWeight: 700,
             background: "var(--np-text)",
             color: "var(--np-bg)",
             border: "none",
-            borderRadius: "0 6px 6px 0",
+            borderRadius: "0 var(--np-r-sm) var(--np-r-sm) 0",
+            whiteSpace: "nowrap",
             cursor: form.status === "loading" ? "not-allowed" : "pointer",
-            textTransform: "uppercase",
-            letterSpacing: "0.1em",
+            letterSpacing: "0.01em",
             transition: "all 0.2s",
             opacity: form.status === "loading" ? 0.6 : 1,
             ...buttonStyle,
@@ -97,10 +99,10 @@ export default function NewsletterCapture({
         </button>
       </div>
       {form.status === "error" && (
-        <p style={{ fontSize: 13, color: "#f87171", marginTop: 10, textAlign: align, ...errorStyle }}>{form.error}</p>
+        <p role="alert" style={{ fontSize: 13, color: "var(--np-down)", marginTop: 10, textAlign: align, ...errorStyle }}>{form.error}</p>
       )}
       {note ? (
-        <p style={{ fontSize: 12, color: "var(--np-text-faint)", marginTop: 10, textAlign: align, lineHeight: 1.6 }}>
+        <p style={{ fontSize: 12, color: "var(--np-text-faint)", marginTop: 10, textAlign: align, lineHeight: 1.6, ...noteStyle }}>
           {note}
         </p>
       ) : null}

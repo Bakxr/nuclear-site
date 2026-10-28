@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { motion, AnimatePresence, useInView, useScroll, useTransform, MotionConfig } from "framer-motion";
+import { motion, AnimatePresence, MotionConfig } from "framer-motion";
 import { LineChart, Line, ResponsiveContainer } from "recharts";
 import { FEATURED_STOCKS, NUCLEAR_SHARE, LEARN_FACTS, ENERGY_COMPARISON } from "./data/constants.js";
 import { NUCLEAR_PLANTS } from "./data/plants.js";
@@ -11,24 +11,18 @@ import NewsletterCapture from "./features/newsletter/NewsletterCapture.jsx";
 import useDarkMode from "./hooks/useDarkMode.js";
 import TimelineSection from "./features/sections/TimelineSection.jsx";
 import SmrSection from "./features/sections/SmrSection.jsx";
-import StocksSection from "./features/sections/StocksSection.jsx";
-import NewsletterSection from "./features/sections/NewsletterSection.jsx";
 import ProSection from "./features/sections/ProSection.jsx";
 import FooterSection from "./features/sections/FooterSection.jsx";
-import HeroSection from "./features/sections/HeroSection.jsx";
-import QuotesSection, { QUOTES } from "./features/sections/QuotesSection.jsx";
 import NewsSection from "./features/sections/NewsSection.jsx";
 import LearnSection from "./features/sections/LearnSection.jsx";
 import GlobeSection from "./features/sections/GlobeSection.jsx";
 import DataSection from "./features/sections/DataSection.jsx";
-import StockTicker from "./components/StockTicker.jsx";
 import SearchOverlay from "./components/SearchOverlay.jsx";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import LazySectionFallback from "./components/LazySectionFallback.jsx";
 import useDialog from "./hooks/useDialog.js";
 import { normalizeReactorType } from "./services/plantAPI.js";
 import { groupPlantsByCountry } from "./utils/countries.js";
-import { NAV_ITEMS } from "./data/editorial.js";
 import { describePlan, formatAccessDate, getAccountStatusMeta } from "./features/access/accountStatus.js";
 import UserIcon from "./features/access/UserIcon.jsx";
 import useBillingPortal from "./features/access/useBillingPortal.js";
@@ -39,6 +33,12 @@ import { buildPublicTerminalSignals } from "./features/terminal/publicSignals.js
 import { buildAppPath, getAppViewFromLocation } from "./features/terminal/route.js";
 import { useTerminalSnapshot } from "./features/terminal/useTerminalSnapshot.js";
 import TerminalEditorialStrip from "./components/TerminalEditorialStrip.jsx";
+import Masthead from "./features/front/Masthead.jsx";
+import FrontPage from "./features/front/FrontPage.jsx";
+import { useFrontSignals } from "./features/front/useFrontSignals.js";
+import MarketsTable from "./features/front/MarketsTable.jsx";
+import { pickFront } from "./features/front/pickFront.js";
+import "./features/front/front.css";
 
 const Globe = lazy(() => import("./components/Globe.jsx"));
 const StockModal = lazy(() => import("./components/StockModal.jsx"));
@@ -195,7 +195,7 @@ function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport
             style={{
               width: "min(92vw, 540px)",
               borderRadius: 18,
-              border: "1px solid rgba(212,165,74,0.2)",
+              border: "1px solid rgba(var(--np-accent-rgb), 0.2)",
               background: "linear-gradient(180deg, rgba(22,18,13,0.98) 0%, rgba(12,10,8,0.98) 100%)",
               boxShadow: "0 30px 90px rgba(0,0,0,0.35)",
               padding: isMobileViewport ? "24px 18px 20px" : "28px 26px 24px",
@@ -228,7 +228,7 @@ function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport
             </button>
 
             <div>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#d4a54a" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--np-accent)" }}>
                 Account access
               </div>
               <h3 id="account-access-title" style={{ fontFamily: "var(--np-font-display)", fontSize: "clamp(28px,4vw,40px)", lineHeight: 1.08, margin: "10px 0 8px" }}>
@@ -344,7 +344,7 @@ function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport
                   style={{
                     width: "100%",
                     borderRadius: 14,
-                    border: "1px solid rgba(212,165,74,0.35)",
+                    border: "1px solid rgba(var(--np-accent-rgb), 0.35)",
                     background: "#f5f0e8",
                     color: "#14120e",
                     padding: "13px 16px",
@@ -391,7 +391,7 @@ function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport
                   style={{
                     width: "100%",
                     borderRadius: 14,
-                    border: "1px solid rgba(212,165,74,0.35)",
+                    border: "1px solid rgba(var(--np-accent-rgb), 0.35)",
                     background: "#f5f0e8",
                     color: "#14120e",
                     padding: "13px 16px",
@@ -412,7 +412,7 @@ function AccountAccessDialog({ isOpen, onClose, onOpenTerminal, isMobileViewport
                     style={{
                       width: "100%",
                       borderRadius: 14,
-                      border: "1px solid rgba(212,165,74,0.22)",
+                      border: "1px solid rgba(var(--np-accent-rgb), 0.22)",
                       background: "rgba(255,255,255,0.03)",
                       color: "#f5f0e8",
                       padding: "12px 16px",
@@ -477,9 +477,8 @@ export default function NuclearPulse() {
   const [searchQuery, setSearchQuery] = useState("");
   const [newsFilter, setNewsFilter] = useState("All");
   const [newsSort, setNewsSort] = useState("latest");
-  const [newsLimit, setNewsLimit] = useState(6);
+  const [newsLimit, setNewsLimit] = useState(12);
   const [plantFilter, setPlantFilter] = useState("All");
-  const [showStats, setShowStats] = useState(false);
   const [stocks, setStocks] = useState(() => FEATURED_STOCKS.map(s => ({ ...s, price: 0, change: 0, pct: 0, history: [] })));
   const [stocksLoading, setStocksLoading] = useState(true);
   const [stocksError, setStocksError] = useState(false);
@@ -525,7 +524,6 @@ export default function NuclearPulse() {
   // Proof comparison state
   const [compareMetric, setCompareMetric] = useState("co2");
   const [hoveredSource, setHoveredSource] = useState(null);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { isDark, toggle: toggleDarkMode } = useDarkMode();
   const [isMobileViewport, setIsMobileViewport] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -536,10 +534,6 @@ export default function NuclearPulse() {
     return getAppViewFromLocation(window.location);
   });
 
-  // Parallax hero
-  const { scrollY } = useScroll();
-  const heroY       = useTransform(scrollY, [0, 520], [0, -90]);
-  const heroOpacity = useTransform(scrollY, [0, 380], [1, 0]);
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [activeSection, setActiveSection] = useState(null);
   const [showSearch, setShowSearch] = useState(false);
@@ -554,12 +548,9 @@ export default function NuclearPulse() {
     refreshTerminalSnapshot,
   } = useTerminalSnapshot({ accessState, appView, getAccessToken });
 
-  // Quote state — random on each page load, no auto-rotation
-  const [quoteIndex, setQuoteIndex] = useState(() => Math.floor(Math.random() * QUOTES.length));
-  const [quoteFading, setQuoteFading] = useState(false);
-
   // Section refs for navigation — each ref is a named variable (not inside an object literal)
   // to satisfy the Rules of Hooks (hooks must be called unconditionally at the top level)
+  const frontRef = useRef(null);
   const globeRef = useRef(null);
   const globePanelRef = useRef(null);
   const globePanelListRef = useRef(null);
@@ -570,18 +561,23 @@ export default function NuclearPulse() {
   const timelineRef = useRef(null);
   const learnRef = useRef(null);
   const smrRef = useRef(null);
+  // Home-page sections in page order (drives the active nav link); the
+  // /learn page's sections are scroll targets only.
   const navSections = useMemo(() => ([
-    { key: "data", ref: dataRef },
-    { key: "globe", ref: globeRef },
-    { key: "news", ref: newsRef },
+    { key: "front", ref: frontRef },
     { key: "stocks", ref: stocksRef },
+    { key: "news", ref: newsRef },
+    { key: "globe", ref: globeRef },
     { key: "smr", ref: smrRef },
-    { key: "learn", ref: learnRef },
-    { key: "timeline", ref: timelineRef },
   ]), []);
   // Plain lookup map used by scrollTo and section refs in JSX.
   const sectionRefs = useMemo(
-    () => Object.fromEntries(navSections.map(({ key, ref }) => [key, ref])),
+    () => ({
+      ...Object.fromEntries(navSections.map(({ key, ref }) => [key, ref])),
+      data: dataRef,
+      learn: learnRef,
+      timeline: timelineRef,
+    }),
     [navSections],
   );
 
@@ -590,12 +586,19 @@ export default function NuclearPulse() {
   }, []);
   const popupDialogRef = useDialog(showSubscribePopup, dismissSubscribePopup);
 
-  const subEmail = newsletterForms.footer.email;
-  const setSubEmail = (value) => handleNewsletterEmailChange("footer", value);
-  const subWebsite = newsletterForms.footer.website;
-  const setSubWebsite = (value) => handleNewsletterWebsiteChange("footer", value);
-  const subStatus = isSubscribed ? "success" : newsletterForms.footer.status;
-  const subErrorMsg = newsletterForms.footer.error;
+  const newsletter = {
+    forms: newsletterForms,
+    isSubscribed,
+    handleEmailChange: handleNewsletterEmailChange,
+    handleWebsiteChange: handleNewsletterWebsiteChange,
+    handleSubscribe,
+  };
+  const { uranium: frontUranium, fleet: frontFleet } = useFrontSignals();
+  const mastReadings = [
+    frontUranium ? `U₃O₈ $${frontUranium.pricePerLb.toFixed(2)}/lb` : null,
+    frontFleet ? `US fleet ${frontFleet.online}/${frontFleet.total} online` : null,
+  ].filter(Boolean).join(" · ");
+  const frontUrls = useMemo(() => pickFront(news).frontUrls, [news]);
 
   // Scroll to top on mount (prevents browser scroll restoration on refresh)
   useEffect(() => {
@@ -633,7 +636,7 @@ export default function NuclearPulse() {
   useEffect(() => {
     const updateActiveSection = () => {
       const offset = 140;
-      let current = "data";
+      let current = "front";
 
       navSections.forEach(({ key, ref }) => {
         if (!ref.current) return;
@@ -703,17 +706,6 @@ export default function NuclearPulse() {
     return () => clearInterval(interval);
   }, [stocksRetry]);
 
-  // Stats counter animation
-  const statsRef = useRef(null);
-  const statsInView = useInView(statsRef, { once: true, amount: 0.3 });
-
-  useEffect(() => {
-    if (statsInView) {
-      const timer = setTimeout(() => setShowStats(true), 100);
-      return () => clearTimeout(timer);
-    }
-  }, [statsInView]);
-
   const scrollTo = (section) => {
     setActiveSection(section);
     sectionRefs[section]?.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -725,10 +717,21 @@ export default function NuclearPulse() {
       const nextUrl = buildAppPath(view);
       if (`${window.location.pathname}${window.location.search}` !== nextUrl) {
         window.history.pushState({}, "", nextUrl);
+        window.scrollTo(0, 0);
       }
     }
-    setMobileMenuOpen(false);
   }, []);
+
+  // Section links work from /learn too: go home first, then scroll once the
+  // home sections have rendered.
+  const goToSection = (section) => {
+    if (appView === "home") {
+      scrollTo(section);
+      return;
+    }
+    switchAppView("home");
+    window.setTimeout(() => scrollTo(section), 60);
+  };
 
   useEffect(() => {
     const onPopState = () => {
@@ -773,8 +776,6 @@ export default function NuclearPulse() {
 
   const uniqueNewsSources = useMemo(() => new Set(news.map((item) => item.source)).size, [news]);
 
-  const newsStatusLabel = newsError ? "Curated fallback" : "Live feeds";
-  const newsStatusColor = newsError ? "var(--np-accent-ink)" : "var(--np-up)";
 
   async function handleTerminalRefresh() {
     try {
@@ -957,7 +958,7 @@ export default function NuclearPulse() {
   if (appView === "terminal") {
     return (
       <MotionConfig reducedMotion="user">
-        <div className="np-app-shell" style={{ minHeight: "100vh", background: "var(--np-bg)", fontFamily: "'DM Sans',sans-serif", color: "var(--np-text)" }}>
+        <div className="np-app-shell" style={{ minHeight: "100vh", background: "var(--np-bg)", fontFamily: "var(--np-font-sans)", color: "var(--np-text)" }}>
           <TerminalRouteView
             GlobeComponent={Globe}
             accessState={accessState}
@@ -993,429 +994,200 @@ export default function NuclearPulse() {
 
   return (
     <MotionConfig reducedMotion="user">
-    <div className="np-app-shell" style={{ minHeight: "100vh", background: "var(--np-bg)", fontFamily: "'DM Sans',sans-serif", color: "var(--np-text)" }}>
-      <header style={{ position: "sticky", top: 0, zIndex: 140, background: "var(--np-bg)" }}>
-      <StockTicker stocks={stocks} onClickStock={setSelectedStock} />
-
-      {/* Masthead */}
-      <nav className="np-nav" style={{
-        display: "flex", justifyContent: "space-between", alignItems: "center",
-        padding: "14px var(--np-section-x)", borderBottom: "1px solid var(--np-hairline)",
-        background: "var(--np-nav-bg)",
-        backdropFilter: "blur(24px)",
-      }}>
-        <div className="np-brand" style={{ display: "flex", alignItems: "center", gap: 11, cursor: "pointer" }}
-             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
-          <svg aria-hidden="true" width="26" height="26" viewBox="0 0 26 26" fill="none" style={{ flexShrink: 0 }}>
-            <circle cx="13" cy="13" r="2.2" fill="var(--np-accent)" />
-            <ellipse cx="13" cy="13" rx="10.6" ry="4.4" stroke="var(--np-text)" strokeWidth="1.1" />
-            <ellipse cx="13" cy="13" rx="10.6" ry="4.4" stroke="var(--np-text)" strokeWidth="1.1" transform="rotate(60 13 13)" />
-            <ellipse cx="13" cy="13" rx="10.6" ry="4.4" stroke="var(--np-text)" strokeWidth="1.1" transform="rotate(120 13 13)" />
-          </svg>
-          <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-            <span style={{ fontFamily: "var(--np-font-display)", fontSize: 21, fontWeight: 500, letterSpacing: "-0.025em", lineHeight: 1, color: "var(--np-text)" }}>
-              Nuclear<em style={{ fontStyle: "italic", fontWeight: 350, marginLeft: 5 }}>Pulse</em>
-            </span>
-            <span style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.22em", color: "var(--np-text-faint)", fontWeight: 700 }}>
-              Strategic Energy Briefing
-            </span>
-          </div>
-        </div>
-        <div className="np-nav-links" style={{ display: "flex", alignItems: "center", gap: 22 }}>
-          {NAV_ITEMS.map((item, i) => {
-            const isActive = activeSection === item.key;
-            return (
-              <button key={item.key} onClick={() => scrollTo(item.key)} className={`np-nav-link${isActive ? " is-active" : ""}`}>
-                <span className="np-nav-index" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
-                {item.label}
-              </button>
-            );
-          })}
-          <button onClick={() => switchAppView("terminal")} style={{
-            background: "transparent", cursor: "pointer",
-            fontFamily: "'DM Sans',sans-serif", fontSize: 11.5, fontWeight: 700,
-            color: "var(--np-accent-ink)", letterSpacing: "0.13em", textTransform: "uppercase",
-            padding: "9px 16px", borderRadius: 6,
-            border: "1px solid rgba(212,165,74,0.45)",
-            transition: "background 0.2s, color 0.2s, border-color 0.2s",
-          }}
-            onMouseEnter={e => { e.currentTarget.style.background = "var(--np-text)"; e.currentTarget.style.color = "var(--np-bg)"; e.currentTarget.style.borderColor = "var(--np-text)"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--np-accent-ink)"; e.currentTarget.style.borderColor = "rgba(212,165,74,0.45)"; }}
-          >Terminal</button>
-        </div>
-        <div className="np-nav-actions" style={{ display: "flex", alignItems: "center", gap: 10, marginLeft: isMobileViewport ? 0 : 14 }}>
-          {!isMobileViewport ? (
-            <button
-              type="button"
-              onClick={() => setShowAccountDialog(true)}
-              aria-label={user ? `Account (${accountStatusMeta.detail})` : "Sign in"}
-              title={user ? `${user.email} · ${accountStatusMeta.detail}` : "Sign in"}
-              style={{
-                position: "relative",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-                height: 36,
-                minWidth: 36,
-                flexShrink: 0,
-                whiteSpace: "nowrap",
-                borderRadius: 6,
-                border: "1px solid var(--np-hairline)",
-                background: "transparent",
-                color: user ? "var(--np-text)" : "var(--np-text-muted)",
-                padding: user ? 0 : "0 12px",
-                cursor: "pointer",
-                fontSize: 12.5,
-                fontWeight: 600,
-                transition: "border-color 0.2s",
-              }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = "var(--np-accent)"}
-              onMouseLeave={e => e.currentTarget.style.borderColor = "var(--np-hairline)"}
-            >
-              <UserIcon size={16} />
-              {user ? (
-                <span aria-hidden="true" style={{
-                  position: "absolute", top: 5, right: 5, width: 7, height: 7, borderRadius: "50%",
-                  background: accountStatusMeta.accent, boxShadow: "0 0 0 2px var(--np-bg)",
-                }} />
-              ) : "Sign in"}
-            </button>
-          ) : null}
-          <button
-            onClick={toggleDarkMode}
-            aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-            title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-            style={{
-              background: "none", border: "1px solid var(--np-hairline)", borderRadius: 6,
-              width: 36, height: 36, cursor: "pointer", display: "flex", alignItems: "center",
-              justifyContent: "center", fontSize: 15, transition: "border-color 0.2s",
-              color: "var(--np-text-muted)", flexShrink: 0,
-            }}
-            onMouseEnter={e => e.currentTarget.style.borderColor = "var(--np-accent)"}
-            onMouseLeave={e => e.currentTarget.style.borderColor = "var(--np-hairline)"}
-          ><span aria-hidden="true">{isDark ? "☀︎" : "☾︎"}</span></button>
-          <div className="np-search-shell" style={{ position: "relative" }}>
-            <div className="np-nav-search" style={{ display: "flex", alignItems: "center", gap: 8, background: "transparent", borderRadius: 6, padding: "7px 14px", border: "1px solid var(--np-hairline)", transition: "border-color 0.2s" }}>
-              <svg aria-hidden="true" width="13" height="13" viewBox="0 0 14 14" fill="none" style={{ opacity: 0.45, flexShrink: 0 }}>
-                <circle cx="6" cy="6" r="4.6" stroke="currentColor" strokeWidth="1.4" />
-                <line x1="9.4" y1="9.4" x2="13" y2="13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-              </svg>
-              <input
-                type="search"
-                aria-label="Search everything"
-                placeholder="Search everything..."
-                value={searchQuery}
-                onChange={e => { setSearchQuery(e.target.value); setShowSearch(true); }}
-                onFocus={() => { if (searchQuery) setShowSearch(true); }}
-                onBlur={() => setTimeout(() => setShowSearch(false), 150)}
-                style={{ background: "none", border: "none", outline: "none", fontSize: 13, fontFamily: "'DM Sans',sans-serif", color: "var(--np-text)", width: 160 }}
+    <div className="np-app-shell" style={{ minHeight: "100vh", background: "var(--np-bg)", fontFamily: "var(--np-font-sans)", color: "var(--np-text)" }}>
+      <Masthead
+        appView={appView}
+        activeSection={activeSection}
+        onSection={goToSection}
+        onView={switchAppView}
+        isDark={isDark}
+        onToggleTheme={toggleDarkMode}
+        user={user}
+        accountStatusMeta={accountStatusMeta}
+        onOpenAccount={() => setShowAccountDialog(true)}
+        readings={mastReadings}
+        searchQuery={searchQuery}
+        onSearchChange={(value) => { setSearchQuery(value); setShowSearch(true); }}
+        onSearchFocus={() => { if (searchQuery) setShowSearch(true); }}
+        onSearchBlur={() => setTimeout(() => setShowSearch(false), 150)}
+        searchOverlay={(
+          <AnimatePresence>
+            {showSearch && searchQuery.trim().length > 0 && (
+              <SearchOverlay
+                query={searchQuery}
+                plants={NUCLEAR_PLANTS}
+                news={news}
+                stocks={stocks}
+                onSelectPlant={setSelectedPlant}
+                onSelectStock={setSelectedStock}
+                onSelectCountry={setSelectedCountry}
+                onClose={() => setShowSearch(false)}
               />
-              {searchQuery && (
-                <button onClick={() => { setSearchQuery(""); setShowSearch(false); }} aria-label="Clear search" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--np-text-muted)", fontSize: 14, padding: 0, lineHeight: 1 }}><span aria-hidden="true">✕</span></button>
-              )}
-            </div>
-            <AnimatePresence>
-              {showSearch && searchQuery.trim().length > 0 && (
-                <SearchOverlay
-                  query={searchQuery}
-                  plants={NUCLEAR_PLANTS}
-                  news={news}
-                  stocks={stocks}
-                  onSelectPlant={setSelectedPlant}
-                  onSelectStock={setSelectedStock}
-                  onSelectCountry={setSelectedCountry}
-                  onClose={() => setShowSearch(false)}
-                />
-              )}
-            </AnimatePresence>
-          </div>
-          <button className="np-hamburger" onClick={() => setMobileMenuOpen(prev => !prev)} aria-label={mobileMenuOpen ? "Close menu" : "Open menu"} aria-expanded={mobileMenuOpen}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              {mobileMenuOpen
-                ? <><line x1="6" y1="6" x2="18" y2="18" /><line x1="6" y1="18" x2="18" y2="6" /></>
-                : <><line x1="4" y1="7" x2="20" y2="7" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="17" x2="20" y2="17" /></>
-              }
-            </svg>
-          </button>
-        </div>
-        {mobileMenuOpen && (
-          <div className="np-mobile-menu">
-            <button onClick={() => switchAppView("terminal")}>
-              Terminal
-            </button>
-            <div style={{
-              margin: "6px 12px 8px",
-              padding: "12px",
-              borderRadius: 14,
-              border: "1px solid var(--np-border)",
-              background: "var(--np-surface-dim)",
-              display: "grid",
-              gap: 8,
-            }}>
-              <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--np-text-faint)" }}>
-                Account
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-                <span style={{ width: 8, height: 8, borderRadius: "50%", background: accountStatusMeta.accent, flexShrink: 0 }} />
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "var(--np-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {user ? user.email : "Not signed in"}
-                  </div>
-                  <div style={{ fontSize: 11, color: accountStatusMeta.accent, letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 700 }}>
-                    {accountStatusMeta.detail}
-                  </div>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => { setShowAccountDialog(true); setMobileMenuOpen(false); }}
-                style={{
-                  width: "100%",
-                  borderRadius: 10,
-                  border: "1px solid rgba(212,165,74,0.18)",
-                  background: "rgba(255,255,255,0.04)",
-                  color: "var(--np-text)",
-                  padding: "10px 12px",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  letterSpacing: "0.08em",
-                  textTransform: "uppercase",
-                }}
-              >
-                {user ? "Manage account" : "Sign in"}
-              </button>
-            </div>
-            {NAV_ITEMS.map(item => (
-              <button key={item.key} onClick={() => { scrollTo(item.key); setMobileMenuOpen(false); }}>
-                {item.label}
-              </button>
-            ))}
-            <div style={{ padding: "8px 12px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--np-surface-dim)", borderRadius: 6, padding: "8px 12px" }}>
-                <svg aria-hidden="true" width="13" height="13" viewBox="0 0 14 14" fill="none" style={{ opacity: 0.45, flexShrink: 0 }}>
-                  <circle cx="6" cy="6" r="4.6" stroke="currentColor" strokeWidth="1.4" />
-                  <line x1="9.4" y1="9.4" x2="13" y2="13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-                </svg>
-                <input type="text" placeholder="Search plants..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                  style={{ background: "none", border: "none", outline: "none", fontSize: 14, fontFamily: "'DM Sans',sans-serif", color: "var(--np-text)", width: "100%" }} />
-              </div>
-            </div>
-          </div>
+            )}
+          </AnimatePresence>
         )}
-      </nav>
-      </header>
+      />
 
       <main id="main">
-      <HeroSection
-        statsRef={statsRef}
-        isDark={isDark}
-        isMobileViewport={isMobileViewport}
-        heroY={heroY}
-        heroOpacity={heroOpacity}
-        showStats={showStats}
-      >
-        <NewsletterCapture
-          surface="hero"
-          form={newsletterForms.hero}
-          success={isSubscribed}
-          successMessage="Almost there. Check your inbox and click the link to confirm your subscription."
-          onEmailChange={handleNewsletterEmailChange}
-          onWebsiteChange={handleNewsletterWebsiteChange}
-          onSubmit={handleSubscribe}
-          buttonLabel="Get the briefing"
-          placeholder="you@company.com"
-          align="center"
-          note="Free. One email every Sunday: the week in nuclear, uranium and the stocks that moved."
-        />
-        <button
-          type="button"
-          className="np-hero-terminal-link"
-          onClick={() => switchAppView("terminal")}
-        >
-          Or open the terminal: 7 days free →
-        </button>
-      </HeroSection>
+      {appView === "learn" ? (
+        <>
+          <section className="np-wrap" style={{ paddingTop: "clamp(24px, 4vw, 40px)" }}>
+            <h1 style={{ margin: 0, fontFamily: "var(--np-font-display)", fontSize: "clamp(36px, 5vw, 60px)", fontWeight: 500, letterSpacing: "-0.02em", lineHeight: 1.05 }}>Learn</h1>
+            <p style={{ margin: "12px 0 0", maxWidth: "62ch", fontSize: 18, lineHeight: 1.55, color: "var(--np-text-muted)" }}>
+              How the world&apos;s reactors work, where nuclear power already carries the grid, and eighty years of the history behind it.
+            </p>
+          </section>
+          <LearnSection
+            sectionRef={sectionRefs.learn}
+            isMobileViewport={isMobileViewport}
+            expandedReactor={expandedReactor}
+            setExpandedReactor={setExpandedReactor}
+            reactorViewMode={reactorViewMode}
+            setReactorViewMode={setReactorViewMode}
+            learnFilter={learnFilter}
+            setLearnFilter={setLearnFilter}
+            flippedCards={flippedCards}
+            setFlippedCards={setFlippedCards}
+            filteredFacts={filteredFacts}
+            highlightedFact={highlightedFact}
+            setHighlightedFact={setHighlightedFact}
+          />
+          <DataSection
+            sectionRef={sectionRefs.data}
+            isDark={isDark}
+            dataView={dataView}
+            setDataView={setDataView}
+            dataSort={dataSort}
+            setDataSort={setDataSort}
+            expandedCountry={expandedCountry}
+            setExpandedCountry={setExpandedCountry}
+            hoveredCountry={hoveredCountry}
+            setHoveredCountry={setHoveredCountry}
+            hoveredSource={hoveredSource}
+            setHoveredSource={setHoveredSource}
+            compareMetric={compareMetric}
+            setCompareMetric={setCompareMetric}
+            activeComparisonMetric={activeComparisonMetric}
+            totalCountries={totalCountries}
+            sortedNuclearShare={sortedNuclearShare}
+            halfCount={halfCount}
+            dataShowAll={dataShowAll}
+            setDataShowAll={setDataShowAll}
+            getBarWidth={getBarWidth}
+            plantsByCountry={plantsByCountry}
+            comparisonRows={comparisonRows}
+            formatComparisonValue={formatComparisonValue}
+            setSelectedPlant={setSelectedPlant}
+            setSelectedCountry={setSelectedCountry}
+            setSearchQuery={setSearchQuery}
+            scrollTo={scrollTo}
+          />
+          <TimelineSection sectionRef={sectionRefs.timeline} />
+        </>
+      ) : (
+        <>
+          <FrontPage
+            sectionRef={sectionRefs.front}
+            news={news}
+            newsLoading={newsLoading}
+            stocks={stocks}
+            onOpenStock={setSelectedStock}
+            onShowWire={() => scrollTo("news")}
+            newsletter={newsletter}
+          />
 
-      <QuotesSection
-        quoteIndex={quoteIndex}
-        quoteFading={quoteFading}
-        setQuoteIndex={setQuoteIndex}
-        setQuoteFading={setQuoteFading}
-      />
+          <MarketsTable
+            sectionRef={sectionRefs.stocks}
+            stocks={stocks}
+            stocksLoading={stocksLoading}
+            stocksLastUpdated={stocksLastUpdated}
+            stocksError={stocksError}
+            onRetry={() => { setStocksError(false); setStocksRetry((r) => r + 1); }}
+            onOpenStock={setSelectedStock}
+          />
 
-      <DataSection
-        sectionRef={sectionRefs.data}
-        isDark={isDark}
-        dataView={dataView}
-        setDataView={setDataView}
-        dataSort={dataSort}
-        setDataSort={setDataSort}
-        expandedCountry={expandedCountry}
-        setExpandedCountry={setExpandedCountry}
-        hoveredCountry={hoveredCountry}
-        setHoveredCountry={setHoveredCountry}
-        hoveredSource={hoveredSource}
-        setHoveredSource={setHoveredSource}
-        compareMetric={compareMetric}
-        setCompareMetric={setCompareMetric}
-        activeComparisonMetric={activeComparisonMetric}
-        totalCountries={totalCountries}
-        sortedNuclearShare={sortedNuclearShare}
-        halfCount={halfCount}
-        dataShowAll={dataShowAll}
-        setDataShowAll={setDataShowAll}
-        getBarWidth={getBarWidth}
-        plantsByCountry={plantsByCountry}
-        comparisonRows={comparisonRows}
-        formatComparisonValue={formatComparisonValue}
-        setSelectedPlant={setSelectedPlant}
-        setSelectedCountry={setSelectedCountry}
-        setSearchQuery={setSearchQuery}
-        scrollTo={scrollTo}
-      />
-      <GlobeSection
-        sectionRef={sectionRefs.globe}
-        globeLayer={globeLayer}
-        setGlobeLayer={setGlobeLayer}
-        plantFilter={plantFilter}
-        setPlantFilter={setPlantFilter}
-        filteredPlants={filteredPlants}
-        filteredSupplySites={filteredSupplySites}
-        activeGlobeItems={activeGlobeItems}
-        visibleGlobeItems={visibleGlobeItems}
-        setSelectedPlant={setSelectedPlant}
-        globePanelRef={globePanelRef}
-        globePanelListRef={globePanelListRef}
-        globeFiltersRef={globeFiltersRef}
-        shouldUseCompactGlobePanel={shouldUseCompactGlobePanel}
-        mobileGlobePanelExpanded={mobileGlobePanelExpanded}
-        setMobileGlobePanelExpanded={setMobileGlobePanelExpanded}
-        globePanelPreviewCount={globePanelPreviewCount}
-        globeCountryFilter={globeCountryFilter}
-        setGlobeCountryFilter={setGlobeCountryFilter}
-        globeReactorTypeFilter={globeReactorTypeFilter}
-        setGlobeReactorTypeFilter={setGlobeReactorTypeFilter}
-        globeCountryOptions={globeCountryOptions}
-        globeReactorTypeOptions={globeReactorTypeOptions}
-        hasActiveGlobeFilters={hasActiveGlobeFilters}
-        globeFiltersOpen={globeFiltersOpen}
-        setGlobeFiltersOpen={setGlobeFiltersOpen}
-        searchQuery={searchQuery}
-      />
+          <NewsSection
+            sectionRef={sectionRefs.news}
+            news={news}
+            newsLoading={newsLoading}
+            newsError={newsError}
+            newsFilter={newsFilter}
+            newsSort={newsSort}
+            newsLimit={newsLimit}
+            filteredNews={filteredNews}
+            uniqueNewsSources={uniqueNewsSources}
+            newsLastUpdated={newsLastUpdated}
+            excludeUrls={frontUrls}
+            setNewsFilter={setNewsFilter}
+            setNewsSort={setNewsSort}
+            setNewsLimit={setNewsLimit}
+            refreshNews={refreshNews}
+            getNewsMapLayer={getNewsMapLayer}
+            setGlobeLayer={setGlobeLayer}
+            setPlantFilter={setPlantFilter}
+            setSearchQuery={setSearchQuery}
+            scrollTo={scrollTo}
+          />
 
-      <NewsSection
-        sectionRef={sectionRefs.news}
-        news={news}
-        newsLoading={newsLoading}
-        newsError={newsError}
-        newsFilter={newsFilter}
-        newsSort={newsSort}
-        newsLimit={newsLimit}
-        filteredNews={filteredNews}
-        uniqueNewsSources={uniqueNewsSources}
-        newsLastUpdated={newsLastUpdated}
-        newsStatusLabel={newsStatusLabel}
-        newsStatusColor={newsStatusColor}
-        setNewsFilter={setNewsFilter}
-        setNewsSort={setNewsSort}
-        setNewsLimit={setNewsLimit}
-        refreshNews={refreshNews}
-        getNewsMapLayer={getNewsMapLayer}
-        setGlobeLayer={setGlobeLayer}
-        setPlantFilter={setPlantFilter}
-        setSearchQuery={setSearchQuery}
-        scrollTo={scrollTo}
-      />
+          <GlobeSection
+            sectionRef={sectionRefs.globe}
+            globeLayer={globeLayer}
+            setGlobeLayer={setGlobeLayer}
+            plantFilter={plantFilter}
+            setPlantFilter={setPlantFilter}
+            filteredPlants={filteredPlants}
+            filteredSupplySites={filteredSupplySites}
+            activeGlobeItems={activeGlobeItems}
+            visibleGlobeItems={visibleGlobeItems}
+            setSelectedPlant={setSelectedPlant}
+            globePanelRef={globePanelRef}
+            globePanelListRef={globePanelListRef}
+            globeFiltersRef={globeFiltersRef}
+            shouldUseCompactGlobePanel={shouldUseCompactGlobePanel}
+            mobileGlobePanelExpanded={mobileGlobePanelExpanded}
+            setMobileGlobePanelExpanded={setMobileGlobePanelExpanded}
+            globePanelPreviewCount={globePanelPreviewCount}
+            globeCountryFilter={globeCountryFilter}
+            setGlobeCountryFilter={setGlobeCountryFilter}
+            globeReactorTypeFilter={globeReactorTypeFilter}
+            setGlobeReactorTypeFilter={setGlobeReactorTypeFilter}
+            globeCountryOptions={globeCountryOptions}
+            globeReactorTypeOptions={globeReactorTypeOptions}
+            hasActiveGlobeFilters={hasActiveGlobeFilters}
+            globeFiltersOpen={globeFiltersOpen}
+            setGlobeFiltersOpen={setGlobeFiltersOpen}
+            searchQuery={searchQuery}
+          />
 
-      {/* Sits directly above ProSection, which draws the divider between them. */}
-      <section style={{ padding: "0 var(--np-section-x)", background: "var(--np-bg)" }}>
-        <div style={{ maxWidth: "var(--np-content-max)", margin: "0 auto" }}>
-          <div style={{
-            borderTop: "1px solid var(--np-hairline)",
-            padding: isMobileViewport ? "36px 0" : "clamp(40px, 5vw, 64px) 0",
-          }}>
-            <div style={{ display: "grid", gridTemplateColumns: isMobileViewport ? "1fr" : "minmax(0, 1.1fr) minmax(320px, 420px)", gap: 28, alignItems: "center" }}>
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--np-accent-ink)" }}>
-                  The signal behind the week
-                </div>
-                <div style={{ fontFamily: "var(--np-font-display)", fontSize: "clamp(28px,3.4vw,48px)", fontWeight: 400, letterSpacing: "-0.02em", lineHeight: 1.06, marginTop: 14, textWrap: "balance" }}>
-                  Get the moves that matter, <em style={{ fontStyle: "italic", fontWeight: 350, color: "var(--np-accent-ink)" }}>once a week.</em>
-                </div>
-                <div style={{ fontSize: 15, color: "var(--np-text-muted)", lineHeight: 1.7, marginTop: 14, maxWidth: "56ch" }}>
-                  If you made it this far, you already care about the buildout story. The briefing turns reactor maps, uranium signals, policy shifts, and market moves into one clean weekly read.
-                </div>
-              </div>
-              <div>
-                <NewsletterCapture
-                  surface="inline"
-                  form={newsletterForms.inline}
-                  success={isSubscribed}
-                  successMessage="Almost there. Check your inbox and click the link to confirm your subscription."
-                  onEmailChange={handleNewsletterEmailChange}
-                  onWebsiteChange={handleNewsletterWebsiteChange}
-                  onSubmit={handleSubscribe}
-                  placeholder="Email for the weekly briefing"
-                  buttonLabel="Join free"
-                  rowStyle={{ justifyContent: "flex-start" }}
-                  inputStyle={{ width: "100%" }}
-                  buttonStyle={{ minWidth: isMobileViewport ? "100%" : 152 }}
-                  note="Weekly. Free. No spam. Unsubscribe anytime."
-                />
-              </div>
+          <ProSection
+            isMobileViewport={isMobileViewport}
+            onOpenTerminal={() => switchAppView("terminal")}
+            preview={<TerminalEditorialStrip signals={editorialSignals} onOpenTerminal={() => switchAppView("terminal")} />}
+          />
+
+          <SmrSection sectionRef={sectionRefs.smr} />
+
+          <div className="np-wrap">
+            <div className="np-learn-promo">
+              <a href="/learn" onClick={(e) => { e.preventDefault(); switchAppView("learn"); }}>
+                <div className="np-kicker">Learn</div>
+                <strong>Know your reactors</strong>
+                <span>The six designs that power the world, with working 3-D models →</span>
+              </a>
+              <a href="/learn" onClick={(e) => { e.preventDefault(); switchAppView("learn"); }}>
+                <div className="np-kicker">Learn</div>
+                <strong>Where nuclear is already real</strong>
+                <span>Capacity, reactors and share of power by country →</span>
+              </a>
+              <a href="/learn" onClick={(e) => { e.preventDefault(); switchAppView("learn"); }}>
+                <div className="np-kicker">Learn</div>
+                <strong>Eight decades of fission</strong>
+                <span>From Chicago Pile-1 to the SMR era →</span>
+              </a>
             </div>
           </div>
-        </div>
-      </section>
-
-      <StocksSection
-        sectionRef={sectionRefs.stocks}
-        stocks={stocks}
-        stocksLoading={stocksLoading}
-        stocksLastUpdated={stocksLastUpdated}
-        stocksError={stocksError}
-        setStocksError={setStocksError}
-        setStocksRetry={setStocksRetry}
-        setSelectedStock={setSelectedStock}
-      />
-
-      {/* One terminal block after Markets: pitch + pricing, then the live preview. */}
-      <ProSection
-        isMobileViewport={isMobileViewport}
-        onOpenTerminal={() => switchAppView("terminal")}
-        preview={<TerminalEditorialStrip signals={editorialSignals} onOpenTerminal={() => switchAppView("terminal")} />}
-      />
-
-      <SmrSection sectionRef={sectionRefs.smr} />
-
-      <LearnSection
-        sectionRef={sectionRefs.learn}
-        isMobileViewport={isMobileViewport}
-        expandedReactor={expandedReactor}
-        setExpandedReactor={setExpandedReactor}
-        reactorViewMode={reactorViewMode}
-        setReactorViewMode={setReactorViewMode}
-        learnFilter={learnFilter}
-        setLearnFilter={setLearnFilter}
-        flippedCards={flippedCards}
-        setFlippedCards={setFlippedCards}
-        filteredFacts={filteredFacts}
-        highlightedFact={highlightedFact}
-        setHighlightedFact={setHighlightedFact}
-      />
-
-      <TimelineSection sectionRef={sectionRefs.timeline} />
-
-      <NewsletterSection
-        subStatus={subStatus}
-        subEmail={subEmail}
-        subWebsite={subWebsite}
-        subErrorMsg={subErrorMsg}
-        setSubEmail={setSubEmail}
-        setSubWebsite={setSubWebsite}
-        handleSubscribe={handleSubscribe}
-      />
+        </>
+      )}
 
       <AccountAccessDialog
         isOpen={showAccountDialog}
@@ -1435,8 +1207,7 @@ export default function NuclearPulse() {
             style={{
               position: "fixed",
               inset: 0,
-              background: "rgba(14,12,10,0.64)",
-              backdropFilter: "blur(10px)",
+              background: "rgba(14,12,10,0.5)",
               zIndex: 1100,
               display: "flex",
               alignItems: "center",
@@ -1457,12 +1228,12 @@ export default function NuclearPulse() {
               transition={{ type: "spring", damping: 28, stiffness: 320 }}
               style={{
                 width: "min(92vw, 520px)",
-                borderRadius: 18,
-                border: "1px solid rgba(212,165,74,0.2)",
-                background: "linear-gradient(180deg, rgba(22,18,13,0.98) 0%, rgba(13,11,8,0.98) 100%)",
-                boxShadow: "0 28px 80px rgba(0,0,0,0.35)",
+                borderRadius: "var(--np-r-md)",
+                borderTop: "3px double var(--np-rule)",
+                background: "var(--np-bg)",
+                boxShadow: "0 28px 80px rgba(0,0,0,0.3)",
                 padding: isMobileViewport ? "24px 18px 20px" : "28px 26px 24px",
-                color: "#f5f0e8",
+                color: "var(--np-text)",
                 position: "relative",
               }}
             >
@@ -1474,12 +1245,12 @@ export default function NuclearPulse() {
                   position: "absolute",
                   top: 12,
                   right: 12,
-                  width: 34,
-                  height: 34,
-                  borderRadius: "50%",
-                  border: "1px solid rgba(245,240,232,0.12)",
-                  background: "rgba(255,255,255,0.04)",
-                  color: "#f5f0e8",
+                  width: 44,
+                  height: 44,
+                  borderRadius: "var(--np-r-sm)",
+                  border: "1px solid var(--np-border)",
+                  background: "transparent",
+                  color: "var(--np-text)",
                   cursor: "pointer",
                   fontSize: 20,
                   lineHeight: 1,
@@ -1487,14 +1258,12 @@ export default function NuclearPulse() {
               >
                 ×
               </button>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#d4a54a" }}>
-                Weekly atomic briefing
-              </div>
+              <div className="np-kicker">The Sunday briefing</div>
               <h3 id="newsletter-popup-title" style={{ fontFamily: "var(--np-font-display)", fontSize: "clamp(28px,4vw,40px)", lineHeight: 1.08, margin: "10px 0 10px" }}>
-                Don’t lose the signal.
+                The week in nuclear, in five minutes.
               </h3>
-              <p style={{ fontSize: 15, color: "rgba(245,240,232,0.72)", lineHeight: 1.7, margin: "0 0 18px" }}>
-                Get one sharp weekly email on reactor buildouts, uranium markets, policy fights, and the stories worth your attention.
+              <p style={{ fontSize: 16, color: "var(--np-text-muted)", lineHeight: 1.6, margin: "0 0 18px" }}>
+                One email every Sunday: the stories that mattered, the uranium price and the stocks that moved. Free.
               </p>
               <NewsletterCapture
                 surface="popup"
@@ -1505,16 +1274,7 @@ export default function NuclearPulse() {
                 onSubmit={handleSubscribe}
                 placeholder="Email for the weekly briefing"
                 buttonLabel="Join free"
-                inputStyle={{
-                  width: "100%",
-                  background: "rgba(255,255,255,0.05)",
-                  color: "#f5f0e8",
-                  borderColor: "rgba(245,240,232,0.12)",
-                }}
-                buttonStyle={{
-                  background: "#f5f0e8",
-                  color: "#14120e",
-                }}
+                inputStyle={{ width: "100%" }}
                 note="Free weekly email. No spam. Unsubscribe anytime."
               />
             </motion.div>
@@ -1550,7 +1310,7 @@ export default function NuclearPulse() {
 
       <style>{`
         @keyframes tickerScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
-        ::selection{background:rgba(212,165,74,0.25);color:#1e1912}
+        ::selection{background:rgba(var(--np-accent-rgb), 0.25);color:#1e1912}
       `}</style>
     </div>
     </MotionConfig>

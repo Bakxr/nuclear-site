@@ -9,7 +9,7 @@ function highlight(text, query) {
   return (
     <>
       {text.slice(0, idx)}
-      <mark style={{ background: "rgba(212,165,74,0.3)", color: "inherit", borderRadius: 2, padding: "0 1px" }}>
+      <mark style={{ background: "rgba(var(--np-accent-rgb), 0.3)", color: "inherit", borderRadius: 2, padding: "0 1px" }}>
         {text.slice(idx, idx + query.length)}
       </mark>
       {text.slice(idx + query.length)}
@@ -185,12 +185,12 @@ export default function SearchOverlay({ query, plants, news, stocks, onSelectPla
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    background: isActive ? "rgba(212,165,74,0.08)" : "transparent",
+                    background: isActive ? "rgba(var(--np-accent-rgb), 0.08)" : "transparent",
                     transition: "background 0.1s",
                     width: "100%",
                     border: "none",
                     textAlign: "left",
-                    fontFamily: "'DM Sans',sans-serif",
+                    fontFamily: "var(--np-font-sans)",
                   }}
                   onMouseEnter={() => setCursor(myIdx)}
                 >
@@ -199,7 +199,7 @@ export default function SearchOverlay({ query, plants, news, stocks, onSelectPla
                     <div style={{ fontSize: 11, color: "var(--np-text-muted)", marginTop: 1 }}>{highlight(plant.country, query)} | {plant.type}</div>
                   </div>
                   <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 12 }}>
-                    <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 12, fontWeight: 600 }}>{plant.capacity.toLocaleString()} MW</div>
+                    <div style={{ fontFamily: "var(--np-font-mono)", fontSize: 12, fontWeight: 600 }}>{plant.capacity.toLocaleString()} MW</div>
                     <div style={{ fontSize: 10, color: STATUS_TEXT_COLORS[plant.status] || STATUS_TEXT_COLORS.Idle }}>* {plant.status}</div>
                   </div>
                 </button>
@@ -221,21 +221,21 @@ export default function SearchOverlay({ query, plants, news, stocks, onSelectPla
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    background: isActive ? "rgba(212,165,74,0.08)" : "transparent",
+                    background: isActive ? "rgba(var(--np-accent-rgb), 0.08)" : "transparent",
                     transition: "background 0.1s",
                     width: "100%",
                     border: "none",
                     textAlign: "left",
-                    fontFamily: "'DM Sans',sans-serif",
+                    fontFamily: "var(--np-font-sans)",
                   }}
                   onMouseEnter={() => setCursor(myIdx)}
                 >
                   <div>
-                    <div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, fontSize: 14, color: "#d4a54a" }}>{highlight(stock.ticker, query)}</div>
+                    <div style={{ fontFamily: "var(--np-font-mono)", fontWeight: 700, fontSize: 14, color: "var(--np-accent)" }}>{highlight(stock.ticker, query)}</div>
                     <div style={{ fontSize: 11, color: "var(--np-text-muted)", marginTop: 1 }}>{highlight(stock.name, query)}</div>
                   </div>
                   <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 12 }}>
-                    {stock.price > 0 && <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 13, fontWeight: 600 }}>${stock.price.toFixed(2)}</div>}
+                    {stock.price > 0 && <div style={{ fontFamily: "var(--np-font-mono)", fontSize: 13, fontWeight: 600 }}>${stock.price.toFixed(2)}</div>}
                     {stock.pct !== undefined && <div style={{ fontSize: 11, color: isUp ? "#4ade80" : "#f87171" }}>{isUp ? "+" : ""}{stock.pct.toFixed(2)}%</div>}
                   </div>
                 </button>
@@ -259,7 +259,7 @@ export default function SearchOverlay({ query, plants, news, stocks, onSelectPla
                     justifyContent: "space-between",
                     alignItems: "flex-start",
                     gap: 10,
-                    background: isActive ? "rgba(212,165,74,0.08)" : "transparent",
+                    background: isActive ? "rgba(var(--np-accent-rgb), 0.08)" : "transparent",
                     transition: "background 0.1s",
                     textDecoration: "none",
                     color: "inherit",
@@ -290,8 +290,8 @@ export default function SearchOverlay({ query, plants, news, stocks, onSelectPla
                       fontWeight: 700,
                       textTransform: "uppercase",
                       letterSpacing: "0.08em",
-                      color: "#d4a54a",
-                      background: "rgba(212,165,74,0.1)",
+                      color: "var(--np-accent)",
+                      background: "rgba(var(--np-accent-rgb), 0.1)",
                       borderRadius: 6,
                       padding: "3px 7px",
                       marginTop: 2,
@@ -317,12 +317,12 @@ export default function SearchOverlay({ query, plants, news, stocks, onSelectPla
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    background: isActive ? "rgba(212,165,74,0.08)" : "transparent",
+                    background: isActive ? "rgba(var(--np-accent-rgb), 0.08)" : "transparent",
                     transition: "background 0.1s",
                     width: "100%",
                     border: "none",
                     textAlign: "left",
-                    fontFamily: "'DM Sans',sans-serif",
+                    fontFamily: "var(--np-font-sans)",
                   }}
                   onMouseEnter={() => setCursor(myIdx)}
                 >
@@ -332,7 +332,7 @@ export default function SearchOverlay({ query, plants, news, stocks, onSelectPla
                       <div style={{ fontSize: 11, color: "var(--np-text-muted)", marginTop: 1 }}>{country.reactors} reactors | {country.capacity}</div>
                     </div>
                   </div>
-                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 15, fontWeight: 700, color: "#d4a54a" }}>
+                  <div style={{ fontFamily: "var(--np-font-mono)", fontSize: 15, fontWeight: 700, color: "var(--np-accent)" }}>
                     {country.nuclear}%
                   </div>
                 </button>

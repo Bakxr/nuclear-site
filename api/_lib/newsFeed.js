@@ -211,6 +211,61 @@ export function parseFeed(xml, feed) {
   return parsed.sort((a, b) => b.pubDate.getTime() - a.pubDate.getTime()).slice(0, MAX_PER_FEED);
 }
 
+// Same story from several outlets: merge into one article that credits every
+// source (`related`). Jaccard similarity of headline + excerpt words; on real
+// feeds duplicates score 0.35+ and unrelated stories under 0.2.
+const CLUSTER_THRESHOLD = 0.3;
+const CLUSTER_WINDOW_MS = 72 * 60 * 60 * 1000;
+const STOPWORDS = new Set("the a an and or of to in for on at by with from as is are was were be has have its it this that their after over into up new says said will would could about more than first".split(" "));
+
+function storyTokens(article) {
+  return new Set(
+    `${article.title} ${article.curiosityHook || ""}`
+      .toLowerCase()
+      // "$5B", "$5 billion" and "5 billion" are the same figure.
+      .replace(/\$(\d+(?:\.\d+)?)\s*(?:b|bn|billion)\b/g, "$1billion")
+      .replace(/(\d+(?:\.\d+)?)\s*billion/g, "$1billion")
+      .replace(/[^a-z0-9\s]/g, " ")
+      .split(/\s+/)
+      .filter((word) => word.length > 2 && !STOPWORDS.has(word))
+      // Plurals: "uprates" and "uprate" are the same word.
+      .map((word) => (word.length > 4 && word.endsWith("s") && !word.endsWith("ss") ? word.slice(0, -1) : word)),
+  );
+}
+
+function similarity(a, b) {
+  let shared = 0;
+  for (const word of a) if (b.has(word)) shared += 1;
+  return shared / (a.size + b.size - shared || 1);
+}
+
+// Input sorted newest first. Each cluster keeps one article (an official
+// source if there is one, else the earliest report) with the others listed
+// in `related`; order is preserved by each cluster's newest report.
+export function clusterArticles(articles) {
+  const tokens = articles.map(storyTokens);
+  const parent = articles.map((_, i) => i);
+  const find = (i) => (parent[i] === i ? i : (parent[i] = find(parent[i])));
+  for (let i = 0; i < articles.length; i += 1) {
+    for (let j = i + 1; j < articles.length; j += 1) {
+      if (Math.abs(articles[i].pubDate - articles[j].pubDate) > CLUSTER_WINDOW_MS) continue;
+      if (similarity(tokens[i], tokens[j]) >= CLUSTER_THRESHOLD) parent[find(j)] = find(i);
+    }
+  }
+  const groups = new Map();
+  articles.forEach((article, i) => {
+    const root = find(i);
+    if (!groups.has(root)) groups.set(root, []);
+    groups.get(root).push(article);
+  });
+  return [...groups.values()].map((group) => {
+    if (group.length === 1) return group[0];
+    const primary = group.find((a) => a.isOfficial) || group[group.length - 1];
+    const related = group.filter((a) => a !== primary).map(({ source, url, title }) => ({ source, url, title }));
+    return { ...primary, pubDate: group[0].pubDate, related };
+  });
+}
+
 const FETCH_TIMEOUT_MS = 8000;
 
 async function fetchFeed(feed) {
@@ -251,13 +306,14 @@ export async function getLiveNewsPayload({ force = false } = {}) {
 
   const seen = new Set();
   const counts = {};
-  const deduped = articles
+  const unique = articles
     .sort((a, b) => b.pubDate.getTime() - a.pubDate.getTime())
     .filter((article) => {
       if (seen.has(article.url)) return false;
       seen.add(article.url);
       return true;
-    })
+    });
+  const deduped = clusterArticles(unique)
     .filter((article) => {
       const count = counts[article._feedId] || 0;
       if (count >= MAX_DIVERSITY) return false;

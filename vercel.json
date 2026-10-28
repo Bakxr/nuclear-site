@@ -8,6 +8,10 @@
       "destination": "/"
     },
     {
+      "source": "/learn",
+      "destination": "/"
+    },
+    {
       "source": "/api/social/post",
       "destination": "/api/social/card?view=post"
     }

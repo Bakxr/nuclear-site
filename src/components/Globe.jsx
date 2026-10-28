@@ -751,7 +751,7 @@ export default function Globe({
   }
 
   const controlButtonStyle = {
-    border: "1px solid rgba(212,165,74,0.18)",
+    border: "1px solid var(--np-hairline)",
     background: "rgba(16,13,9,0.76)",
     color: "rgba(245,240,232,0.88)",
     fontFamily: "'DM Mono',monospace",
@@ -883,7 +883,7 @@ export default function Globe({
         padding: "9px 12px",
         borderRadius: 2,
         background: "rgba(16,13,9,0.72)",
-        border: "1px solid rgba(212,165,74,0.16)",
+        border: "1px solid var(--np-hairline)",
         color: "rgba(245,240,232,0.78)",
         fontSize: 11,
         fontWeight: 700,
@@ -908,7 +908,7 @@ export default function Globe({
           top: Math.max(12, tooltip.y - 10),
           background: "rgba(16,13,9,0.94)", color: "#f5f0e8", padding: "12px 16px", borderRadius: 2,
           fontSize: 13, fontFamily: "'DM Sans',sans-serif", pointerEvents: "none", zIndex: 10,
-          border: "1px solid rgba(212,165,74,0.18)", maxWidth: "min(240px, calc(100% - 24px))", lineHeight: 1.4,
+          border: "1px solid var(--np-hairline)", maxWidth: "min(240px, calc(100% - 24px))", lineHeight: 1.4,
           backdropFilter: "blur(8px)", boxShadow: "0 8px 28px rgba(0,0,0,0.28)",
         }}>
           <div style={{ fontWeight: 700, fontSize: 15 }}>{hoveredPlant.name || hoveredPlant.question || "—"}</div>
@@ -926,7 +926,7 @@ export default function Globe({
           ) : mode === "reactors" ? (
             <>
               <div style={{ opacity: 0.6, marginTop: 2 }}>{hoveredPlant.country}</div>
-              <div style={{ color: "#d4a54a", marginTop: 6, fontFamily: "'DM Mono',monospace", fontSize: 14 }}>{hoveredPlant.capacity.toLocaleString()} MW</div>
+              <div style={{ color: "var(--np-accent-ink)", marginTop: 6, fontFamily: "var(--np-font-mono)", fontSize: 14 }}>{hoveredPlant.capacity.toLocaleString()} MW</div>
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
                 <span style={{ fontSize: 11, color: STATUS_COLORS[hoveredPlant.status] ?? STATUS_COLORS.Shutdown }}>● {hoveredPlant.status}</span>
                 <span style={{ fontSize: 11, opacity: 0.5 }}>{hoveredPlant.reactors} reactor{hoveredPlant.reactors > 1 ? "s" : ""}{hoveredPlant.underConstruction ? ` · +${hoveredPlant.underConstruction.reactors} building` : ""}</span>
@@ -935,7 +935,7 @@ export default function Globe({
           ) : (
             <>
               <div style={{ opacity: 0.6, marginTop: 2 }}>{hoveredPlant.country} · {hoveredPlant.region}</div>
-              <div style={{ color: SUPPLY_STAGE_COLORS[hoveredPlant.stage] || "#d4a54a", marginTop: 6, fontFamily: "'DM Mono',monospace", fontSize: 13 }}>
+              <div style={{ color: SUPPLY_STAGE_COLORS[hoveredPlant.stage] || "#d4a54a", marginTop: 6, fontFamily: "var(--np-font-mono)", fontSize: 13 }}>
                 {hoveredPlant.stage}
               </div>
               <div style={{ marginTop: 6, fontSize: 11, color: "rgba(245,240,232,0.7)", lineHeight: 1.5 }}>

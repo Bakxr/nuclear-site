@@ -73,7 +73,7 @@ export default function SmrSection({ sectionRef }) {
             <tbody>
               {[...SMR_PROJECTS].sort((a, b) => SMR_STATUS_ORDER.indexOf(a.status) - SMR_STATUS_ORDER.indexOf(b.status) || a.year - b.year).map((project, i, rows) => {
                 const cell = { padding: "14px 16px", borderBottom: i === rows.length - 1 ? "none" : "1px solid var(--np-band-border)", verticalAlign: "top" };
-                const num = { ...cell, textAlign: "right", fontFamily: "'DM Mono',monospace", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap", color: "var(--np-band-text)" };
+                const num = { ...cell, textAlign: "right", fontFamily: "var(--np-font-mono)", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap", color: "var(--np-band-text)" };
                 // Data carries a flag emoji first ("🇨🇦 Canada"); show the name only.
                 const countryName = project.country.split(" ").slice(1).join(" ");
                 return (

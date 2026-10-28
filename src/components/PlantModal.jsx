@@ -90,7 +90,7 @@ export default function PlantModal({ plant, onClose }) {
         transition={{ type: "spring", damping: 25, stiffness: 300 }}
         style={{
           background: "var(--np-bg)", borderRadius: 20, maxWidth: 780, width: "100%",
-          position: "relative", border: "1px solid rgba(212,165,74,0.2)",
+          position: "relative", border: "1px solid rgba(var(--np-accent-rgb), 0.2)",
           boxShadow: "0 24px 80px rgba(0,0,0,0.15)", overflow: "hidden",
           maxHeight: "85vh", display: "flex", flexDirection: "column",
         }}
@@ -142,11 +142,11 @@ export default function PlantModal({ plant, onClose }) {
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
                 <svg width="64" height="64" viewBox="0 0 64 64" opacity="0.3">
-                  <circle cx="32" cy="32" r="28" fill="none" stroke="#d4a54a" strokeWidth="2" />
-                  <circle cx="32" cy="32" r="6" fill="#d4a54a" />
-                  <ellipse cx="32" cy="32" rx="18" ry="6" fill="none" stroke="#d4a54a" strokeWidth="1.5" transform="rotate(0 32 32)" />
-                  <ellipse cx="32" cy="32" rx="18" ry="6" fill="none" stroke="#d4a54a" strokeWidth="1.5" transform="rotate(60 32 32)" />
-                  <ellipse cx="32" cy="32" rx="18" ry="6" fill="none" stroke="#d4a54a" strokeWidth="1.5" transform="rotate(120 32 32)" />
+                  <circle cx="32" cy="32" r="28" fill="none" stroke="var(--np-accent)" strokeWidth="2" />
+                  <circle cx="32" cy="32" r="6" fill="var(--np-accent)" />
+                  <ellipse cx="32" cy="32" rx="18" ry="6" fill="none" stroke="var(--np-accent)" strokeWidth="1.5" transform="rotate(0 32 32)" />
+                  <ellipse cx="32" cy="32" rx="18" ry="6" fill="none" stroke="var(--np-accent)" strokeWidth="1.5" transform="rotate(60 32 32)" />
+                  <ellipse cx="32" cy="32" rx="18" ry="6" fill="none" stroke="var(--np-accent)" strokeWidth="1.5" transform="rotate(120 32 32)" />
                 </svg>
               </div>
             )}
@@ -159,7 +159,7 @@ export default function PlantModal({ plant, onClose }) {
 
             {/* Plant name overlaid */}
             <div style={{ position: "absolute", bottom: 16, left: 24, right: 60, zIndex: 1 }}>
-              <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", color: "#d4a54a", fontWeight: 700, marginBottom: 4 }}>
+              <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--np-accent)", fontWeight: 700, marginBottom: 4 }}>
                 Nuclear Power Station
               </div>
               <h3 id="plant-modal-title" style={{ fontFamily: "var(--np-font-display)", fontSize: "clamp(22px, 4vw, 32px)", fontWeight: 500, margin: 0, color: "#fff", lineHeight: 1.15 }}>
@@ -190,7 +190,7 @@ export default function PlantModal({ plant, onClose }) {
               {infoCards.map((item, i) => (
                 <div key={i} style={{ background: "var(--np-surface-dim)", borderRadius: 10, padding: "12px 14px" }}>
                   <div style={{ fontSize: 10, color: "var(--np-text-muted)", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>{item.label}</div>
-                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 15, fontWeight: 600, color: "var(--np-text)" }}>{item.val}</div>
+                  <div style={{ fontFamily: "var(--np-font-mono)", fontSize: 15, fontWeight: 600, color: "var(--np-text)" }}>{item.val}</div>
                   {item.sub && <div style={{ fontSize: 10, color: "var(--np-text-faint)", marginTop: 2 }}>{item.sub}</div>}
                 </div>
               ))}
@@ -231,7 +231,7 @@ export default function PlantModal({ plant, onClose }) {
                 background: "var(--np-nav-bg)", padding: "5px 8px",
                 display: "flex", justifyContent: "space-between", alignItems: "center",
               }}>
-                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 10, color: "var(--np-text-muted)" }}>
+                <span style={{ fontFamily: "var(--np-font-mono)", fontSize: 10, color: "var(--np-text-muted)" }}>
                   {plant.lat.toFixed(2)}&deg;, {plant.lng.toFixed(2)}&deg;
                 </span>
                 <span style={{ fontSize: 8, color: "var(--np-text-faint)" }}>&copy; OpenStreetMap</span>
@@ -256,7 +256,7 @@ export default function PlantModal({ plant, onClose }) {
                     color: reactorView === tab.key ? "var(--np-bg)" : "var(--np-text-muted)",
                     border: "1px solid " + (reactorView === tab.key ? "var(--np-text)" : "var(--np-border)"),
                     borderRadius: 8, padding: "6px 14px", fontSize: 12, fontWeight: 600,
-                    cursor: "pointer", fontFamily: "'DM Sans',sans-serif", transition: "all 0.2s",
+                    cursor: "pointer", fontFamily: "var(--np-font-sans)", transition: "all 0.2s",
                   }}>{tab.label}</button>
                 ))}
               </div>
@@ -280,14 +280,14 @@ export default function PlantModal({ plant, onClose }) {
                   href={`https://en.wikipedia.org/wiki/${encodeURIComponent(plant.name.replace(/\s+/g, "_"))}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ fontSize: 12, color: "#d4a54a", textDecoration: "none", fontWeight: 600 }}
+                  style={{ fontSize: 12, color: "var(--np-accent)", textDecoration: "none", fontWeight: 600 }}
                 >
                   Wikipedia &rarr;
                 </a>
               )}
               <button onClick={copyLink} style={{
                 background: "none", border: "1px solid var(--np-border)", borderRadius: 6,
-                padding: "4px 10px", fontSize: 12, cursor: "pointer", fontFamily: "'DM Sans',sans-serif",
+                padding: "4px 10px", fontSize: 12, cursor: "pointer", fontFamily: "var(--np-font-sans)",
                 color: copied ? "#4ade80" : "var(--np-text-muted)", transition: "all 0.2s",
                 display: "flex", alignItems: "center", gap: 5,
               }}>

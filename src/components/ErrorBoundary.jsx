@@ -64,11 +64,11 @@ export default class ErrorBoundary extends React.Component {
             fontSize: 13,
             fontWeight: 600,
             cursor: "pointer",
-            fontFamily: "'DM Sans',sans-serif",
+            fontFamily: "var(--np-font-sans)",
             letterSpacing: "0.02em",
             transition: "background 0.2s, color 0.2s",
           }}
-          onMouseEnter={e => { e.currentTarget.style.background = "#d4a54a"; e.currentTarget.style.color = "#14120e"; }}
+          onMouseEnter={e => { e.currentTarget.style.background = "var(--np-accent)"; e.currentTarget.style.color = "#14120e"; }}
           onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "var(--np-accent-ink)"; }}
         >
           Try again

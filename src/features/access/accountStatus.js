@@ -45,7 +45,7 @@ export function getAccountStatusMeta({ accessState, isConfigured, membershipLoad
     return {
       title: "Account",
       detail: "Sign in",
-      accent: "rgba(212,165,74,0.72)",
+      accent: "rgba(var(--np-accent-rgb), 0.72)",
     };
   }
 
@@ -60,6 +60,6 @@ export function getAccountStatusMeta({ accessState, isConfigured, membershipLoad
   return {
     title: truncateEmail(user.email, 22),
     detail: "Signed in",
-    accent: "#d4a54a",
+    accent: "var(--np-accent)",
   };
 }

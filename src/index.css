@@ -1,124 +1,128 @@
 /* ====================================================================
-   THEME CUSTOM PROPERTIES
+   THEME CUSTOM PROPERTIES — "Broadsheet" (2026-10 redesign)
+   Paper and ink with one blue accent. Newsreader carries the editorial
+   voice, Public Sans the UI, JetBrains Mono the numbers.
    ==================================================================== */
 :root {
-  /* Typefaces — Fraunces carries the editorial voice, DM Sans the UI, DM Mono the data. */
-  --np-font-display: 'Fraunces', 'Iowan Old Style', Georgia, serif;
-  --np-font-sans: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --np-font-mono: 'DM Mono', 'SFMono-Regular', Menlo, monospace;
+  --np-font-display: 'Newsreader', 'Iowan Old Style', Georgia, serif;
+  --np-font-sans: 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --np-font-mono: 'JetBrains Mono', 'SFMono-Regular', Menlo, monospace;
 
-  /* Paper + ink — bright, clean ivory with crisp near-black ink. */
-  --np-bg: #f3f1e8;
-  --np-bg-alt: #f9f8f1;
-  --np-surface: #fcfbf5;
-  --np-surface-dim: rgba(28, 24, 14, 0.05);
-  --np-text: #1b1609;
-  --np-text-muted: #5e5546;
-  --np-text-faint: #6f6552; /* 5.1:1 on --np-bg (was #8c8169, 3.4:1) */
-  --np-accent: #d4a54a;
-  /* Gold that holds contrast as small text on paper. Resolves back to bright gold on dark. */
-  --np-accent-ink: #826017;
-  --np-border: rgba(28, 24, 14, 0.11);
-  --np-border-strong: rgba(28, 24, 14, 0.24);
-  --np-hairline: rgba(28, 24, 14, 0.16);
-  --np-dark-bg: #0e0c08;
-  --np-dark-surface: rgba(245, 240, 232, 0.035);
-  --np-dark-text: #f5f0e8;
-  --np-dark-text-muted: rgba(245, 240, 232, 0.52);
-  --np-nav-bg: rgba(246, 244, 237, 0.92);
-  --np-card-bg: #f9f8f1;
-  --np-card-border: rgba(28, 24, 14, 0.11);
-  --np-containment-bg: #e8e5d7;
+  --np-bg: #f5f2ea;
+  --np-bg-alt: #efebe0;
+  --np-surface: #fbf9f4;
+  --np-surface-dim: rgba(22, 20, 15, 0.05);
+  --np-text: #16140f;
+  --np-text-muted: #4a453b;
+  --np-text-faint: #5c564a;
+  /* The accent, also as an RGB triplet for rgba(var(--np-accent-rgb), a). */
+  --np-accent: #1c44c9;
+  --np-accent-rgb: 28, 68, 201;
+  --np-accent-ink: #1c44c9;
+  --np-on-accent: #ffffff;
+  --np-rule: #16140f;
+  --np-border: rgba(22, 20, 15, 0.12);
+  --np-border-strong: rgba(22, 20, 15, 0.28);
+  --np-hairline: rgba(22, 20, 15, 0.18);
+  --np-dark-bg: #16140f;
+  --np-dark-surface: rgba(245, 242, 234, 0.05);
+  --np-dark-text: #f5f2ea;
+  --np-dark-text-muted: rgba(245, 242, 234, 0.72);
+  --np-nav-bg: rgba(245, 242, 234, 0.96);
+  --np-card-bg: #fbf9f4;
+  --np-card-border: rgba(22, 20, 15, 0.12);
+  --np-containment-bg: #eae5d8;
+  --np-callout-bg: #eae5d8;
 
-  /* Rhythm — generous editorial whitespace, fluid gutters. */
-  --np-section-x: clamp(20px, 4vw, 64px);
-  --np-section-y: clamp(76px, 7vw, 100px);
-  --np-section-y-tight: clamp(56px, 6vw, 84px);
-  --np-section-y-footer: 64px;
+  --np-section-x: clamp(16px, 3vw, 32px);
+  --np-section-y: clamp(40px, 5vw, 64px);
+  --np-section-y-tight: clamp(32px, 4vw, 48px);
+  --np-section-y-footer: 48px;
+  --np-content-max: 1240px;
 
-  /* Content column — wide, full-screen friendly. */
-  --np-content-max: 1200px;
-
-  /* Geometry — quieter corners, hairline borders. */
-  --np-r-sm: 6px;
-  --np-r-md: 12px;
-  --np-r-lg: 18px;
+  /* Broadsheet geometry: square corners, ruled lines. */
+  --np-r-sm: 2px;
+  --np-r-md: 4px;
+  --np-r-lg: 6px;
 }
 
 :root.dark {
-  --np-bg: #100d09;
-  --np-bg-alt: #161310;
-  --np-surface: #1a1712;
-  --np-surface-dim: rgba(245, 240, 232, 0.05);
-  --np-text: #f5f0e8;
-  --np-text-muted: #b3a489;
-  --np-text-faint: #8b7d65;
-  --np-accent: #d4a54a;
-  --np-accent-ink: #d4a54a;
-  --np-border: rgba(245, 240, 232, 0.09);
-  --np-border-strong: rgba(245, 240, 232, 0.18);
-  --np-hairline: rgba(245, 240, 232, 0.13);
-  --np-dark-bg: #0a0805;
-  --np-dark-surface: rgba(245, 240, 232, 0.04);
-  --np-dark-text: #f5f0e8;
-  --np-dark-text-muted: rgba(245, 240, 232, 0.52);
-  --np-nav-bg: rgba(16, 13, 9, 0.92);
-  --np-card-bg: #1a1712;
-  --np-card-border: rgba(245, 240, 232, 0.09);
-  --np-containment-bg: #161310;
+  --np-bg: #121110;
+  --np-bg-alt: #1c1a17;
+  --np-surface: #1c1a17;
+  --np-surface-dim: rgba(237, 232, 220, 0.05);
+  --np-text: #ede8dc;
+  --np-text-muted: #b9b2a3;
+  --np-text-faint: #9a9384;
+  --np-accent: #8fa8ff;
+  --np-accent-rgb: 143, 168, 255;
+  --np-accent-ink: #8fa8ff;
+  --np-on-accent: #0b1430;
+  --np-rule: #ede8dc;
+  --np-border: rgba(237, 232, 220, 0.12);
+  --np-border-strong: rgba(237, 232, 220, 0.26);
+  --np-hairline: rgba(237, 232, 220, 0.16);
+  --np-dark-bg: #0b0a09;
+  --np-dark-surface: rgba(237, 232, 220, 0.05);
+  --np-dark-text: #ede8dc;
+  --np-dark-text-muted: rgba(237, 232, 220, 0.72);
+  --np-nav-bg: rgba(18, 17, 16, 0.96);
+  --np-card-bg: #1c1a17;
+  --np-card-border: rgba(237, 232, 220, 0.12);
+  --np-containment-bg: #1c1a17;
+  --np-callout-bg: #24221e;
 }
 
-/* Band sections (Markets, Buildout, History): a darker band on dark mode,
-   a toned paper band on light. Plus status colors that hold contrast on
-   either background; the light values are deeper versions of the dark ones. */
+/* Bands (sections set apart from the page): toned paper on light, a deeper
+   ink on dark. Plus status colors that hold 4.5:1 on either background. */
 :root {
-  --np-band-bg: #ebe7da;
-  --np-band-text: #1b1609;
-  --np-band-text-muted: #5e5546;
-  --np-band-text-faint: #7d7360;
-  --np-band-surface: #fcfbf5;
+  --np-band-bg: #efebe0;
+  --np-band-text: #16140f;
+  --np-band-text-muted: #4a453b;
+  --np-band-text-faint: #5c564a;
+  --np-band-surface: #fbf9f4;
   --np-band-surface-hover: #ffffff;
-  --np-band-border: rgba(28, 24, 14, 0.12);
-  --np-band-rule: rgba(28, 24, 14, 0.2);
-  --np-band-shadow: 0 20px 48px rgba(28, 24, 14, 0.12);
-  --np-band-ghost: rgba(28, 24, 14, 0.13);
+  --np-band-border: rgba(22, 20, 15, 0.14);
+  --np-band-rule: rgba(22, 20, 15, 0.28);
+  --np-band-shadow: none;
+  --np-band-ghost: rgba(22, 20, 15, 0.13);
 
-  --np-up: #1f7a45;
-  --np-down: #b42318;
-  --np-success: #1f7a45;
-  --np-c-gold: #8a6212;
-  --np-c-green: #1f7a45;
-  --np-c-red: #b42318;
-  --np-c-teal: #1f6f8b;
-  --np-c-amber: #9a6200;
-  --np-c-blue: #2557b8;
-  --np-c-violet: #6941c6;
-  --np-c-slate: #55606e;
+  --np-up: #0b6b3a;
+  --np-down: #a3231a;
+  --np-success: #0b6b3a;
+  --np-c-gold: #8a5300;
+  --np-c-green: #0b6b3a;
+  --np-c-red: #a3231a;
+  --np-c-teal: #1f6478;
+  --np-c-amber: #8a5300;
+  --np-c-blue: #1c44c9;
+  --np-c-violet: #5b3ab0;
+  --np-c-slate: #4f5967;
 }
 
 :root.dark {
-  --np-band-bg: var(--np-dark-bg);
-  --np-band-text: #f5f0e8;
-  --np-band-text-muted: rgba(245, 240, 232, 0.55);
-  --np-band-text-faint: rgba(245, 240, 232, 0.35);
-  --np-band-surface: rgba(245, 240, 232, 0.035);
-  --np-band-surface-hover: rgba(245, 240, 232, 0.07);
-  --np-band-border: rgba(245, 240, 232, 0.07);
-  --np-band-rule: rgba(245, 240, 232, 0.16);
-  --np-band-shadow: 0 20px 48px rgba(0, 0, 0, 0.28);
-  --np-band-ghost: rgba(245, 240, 232, 0.4);
+  --np-band-bg: #0b0a09;
+  --np-band-text: #ede8dc;
+  --np-band-text-muted: #b9b2a3;
+  --np-band-text-faint: #9a9384;
+  --np-band-surface: #1c1a17;
+  --np-band-surface-hover: #24221e;
+  --np-band-border: rgba(237, 232, 220, 0.12);
+  --np-band-rule: rgba(237, 232, 220, 0.24);
+  --np-band-shadow: none;
+  --np-band-ghost: rgba(237, 232, 220, 0.4);
 
-  --np-up: #4ade80;
-  --np-down: #f87171;
-  --np-success: #4ade80;
-  --np-c-gold: #d4a54a;
-  --np-c-green: #4ade80;
-  --np-c-red: #ef4444;
-  --np-c-teal: #5ab8d4;
-  --np-c-amber: #fbbf24;
-  --np-c-blue: #60a5fa;
-  --np-c-violet: #a78bfa;
-  --np-c-slate: #94a3b8;
+  --np-up: #5bd08a;
+  --np-down: #ff8a7a;
+  --np-success: #5bd08a;
+  --np-c-gold: #f2b84b;
+  --np-c-green: #5bd08a;
+  --np-c-red: #ff8a7a;
+  --np-c-teal: #6cc3dc;
+  --np-c-amber: #f2b84b;
+  --np-c-blue: #8fa8ff;
+  --np-c-violet: #b4a0ff;
+  --np-c-slate: #a3afbf;
 }
 
 * {
@@ -136,20 +140,20 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Editorial display type — Fraunces with optical sizing engaged. */
+/* Editorial display type — Newsreader with optical sizing engaged. */
 h1, h2, h3 {
   font-optical-sizing: auto;
 }
 
 /* Visible, consistent keyboard focus everywhere on the editorial site. */
 .np-app-shell :is(a, button, input, select, textarea, [tabindex]):focus-visible {
-  outline: 2px solid rgba(212, 165, 74, 0.65);
+  outline: 2px solid var(--np-accent);
   outline-offset: 3px;
   border-radius: 2px;
 }
 
 ::selection {
-  background: rgba(212, 165, 74, 0.3);
+  background: rgba(var(--np-accent-rgb), 0.22);
 }
 
 html {
@@ -174,11 +178,11 @@ html {
   --np-terminal-panel: #17140f;
   --np-terminal-panel-alt: #1f1b15;
   --np-terminal-border: rgba(245, 240, 232, 0.09);
-  --np-terminal-border-soft: rgba(212, 165, 74, 0.18);
+  --np-terminal-border-soft: rgba(var(--np-accent-rgb), 0.18);
   --np-terminal-text: #f5f0e8;
   --np-terminal-muted: #b3a489;
   --np-terminal-subtle: #8b7d65;
-  --np-terminal-amber: #d4a54a;
+  --np-terminal-amber: var(--np-accent);
   --np-terminal-cyan: #8fb8ad;
   --np-terminal-green: #4ade80;
   --np-terminal-red: #f87171;
@@ -188,7 +192,7 @@ html {
   min-height: 100vh;
   background: var(--np-terminal-bg);
   color: var(--np-terminal-text);
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--np-font-sans);
 }
 
 img,
@@ -209,12 +213,12 @@ video {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(212, 165, 74, 0.3);
+  background: rgba(var(--np-accent-rgb), 0.3);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(212, 165, 74, 0.5);
+  background: rgba(var(--np-accent-rgb), 0.5);
 }
 
 /* Loading animation */
@@ -262,7 +266,7 @@ video {
 }
 
 .np-data-shell a:hover {
-  color: #d4a54a !important;
+  color: var(--np-accent) !important;
 }
 
 .np-first-fold {
@@ -352,7 +356,7 @@ video {
   border: 1px solid var(--np-border);
   background: var(--np-surface);
   color: var(--np-text);
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--np-font-sans);
   font-size: 12px;
   font-weight: 600;
   line-height: 1.2;
@@ -362,17 +366,17 @@ video {
 }
 
 .np-globe-filter-select:focus {
-  border-color: rgba(212, 165, 74, 0.45);
-  box-shadow: 0 0 0 3px rgba(212, 165, 74, 0.12);
+  border-color: rgba(var(--np-accent-rgb), 0.45);
+  box-shadow: 0 0 0 3px rgba(var(--np-accent-rgb), 0.12);
 }
 
 .np-globe-filter-clear {
   appearance: none;
-  border: 1px solid rgba(212, 165, 74, 0.24);
+  border: 1px solid rgba(var(--np-accent-rgb), 0.24);
   border-radius: 999px;
   background: transparent;
   color: var(--np-accent);
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--np-font-sans);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -383,8 +387,8 @@ video {
 }
 
 .np-globe-filter-clear:hover {
-  background: rgba(212, 165, 74, 0.08);
-  border-color: rgba(212, 165, 74, 0.36);
+  background: rgba(var(--np-accent-rgb), 0.08);
+  border-color: rgba(var(--np-accent-rgb), 0.36);
 }
 
 .np-globe-show-more {
@@ -500,7 +504,7 @@ video {
     background: none;
     border: none;
     cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
+    font-family: var(--np-font-sans);
     font-size: 14px;
     font-weight: 500;
     color: var(--np-text-muted);
@@ -510,7 +514,7 @@ video {
     transition: background 0.2s, color 0.2s;
   }
   .np-mobile-menu button:hover {
-    background: rgba(212, 165, 74, 0.08);
+    background: rgba(var(--np-accent-rgb), 0.08);
     color: var(--np-text);
   }
 
@@ -1009,81 +1013,68 @@ video {
   letter-spacing: 0.04em;
 }
 
-/* Numbered editorial section headers */
+/* Section headers: broadsheet style. A heavy rule, the section name as a
+   serif headline with the meta line set right, then an optional lede. The
+   index number and label are kept for screen readers' context only. */
 .np-sec-head {
-  margin-bottom: clamp(36px, 5vw, 60px);
+  margin-bottom: clamp(20px, 3vw, 28px);
 }
 
 .np-sec-kicker-row {
   display: flex;
   align-items: baseline;
-  gap: 14px;
-  padding-top: 20px;
-  border-top: 1px solid var(--np-hairline);
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 3px double var(--np-rule);
   flex-wrap: wrap;
 }
 
 .np-sec-index {
-  font-family: var(--np-font-mono);
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--np-accent-ink);
-  letter-spacing: 0.06em;
+  display: none;
 }
 
 .np-sec-label {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--np-text-muted);
+  color: var(--np-accent-ink);
 }
 
 .np-sec-meta {
   margin-left: auto;
-  font-family: var(--np-font-mono);
-  font-size: 11px;
+  font-size: 13px;
   color: var(--np-text-faint);
-  letter-spacing: 0.04em;
 }
 
 .np-sec-title {
   font-family: var(--np-font-display);
-  font-size: clamp(38px, 5.4vw, 78px);
-  font-weight: 400;
-  line-height: 1.02;
-  letter-spacing: -0.025em;
-  margin: clamp(20px, 3vw, 36px) 0 0;
+  font-size: clamp(30px, 3.6vw, 44px);
+  font-weight: 500;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  margin: 6px 0 0;
   color: var(--np-text);
-  max-width: 18ch;
+  max-width: 28ch;
   text-wrap: balance;
 }
 
 .np-sec-title em {
-  font-style: italic;
-  font-weight: 350;
-  color: var(--np-accent-ink);
+  font-style: normal;
+  font-weight: inherit;
+  color: inherit;
 }
 
 .np-sec-lede {
   font-size: 16px;
-  line-height: 1.7;
+  line-height: 1.6;
   color: var(--np-text-muted);
-  max-width: 58ch;
-  margin: 18px 0 0;
+  max-width: 64ch;
+  margin: 10px 0 0;
 }
 
-/* Band-section headers (Markets, Buildout, History) follow the band tokens. */
 .np-sec-head--dark .np-sec-kicker-row {
-  border-top-color: var(--np-band-rule);
-}
-
-.np-sec-head--dark .np-sec-index {
-  color: var(--np-accent-ink);
-}
-
-.np-sec-head--dark .np-sec-label {
-  color: var(--np-band-text-muted);
+  border-top-color: var(--np-band-text);
 }
 
 .np-sec-head--dark .np-sec-meta {
@@ -1092,10 +1083,6 @@ video {
 
 .np-sec-head--dark .np-sec-title {
   color: var(--np-band-text);
-}
-
-.np-sec-head--dark .np-sec-title em {
-  color: var(--np-accent-ink);
 }
 
 .np-sec-head--dark .np-sec-lede {
@@ -1122,7 +1109,7 @@ video {
 }
 
 .np-btn:hover {
-  transform: translateY(-2px);
+  transform: none;
 }
 
 .np-btn:active {
@@ -1145,9 +1132,9 @@ video {
 }
 
 .np-btn--primary:hover {
-  background: var(--np-accent-ink);
-  border-color: var(--np-accent-ink);
-  color: #fdfbf6;
+  background: var(--np-accent);
+  border-color: var(--np-accent);
+  color: var(--np-on-accent);
 }
 
 .np-btn--ghost {
@@ -1190,7 +1177,7 @@ video {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  border-radius: 999px;
+  border-radius: var(--np-r-sm);
   border: 1px solid var(--np-border);
   background: transparent;
   color: var(--np-text-muted);
@@ -1222,8 +1209,8 @@ video {
 }
 
 .np-chip--accent.is-active {
-  background: rgba(212, 165, 74, 0.14);
-  border-color: rgba(212, 165, 74, 0.5);
+  background: rgba(var(--np-accent-rgb), 0.14);
+  border-color: rgba(var(--np-accent-rgb), 0.5);
   color: var(--np-accent-ink);
 }
 
@@ -1239,9 +1226,7 @@ video {
 }
 
 .np-card:hover {
-  transform: translateY(-4px);
   border-color: var(--np-border-strong);
-  box-shadow: 0 22px 44px rgba(20, 15, 5, 0.09);
 }
 
 /* Inputs */
@@ -1258,7 +1243,7 @@ video {
 }
 
 .np-input:focus {
-  border-color: rgba(212, 165, 74, 0.65);
+  border-color: rgba(var(--np-accent-rgb), 0.65);
 }
 
 /* Oversized footer wordmark */
@@ -1279,20 +1264,17 @@ video {
 }
 
 .np-footer-link {
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
   font-family: var(--np-font-sans);
-  font-size: 13px;
-  color: rgba(245, 240, 232, 0.55);
+  font-size: 14px;
+  line-height: 1.9;
+  color: var(--np-text);
   text-decoration: none;
-  transition: color 0.2s ease;
-  text-align: left;
 }
 
 .np-footer-link:hover {
-  color: var(--np-accent);
+  color: var(--np-accent-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 /* ====================================================================

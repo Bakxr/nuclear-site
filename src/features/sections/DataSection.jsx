@@ -95,7 +95,7 @@ export default function DataSection({
                 </div>
 
                 <div className="np-data-summary" style={{ display: "grid", gap: 6, minWidth: 230 }}>
-                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: "#d4a54a" }}>
+                  <div style={{ fontFamily: "var(--np-font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--np-accent)" }}>
                     {dataView === "countries" ? "Country lens" : "Proof lens"}
                   </div>
                   <div style={{ fontFamily: "var(--np-font-display)", fontSize: 24, lineHeight: 1.05, letterSpacing: "-0.03em", color: "var(--np-text)" }}>
@@ -129,9 +129,9 @@ export default function DataSection({
                         className="np-data-chip"
                         onClick={() => setDataSort(sort.key)}
                         style={{
-                          background: dataSort === sort.key ? "rgba(212,165,74,0.12)" : "transparent",
-                          color: dataSort === sort.key ? "#d4a54a" : "var(--np-text-muted)",
-                          border: `1px solid ${dataSort === sort.key ? "rgba(212,165,74,0.35)" : "var(--np-border)"}`,
+                          background: dataSort === sort.key ? "rgba(var(--np-accent-rgb), 0.12)" : "transparent",
+                          color: dataSort === sort.key ? "var(--np-accent)" : "var(--np-text-muted)",
+                          border: `1px solid ${dataSort === sort.key ? "rgba(var(--np-accent-rgb), 0.35)" : "var(--np-border)"}`,
                         }}
                       >
                         {sort.label}
@@ -154,9 +154,9 @@ export default function DataSection({
                           className="np-data-chip"
                           onClick={() => setCompareMetric(metric.key)}
                           style={{
-                            background: compareMetric === metric.key ? "rgba(212,165,74,0.12)" : "transparent",
-                            color: compareMetric === metric.key ? "#d4a54a" : "var(--np-text-muted)",
-                            border: `1px solid ${compareMetric === metric.key ? "rgba(212,165,74,0.35)" : "var(--np-border)"}`,
+                            background: compareMetric === metric.key ? "rgba(var(--np-accent-rgb), 0.12)" : "transparent",
+                            color: compareMetric === metric.key ? "var(--np-accent)" : "var(--np-text-muted)",
+                            border: `1px solid ${compareMetric === metric.key ? "rgba(var(--np-accent-rgb), 0.35)" : "var(--np-border)"}`,
                           }}
                         >
                           {metric.label}
@@ -170,13 +170,13 @@ export default function DataSection({
                         gap: 14,
                         padding: "16px 18px",
                         borderRadius: 16,
-                        background: isDark ? "rgba(212,165,74,0.1)" : "rgba(212,165,74,0.06)",
-                        border: `1px solid ${isDark ? "rgba(212,165,74,0.22)" : "rgba(212,165,74,0.16)"}`,
+                        background: isDark ? "rgba(var(--np-accent-rgb), 0.1)" : "rgba(var(--np-accent-rgb), 0.06)",
+                        border: `1px solid ${isDark ? "rgba(var(--np-accent-rgb), 0.22)" : "rgba(var(--np-accent-rgb), 0.16)"}`,
                         alignItems: "center",
                       }}
                     >
                       <div style={{ display: "grid", gap: 6 }}>
-                        <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", color: "#d4a54a" }}>
+                        <div style={{ fontFamily: "var(--np-font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--np-accent)" }}>
                           Source
                         </div>
                         <a href={activeComparisonMetric.sourceUrl} target="_blank" rel="noopener noreferrer" style={{ color: "var(--np-text)", textDecoration: "none", fontWeight: 600 }}>
@@ -184,7 +184,7 @@ export default function DataSection({
                         </a>
                       </div>
                       <div style={{ textAlign: "right" }}>
-                        <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--np-text-faint)" }}>
+                        <div style={{ fontFamily: "var(--np-font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--np-text-faint)" }}>
                           Unit
                         </div>
                         <div style={{ fontSize: 13, color: "var(--np-text-muted)", fontWeight: 600 }}>
@@ -224,7 +224,7 @@ export default function DataSection({
                               cursor: "pointer",
                               borderRadius: 12,
                               transition: "background 0.2s ease",
-                              background: hoveredCountry === c.country ? "rgba(212,165,74,0.04)" : expandedCountry === c.country ? "rgba(212,165,74,0.06)" : "transparent",
+                              background: hoveredCountry === c.country ? "rgba(var(--np-accent-rgb), 0.04)" : expandedCountry === c.country ? "rgba(var(--np-accent-rgb), 0.06)" : "transparent",
                             }}
                           >
                             <span style={{ fontWeight: 600, fontSize: 14, color: "var(--np-text)" }}>{c.country}</span>
@@ -238,21 +238,21 @@ export default function DataSection({
                                   inset: 0,
                                   width: `${Math.max(getBarWidth(c), 1.5)}%`,
                                   borderRadius: 999,
-                                  background: "linear-gradient(90deg, #d4a54a 0%, rgba(212,165,74,0.55) 100%)",
+                                  background: "linear-gradient(90deg, var(--np-accent) 0%, rgba(var(--np-accent-rgb), 0.55) 100%)",
                                 }}
                               />
                             </div>
-                            <span className="np-data-value" style={{ fontFamily: "'DM Mono',monospace", fontSize: 14, fontWeight: 700, textAlign: "right", whiteSpace: "nowrap", color: "var(--np-text)" }}>
+                            <span className="np-data-value" style={{ fontFamily: "var(--np-font-mono)", fontSize: 14, fontWeight: 700, textAlign: "right", whiteSpace: "nowrap", color: "var(--np-text)" }}>
                               {dataSort === "capacity" ? c.capacity : dataSort === "reactors" ? c.reactors : `${c.nuclear}%`}
                             </span>
-                            <span className="np-data-sub" style={{ fontFamily: "'DM Mono',monospace", fontSize: 11, color: "var(--np-text-faint)", textAlign: "right", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                            <span className="np-data-sub" style={{ fontFamily: "var(--np-font-mono)", fontSize: 11, color: "var(--np-text-faint)", textAlign: "right", textTransform: "uppercase", letterSpacing: "0.06em" }}>
                               {dataSort === "capacity"
                                 ? `${c.nuclear}% share | ${c.reactors} reactors`
                                 : dataSort === "reactors"
                                   ? `${c.nuclear}% share | ${c.capacity}`
                                   : `${c.reactors} reactors | ${c.capacity}`}
                             </span>
-                            <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 12, color: expandedCountry === c.country ? "#d4a54a" : "var(--np-text-faint)", textAlign: "center" }}>
+                            <span style={{ fontFamily: "var(--np-font-mono)", fontSize: 12, color: expandedCountry === c.country ? "var(--np-accent)" : "var(--np-text-faint)", textAlign: "center" }}>
                               {expandedCountry === c.country ? "-" : "+"}
                             </span>
                           </div>
@@ -287,11 +287,11 @@ export default function DataSection({
                                           alignItems: "center",
                                           gap: 8,
                                           color: "var(--np-text)",
-                                          fontFamily: "'DM Sans',sans-serif",
+                                          fontFamily: "var(--np-font-sans)",
                                         }}
                                         onMouseEnter={(e) => {
-                                          e.currentTarget.style.background = "rgba(212,165,74,0.08)";
-                                          e.currentTarget.style.borderColor = "rgba(212,165,74,0.3)";
+                                          e.currentTarget.style.background = "rgba(var(--np-accent-rgb), 0.08)";
+                                          e.currentTarget.style.borderColor = "rgba(var(--np-accent-rgb), 0.3)";
                                         }}
                                         onMouseLeave={(e) => {
                                           e.currentTarget.style.background = "var(--np-surface-dim)";
@@ -314,8 +314,8 @@ export default function DataSection({
                                       className="np-data-chip"
                                       style={{
                                         background: "transparent",
-                                        color: "#d4a54a",
-                                        border: "1px solid rgba(212,165,74,0.3)",
+                                        color: "var(--np-accent)",
+                                        border: "1px solid rgba(var(--np-accent-rgb), 0.3)",
                                       }}
                                     >
                                       View on globe
@@ -328,8 +328,8 @@ export default function DataSection({
                                       className="np-data-chip"
                                       style={{
                                         background: "transparent",
-                                        color: "#d4a54a",
-                                        border: "1px solid rgba(212,165,74,0.3)",
+                                        color: "var(--np-accent)",
+                                        border: "1px solid rgba(var(--np-accent-rgb), 0.3)",
                                       }}
                                     >
                                       Country profile
@@ -385,11 +385,11 @@ export default function DataSection({
                               padding: "14px 8px",
                               borderBottom: "1px solid var(--np-border)",
                               borderRadius: 12,
-                              background: hoveredSource === row.name ? "rgba(212,165,74,0.04)" : "transparent",
+                              background: hoveredSource === row.name ? "rgba(var(--np-accent-rgb), 0.04)" : "transparent",
                               transition: "background 0.2s ease",
                             }}
                           >
-                            <span style={{ width: 10, height: 10, borderRadius: "50%", background: isNuclear ? "#d4a54a" : color, display: "inline-block" }} />
+                            <span style={{ width: 10, height: 10, borderRadius: "50%", background: isNuclear ? "var(--np-accent)" : color, display: "inline-block" }} />
                             <span style={{ fontWeight: isNuclear ? 700 : 600, fontSize: 14, color: isNuclear ? "var(--np-text)" : "var(--np-text-muted)" }}>
                               {row.name}
                             </span>
@@ -403,15 +403,15 @@ export default function DataSection({
                                   inset: 0,
                                   width: `${Math.max(row.width, 1.5)}%`,
                                   borderRadius: 999,
-                                  background: isNuclear ? "linear-gradient(90deg, #d4a54a 0%, rgba(212,165,74,0.6) 100%)" : color,
+                                  background: isNuclear ? "linear-gradient(90deg, var(--np-accent) 0%, rgba(var(--np-accent-rgb), 0.6) 100%)" : color,
                                   opacity: isNuclear ? 1 : hoveredSource === row.name ? 0.82 : 0.64,
                                 }}
                               />
                             </div>
-                            <span className="np-data-value" style={{ fontFamily: "'DM Mono',monospace", fontSize: 14, fontWeight: 700, textAlign: "right", whiteSpace: "nowrap", color: "var(--np-text)" }}>
+                            <span className="np-data-value" style={{ fontFamily: "var(--np-font-mono)", fontSize: 14, fontWeight: 700, textAlign: "right", whiteSpace: "nowrap", color: "var(--np-text)" }}>
                               {`${formatComparisonValue(row.value)}${activeComparisonMetric.unit === "%" ? "%" : ""}`}
                             </span>
-                            <span className="np-data-sub" style={{ fontFamily: "'DM Mono',monospace", fontSize: 11, color: row.isBest ? (isNuclear ? "var(--np-accent-ink)" : "var(--np-c-green)") : "var(--np-text-faint)", textAlign: "right", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                            <span className="np-data-sub" style={{ fontFamily: "var(--np-font-mono)", fontSize: 11, color: row.isBest ? (isNuclear ? "var(--np-accent-ink)" : "var(--np-c-green)") : "var(--np-text-faint)", textAlign: "right", textTransform: "uppercase", letterSpacing: "0.06em" }}>
                               {row.isBest ? "Best result" : activeComparisonMetric.lowerIsBetter ? "Lower is better" : "Higher is better"}
                             </span>
                           </div>
@@ -426,13 +426,13 @@ export default function DataSection({
                         gap: 18,
                         padding: "18px 20px",
                         borderRadius: 18,
-                        background: isDark ? "rgba(212,165,74,0.1)" : "rgba(212,165,74,0.06)",
-                        border: `1px solid ${isDark ? "rgba(212,165,74,0.22)" : "rgba(212,165,74,0.14)"}`,
+                        background: isDark ? "rgba(var(--np-accent-rgb), 0.1)" : "rgba(var(--np-accent-rgb), 0.06)",
+                        border: `1px solid ${isDark ? "rgba(var(--np-accent-rgb), 0.22)" : "rgba(var(--np-accent-rgb), 0.14)"}`,
                         alignItems: "center",
                       }}
                     >
                       <div style={{ display: "grid", gap: 6 }}>
-                        <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", color: "#d4a54a" }}>
+                        <div style={{ fontFamily: "var(--np-font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--np-accent)" }}>
                           Why this matters
                         </div>
                         <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: "var(--np-text)", fontWeight: 600 }}>
@@ -440,7 +440,7 @@ export default function DataSection({
                         </p>
                       </div>
                       <div style={{ textAlign: "right" }}>
-                        <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--np-text-faint)" }}>
+                        <div style={{ fontFamily: "var(--np-font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--np-text-faint)" }}>
                           Direction
                         </div>
                         <div style={{ fontSize: 13, color: "var(--np-text-muted)", fontWeight: 600 }}>

@@ -5,15 +5,15 @@ function TerminalMetric({ card }) {
   return (
     <div style={{
       borderRadius: 14,
-      border: "1px solid rgba(212,165,74,0.14)",
+      border: "1px solid rgba(var(--np-accent-rgb), 0.14)",
       background: "rgba(20,18,14,0.58)",
       padding: "14px 16px",
       minWidth: 0,
     }}>
-      <div style={{ fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.12em", color: "rgba(212,165,74,0.76)", fontWeight: 700, marginBottom: 6 }}>
+      <div style={{ fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.12em", color: "rgba(var(--np-accent-rgb), 0.76)", fontWeight: 700, marginBottom: 6 }}>
         {card.label}
       </div>
-      <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 22, color: "#f5f0e8", marginBottom: 6 }}>
+      <div style={{ fontFamily: "var(--np-font-mono)", fontSize: 22, color: "#f5f0e8", marginBottom: 6 }}>
         {card.value}
       </div>
       <div style={{ fontSize: 12, lineHeight: 1.55, color: "rgba(245,240,232,0.6)" }}>
@@ -23,11 +23,11 @@ function TerminalMetric({ card }) {
   );
 }
 
-function TerminalMiniList({ title, accent = "#d4a54a", items, renderMeta }) {
+function TerminalMiniList({ title, accent = "var(--np-accent)", items, renderMeta }) {
   return (
     <div style={{
       borderRadius: 16,
-      border: "1px solid rgba(212,165,74,0.12)",
+      border: "1px solid rgba(var(--np-accent-rgb), 0.12)",
       background: "rgba(255,255,255,0.02)",
       padding: 16,
     }}>
@@ -91,7 +91,7 @@ function PredictionOddsBoard({ markets, onOpenTerminal }) {
     <div style={{ display: "grid", gap: 12 }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-          <span style={{ fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.16em", color: "#d4a54a", fontWeight: 700 }}>
+          <span style={{ fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.16em", color: "var(--np-accent)", fontWeight: 700 }}>
             Market odds
           </span>
           <span style={{ fontFamily: "var(--np-font-mono)", fontSize: 10, color: "rgba(245,240,232,0.4)", letterSpacing: "0.05em" }}>
@@ -122,7 +122,7 @@ function PredictionOddsBoard({ markets, onOpenTerminal }) {
               key={market.id}
               style={{
                 borderRadius: 14,
-                border: "1px solid rgba(212,165,74,0.16)",
+                border: "1px solid rgba(var(--np-accent-rgb), 0.16)",
                 background: "rgba(20,18,14,0.58)",
                 padding: "14px 16px",
                 display: "grid",
@@ -144,7 +144,7 @@ function PredictionOddsBoard({ markets, onOpenTerminal }) {
                 </div>
               </div>
               <div style={{ textAlign: "right" }}>
-                <div style={{ fontFamily: "var(--np-font-display)", fontSize: 28, fontWeight: 450, lineHeight: 1, color: "#d4a54a" }}>
+                <div style={{ fontFamily: "var(--np-font-display)", fontSize: 28, fontWeight: 450, lineHeight: 1, color: "var(--np-accent)" }}>
                   {formatOdds(market.yesPrice)}
                 </div>
                 <div style={{ fontSize: 9.5, textTransform: "uppercase", letterSpacing: "0.12em", color: "rgba(245,240,232,0.4)", marginTop: 4 }}>
@@ -184,7 +184,7 @@ export default function TerminalEditorialStrip({ signals, onOpenTerminal }) {
     <div style={{
       width: "100%",
       borderRadius: 18,
-      border: "1px solid rgba(212,165,74,0.18)",
+      border: "1px solid rgba(var(--np-accent-rgb), 0.18)",
       background: "#13100c",
       color: "#f5f0e8",
       padding: "clamp(24px, 3vw, 36px) clamp(18px, 2.6vw, 36px)",

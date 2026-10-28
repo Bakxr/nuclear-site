@@ -118,7 +118,7 @@ export default function GlobeSection({
                         }}
                         style={{
                           borderRadius: 999,
-                          border: `1px solid ${active ? "rgba(212,165,74,0.45)" : "var(--np-border)"}`,
+                          border: `1px solid ${active ? "rgba(var(--np-accent-rgb), 0.45)" : "var(--np-border)"}`,
                           background: active ? "var(--np-text)" : "rgba(255,255,255,0.02)",
                           color: active ? "var(--np-bg)" : "var(--np-text-muted)",
                           padding: "8px 14px",
@@ -143,8 +143,8 @@ export default function GlobeSection({
                       aria-haspopup="true"
                       style={{
                         borderRadius: 999,
-                        border: `1px solid ${hasActiveGlobeFilters ? "rgba(212,165,74,0.42)" : "var(--np-border)"}`,
-                        background: hasActiveGlobeFilters ? "rgba(212,165,74,0.12)" : "rgba(255,255,255,0.02)",
+                        border: `1px solid ${hasActiveGlobeFilters ? "rgba(var(--np-accent-rgb), 0.42)" : "var(--np-border)"}`,
+                        background: hasActiveGlobeFilters ? "rgba(var(--np-accent-rgb), 0.12)" : "rgba(255,255,255,0.02)",
                         color: hasActiveGlobeFilters ? "var(--np-accent)" : "var(--np-text-muted)",
                         padding: "8px 14px",
                         fontSize: 12,
@@ -152,7 +152,7 @@ export default function GlobeSection({
                         letterSpacing: "0.06em",
                         textTransform: "uppercase",
                         cursor: "pointer",
-                        fontFamily: "'DM Sans',sans-serif",
+                        fontFamily: "var(--np-font-sans)",
                         whiteSpace: "nowrap",
                       }}
                     >
@@ -347,7 +347,7 @@ export default function GlobeSection({
                     borderBottom: "1px solid var(--np-border)",
                     transition: "background 0.15s ease",
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(212,165,74,0.08)"; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(var(--np-accent-rgb), 0.08)"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
                 >
                   <div style={{ minWidth: 0 }}>
@@ -355,7 +355,7 @@ export default function GlobeSection({
                     <div style={{ fontSize: 11, color: "var(--np-text-muted)" }}>{plant.country} · {plant.type}</div>
                   </div>
                   <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 12 }}>
-                    <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 12.5, fontWeight: 600, color: "var(--np-text)" }}>
+                    <div style={{ fontFamily: "var(--np-font-mono)", fontSize: 12.5, fontWeight: 600, color: "var(--np-text)" }}>
                       {plant.capacity.toLocaleString("en-US")} MW
                     </div>
                     <div style={{ fontSize: 10, color: STATUS_TEXT_COLORS[plant.status] ?? STATUS_TEXT_COLORS.Idle }}>
@@ -381,7 +381,7 @@ export default function GlobeSection({
                       <div style={{ fontSize: 11, color: "var(--np-text-muted)" }}>{site.country} · {site.region}</div>
                     </div>
                     <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 12 }}>
-                      <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 11.5, fontWeight: 700, color: SUPPLY_STAGE_COLORS[site.stage] || "var(--np-accent)" }}>
+                      <div style={{ fontFamily: "var(--np-font-mono)", fontSize: 11.5, fontWeight: 700, color: SUPPLY_STAGE_COLORS[site.stage] || "var(--np-accent)" }}>
                         {site.stage}
                       </div>
                       <div style={{ fontSize: 10, color: "var(--np-text-faint)" }}>{site.status}</div>
@@ -410,16 +410,16 @@ export default function GlobeSection({
                     marginTop: 14,
                     width: "100%",
                     borderRadius: 999,
-                    border: "1px solid rgba(212,165,74,0.28)",
+                    border: "1px solid rgba(var(--np-accent-rgb), 0.28)",
                     background: "transparent",
-                    color: "#d4a54a",
+                    color: "var(--np-accent)",
                     padding: "10px 16px",
                     fontSize: 12,
                     fontWeight: 700,
                     letterSpacing: "0.08em",
                     textTransform: "uppercase",
                     cursor: "pointer",
-                    fontFamily: "'DM Sans',sans-serif",
+                    fontFamily: "var(--np-font-sans)",
                   }}
                 >
                   {mobileGlobePanelExpanded

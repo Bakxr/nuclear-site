@@ -35,8 +35,8 @@ function allSurfaces(patch, prev) {
 
 // Newsletter sign-up state shared by every form on the page (hero, inline,
 // footer, popup): one success marks them all done. Also owns the popup's
-// trigger rules (45s, half-way scroll, or exit intent on desktop; at most
-// once per session, snoozed 14 days after a dismissal).
+// trigger rules (60s on the page, or exit intent on desktop; at most once per
+// session, snoozed 14 days after a dismissal).
 export function useNewsletter() {
   const [isSubscribed, setIsSubscribed] = useState(() => storageGet("localStorage", STORAGE_KEY) === "1");
   const [forms, setForms] = useState(() => allSurfaces(isSubscribed ? { status: "success" } : {}));
@@ -78,22 +78,18 @@ export function useNewsletter() {
     if (isSubscribed) return undefined;
     if (storageGet("sessionStorage", POPUP_SHOWN_KEY) || storageGet("sessionStorage", POPUP_DISMISSED_KEY) || popupRecentlyDismissed()) return undefined;
 
-    const timer = window.setTimeout(maybeOpenPopup, 45000);
-    const onScroll = () => {
-      const scrollable = document.documentElement.scrollHeight - window.innerHeight;
-      if (scrollable > 0 && window.scrollY / scrollable >= 0.5) maybeOpenPopup();
-    };
+    // A minute of reading, or (desktop) the pointer leaving for the tab bar.
+    // No scroll trigger: on a long page it fired within seconds.
+    const timer = window.setTimeout(maybeOpenPopup, 60000);
     const onMouseOut = (event) => {
       if (window.innerWidth < 1024) return;
       if (event.relatedTarget || event.clientY > 20) return;
       maybeOpenPopup();
     };
 
-    window.addEventListener("scroll", onScroll, { passive: true });
     document.addEventListener("mouseout", onMouseOut);
     return () => {
       window.clearTimeout(timer);
-      window.removeEventListener("scroll", onScroll);
       document.removeEventListener("mouseout", onMouseOut);
     };
   }, [isSubscribed, maybeOpenPopup]);

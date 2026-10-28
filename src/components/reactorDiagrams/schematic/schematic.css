@@ -39,9 +39,9 @@
 .npx-pool { fill: #3f86c6; fill-opacity: 0.12; stroke: #3f86c6; stroke-opacity: 0.35; stroke-width: 1.5; }
 
 /* Labels */
-.npx-label-text { font: 600 13px/1 var(--np-font-sans, 'DM Sans', sans-serif); fill: var(--np-text); fill-opacity: 0.86; }
-.npx-label-sub { font: 500 11px/1 var(--np-font-mono, 'DM Mono', monospace); fill: var(--np-text-muted); }
-.npx-caption { font: 600 10px/1 var(--np-font-mono, 'DM Mono', monospace); letter-spacing: 0.12em; fill: var(--np-text-muted); }
+.npx-label-text { font: 600 13px/1 var(--np-font-sans, var(--np-font-sans)); fill: var(--np-text); fill-opacity: 0.86; }
+.npx-label-sub { font: 500 11px/1 var(--np-font-mono, var(--np-font-mono)); fill: var(--np-text-muted); }
+.npx-caption { font: 600 10px/1 var(--np-font-mono, var(--np-font-mono)); letter-spacing: 0.12em; fill: var(--np-text-muted); }
 .npx-leader { stroke: var(--np-text); stroke-opacity: 0.35; stroke-width: 1; fill: none; }
 .npx-leader-dot { fill: var(--np-accent); }
 
@@ -81,15 +81,15 @@
   min-height: 88px;
 }
 .npx-caption-main { display: grid; gap: 4px; min-width: 0; }
-.npx-caption-main strong { font: 600 14px/1.3 var(--np-font-sans, 'DM Sans', sans-serif); color: var(--np-text); }
-.npx-caption-main span { font: 400 13px/1.55 var(--np-font-sans, 'DM Sans', sans-serif); color: var(--np-text-muted); max-width: 70ch; }
+.npx-caption-main strong { font: 600 14px/1.3 var(--np-font-sans, var(--np-font-sans)); color: var(--np-text); }
+.npx-caption-main span { font: 400 13px/1.55 var(--np-font-sans, var(--np-font-sans)); color: var(--np-text-muted); max-width: 70ch; }
 .npx-legend {
   display: grid;
   gap: 5px;
   margin: 0;
   padding: 0;
   list-style: none;
-  font: 500 11px/1.2 var(--np-font-sans, 'DM Sans', sans-serif);
+  font: 500 11px/1.2 var(--np-font-sans, var(--np-font-sans));
   color: var(--np-text-muted);
   white-space: nowrap;
 }

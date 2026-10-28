@@ -17,7 +17,7 @@ export function SectionLabel({ children, dark = false }) {
       />
       <span style={{
         fontSize: 11, textTransform: "uppercase", letterSpacing: "0.14em", fontWeight: 700,
-        color: dark ? "rgba(212,165,74,0.7)" : "var(--np-accent-ink)",
+        color: dark ? "rgba(var(--np-accent-rgb), 0.7)" : "var(--np-accent-ink)",
       }}>{children}</span>
     </motion.div>
   );
