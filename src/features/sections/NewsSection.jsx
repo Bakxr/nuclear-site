@@ -34,6 +34,9 @@ export default function NewsSection({
   scrollTo,
 }) {
   const items = excludeUrls && newsFilter === "All" ? filteredNews.filter((n) => !excludeUrls.has(n.url)) : filteredNews;
+  // Only the curated backup set (live feeds down or still loading): it must
+  // never pass for today's news.
+  const archive = news.length > 0 && news.every((n) => n._isFallback);
   const updated = newsLastUpdated
     ? `Updated ${newsLastUpdated.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`
     : "";
@@ -43,8 +46,8 @@ export default function NewsSection({
       <section ref={sectionRef} className="np-wrap" style={{ paddingTop: "var(--np-section-y)", scrollMarginTop: 60 }}>
         <SectionHeader
           label="The wire"
-          meta={[`${news.length} stories`, `${uniqueNewsSources} sources`, updated].filter(Boolean).join(" · ")}
-          title="Everything else today"
+          meta={archive ? (newsLoading ? "Loading live feeds…" : "Live feeds unavailable") : [`${news.length} stories`, `${uniqueNewsSources} sources`, updated].filter(Boolean).join(" · ")}
+          title={archive && !newsLoading ? "From the archive" : "Everything else today"}
         />
         <div className="np-news-toolbar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
           <div role="group" aria-label="Filter by topic" style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -63,14 +66,14 @@ export default function NewsSection({
           </div>
         </div>
 
-        {newsError && !newsLoading ? (
+        {(newsError || archive) && !newsLoading ? (
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "10px 0", marginBottom: 8, borderTop: "1px solid var(--np-hairline)", fontSize: 14, color: "var(--np-text-muted)" }}>
-            <span>Live feeds are unavailable, so these are earlier stories.</span>
+            <span>The live feeds aren't answering right now, so these are earlier stories worth knowing. Today's wire returns when they do.</span>
             <button type="button" className="np-text-link" onClick={refreshNews}>Retry</button>
           </div>
         ) : null}
 
-        {newsLoading && news.length === 0 ? (
+        {newsLoading && (news.length === 0 || archive) ? (
           <div className="np-wire" aria-busy="true">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="np-wire-item"><div style={{ height: 48, background: "var(--np-surface-dim)" }} /></div>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { angularDistance, focusOn, formatCoords, shortestTurn } from "./globeMath.js";
+import { angularDistance, focusOn, formatCoords, indexFeatures, shortestTurn, viewAngle } from "./globeMath.js";
 
 describe("shortestTurn", () => {
   it("turns the short way across the date line", () => {
@@ -38,6 +38,22 @@ describe("focusOn", () => {
 
   it("stays at world zoom for places on opposite sides", () => {
     expect(focusOn([{ lat: 0, lng: 0 }, { lat: 0, lng: 180 }]).zoom).toBe(1);
+  });
+});
+
+describe("indexFeatures", () => {
+  it("gives each feature a cap that covers its points", () => {
+    const square = { type: "Feature", geometry: { type: "Polygon", coordinates: [[[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]]] } };
+    const [entry] = indexFeatures([square], () => [5, 5]);
+    expect(entry.centre).toEqual([5, 5]);
+    expect(entry.radius).toBeCloseTo(angularDistance([5, 5], [0, 0]));
+  });
+});
+
+describe("viewAngle", () => {
+  it("is a hemisphere until the globe outgrows the frame", () => {
+    expect(viewAngle(400, 300)).toBe(Math.PI / 2);
+    expect(viewAngle(300, 600)).toBeCloseTo(Math.PI / 6);
   });
 });
 

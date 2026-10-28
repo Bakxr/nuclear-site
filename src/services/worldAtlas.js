@@ -69,6 +69,7 @@ export function fetchLand() {
   return fetchAtlas("land-110m.json", "land");
 }
 
-export function fetchCountries() {
-  return fetchAtlas("countries-110m.json", "countries");
+// detail: "110m" (light, the default) or "50m" (~200 KB, for zoomed-in views).
+export function fetchCountries(detail = "110m") {
+  return fetchAtlas(`countries-${detail}.json`, "countries");
 }

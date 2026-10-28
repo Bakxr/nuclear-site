@@ -45,6 +45,30 @@ export function focusOn(places, maxZoom = 6) {
   return { lng, lat, zoom };
 }
 
+// Each country with a bounding cap (centroid and angular radius) so the
+// globe can skip what's out of view. centroid() is d3's geoCentroid.
+export function indexFeatures(features, centroid) {
+  return features.map((feature) => {
+    const centre = centroid(feature);
+    let radius = 0;
+    const visit = (coords) => {
+      if (typeof coords[0] === "number") {
+        radius = Math.max(radius, angularDistance(centre, coords));
+      } else {
+        coords.forEach(visit);
+      }
+    };
+    if (feature.geometry) visit(feature.geometry.coordinates);
+    return { feature, centre, radius };
+  });
+}
+
+// Half-angle of the globe that can be on screen: everything at a zoomed-out
+// view, shrinking as the globe outgrows the frame.
+export function viewAngle(halfDiagonal, globeRadius) {
+  return halfDiagonal >= globeRadius ? Math.PI / 2 : Math.asin(halfDiagonal / globeRadius);
+}
+
 // "38.2°N 97.1°W" for the globe's readout.
 export function formatCoords(lng, lat) {
   const wrapped = shortestTurn(0, lng);

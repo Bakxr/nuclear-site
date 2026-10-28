@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { geoGraticule10, geoOrthographic, geoPath } from "d3";
+import { geoCentroid, geoGraticule10, geoOrthographic, geoPath } from "d3";
 import { STATUS_TEXT_COLORS } from "../../data/constants.js";
 import { SUPPLY_STAGE_COLORS } from "../../data/supplySites.js";
 import { fetchCountries } from "../../services/worldAtlas.js";
-import { angularDistance, clamp, focusOn, formatCoords, shortestTurn } from "./globeMath.js";
+import { angularDistance, clamp, focusOn, formatCoords, indexFeatures, shortestTurn, viewAngle } from "./globeMath.js";
 import { dotRadius } from "./mapMath.js";
 
 const SPHERE = { type: "Sphere" };
@@ -12,6 +12,7 @@ const MAX_ZOOM = 8;
 const HOME = { lng: -40, lat: 24 }; // over the Atlantic: the Americas and Europe in view
 const SPIN = 5; // degrees per second while idle
 const RING = 16; // room for the bezel round the globe
+const FINE_ZOOM = 1.8; // past this, draw the detailed (1:50m) coastlines
 
 function prefersReducedMotion() {
   return typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -49,20 +50,31 @@ export default function PrintGlobe({ items, mode = "reactors", totalCount, onSel
   const wrapRef = useRef(null);
   const canvasRef = useRef(null);
   const readoutRef = useRef(null);
-  const [countries, setCountries] = useState(null);
   const [hover, setHover] = useState(null);
   const [zoom, setZoom] = useState(1);
   const sim = useRef({
     lng: HOME.lng, lat: HOME.lat, zoom: 1, target: null, spinning: !prefersReducedMotion(),
     velocity: 0, drag: null, inside: false, visible: true, width: 0, height: 0, onScreen: [], hovered: null,
   });
-  const scene = useRef({ dots: [], countries: null, mode, palette: null });
+  const scene = useRef({ dots: [], coarse: null, fine: null, mode, palette: null });
+  const fineRequested = useRef(false);
 
+  // Country outlines live on the scene ref: the draw loop reads them there.
   useEffect(() => {
-    let cancelled = false;
-    fetchCountries().then((geo) => { if (!cancelled) setCountries(geo); });
-    return () => { cancelled = true; };
+    fetchCountries().then((geo) => {
+      if (geo) scene.current.coarse = indexFeatures(geo.features, geoCentroid);
+    });
   }, []);
+
+  // Detailed coastlines, fetched the first time anyone zooms in.
+  useEffect(() => {
+    if (zoom < FINE_ZOOM || fineRequested.current) return;
+    fineRequested.current = true;
+    fetchCountries("50m").then((geo) => {
+      if (geo) scene.current.fine = indexFeatures(geo.features, geoCentroid);
+      else fineRequested.current = false;
+    });
+  }, [zoom]);
 
   const dots = useMemo(() => (items || [])
     .filter((item) => Number.isFinite(item.lat) && Number.isFinite(item.lng))
@@ -78,7 +90,6 @@ export default function PrintGlobe({ items, mode = "reactors", totalCount, onSel
     .sort((a, b) => b.r - a.r), [items, mode]);
 
   scene.current.dots = dots;
-  scene.current.countries = countries;
   scene.current.mode = mode;
 
   const filtered = Number.isFinite(totalCount) && dots.length > 0 && dots.length < totalCount;
@@ -159,7 +170,8 @@ export default function PrintGlobe({ items, mode = "reactors", totalCount, onSel
           s.velocity *= Math.exp(-dt * 2.5);
         } else {
           s.velocity = 0;
-          if (s.spinning && !s.inside) s.lng += SPIN * dt;
+          // Idle spin only at world view: zoomed in, it would race past.
+          if (s.spinning && !s.inside && s.zoom < 1.05) s.lng += SPIN * dt;
         }
       }
       s.lng = ((s.lng + 540) % 360) - 180;
@@ -168,7 +180,7 @@ export default function PrintGlobe({ items, mode = "reactors", totalCount, onSel
     function draw(time) {
       const { width, height } = s;
       const pal = scene.current.palette;
-      const { dots: all, countries: geo } = scene.current;
+      const { dots: all, coarse, fine } = scene.current;
       const cx = width / 2;
       const cy = height / 2;
       const radius = (Math.min(width, height) / 2 - RING) * s.zoom;
@@ -177,6 +189,15 @@ export default function PrintGlobe({ items, mode = "reactors", totalCount, onSel
       ctx.clearRect(0, 0, width, height);
 
       front.scale(radius).translate([cx, cy]).rotate([-s.lng, -s.lat]);
+
+      // Only the countries that can be on screen, at the detail the zoom needs.
+      const centre = [s.lng, s.lat];
+      const reach = viewAngle(Math.hypot(width, height) / 2, radius);
+      const outlines = (s.zoom >= FINE_ZOOM && fine) || coarse;
+      const geo = outlines && {
+        type: "FeatureCollection",
+        features: outlines.filter((c) => angularDistance(centre, c.centre) - c.radius < reach).map((c) => c.feature),
+      };
       back.scale(radius).translate([cx, cy]).rotate([-s.lng + 180, s.lat]);
 
       // Bezel: two hairlines with a degree scale that turns with the globe.
@@ -220,9 +241,9 @@ export default function PrintGlobe({ items, mode = "reactors", totalCount, onSel
       ctx.stroke();
 
       // The far side, faintly, as if through glass.
-      if (geo) {
+      if (coarse && s.zoom < 1.5) {
         ctx.beginPath();
-        backPath(geo);
+        backPath({ type: "FeatureCollection", features: coarse.map((c) => c.feature) });
         ctx.globalAlpha = pal.dark ? 0.14 : 0.12;
         ctx.lineWidth = 0.6;
         ctx.stroke();
@@ -260,7 +281,6 @@ export default function PrintGlobe({ items, mode = "reactors", totalCount, onSel
       ctx.restore();
 
       // Plants on the near side.
-      const centre = [s.lng, s.lat];
       const dotScale = 0.9 + Math.sqrt(s.zoom) * 0.22;
       const pulsePhase = reduced ? 0.5 : (time % 2200) / 2200;
       const onScreen = [];
